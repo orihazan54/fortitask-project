@@ -1,0 +1,111 @@
+/* הגדרות כלליות */
+.profile-container {
+  display: flex;
+  flex-direction: row;
+  background: #f4f6f8;
+  min-height: 100vh;
+  font-family: 'Arial', sans-serif;
+}
+
+/* עיצוב כרטיס פרופיל */
+.profile-card {
+  margin: 20px auto;
+  background: #ffffff;
+  padding: 30px;
+  border-radius: 10px;
+  box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
+  max-width: 500px;
+  text-align: center;
+}
+
+/* כותרת הפרופיל */
+.profile-header {
+  font-size: 24px;
+  font-weight: bold;
+  color: #1565c0;
+  margin-bottom: 20px;
+}
+
+/* פרטי המשתמש */
+.profile-info {
+  text-align: left;
+  margin-bottom: 20px;
+}
+
+.profile-info p {
+  font-size: 16px;
+  margin: 10px 0;
+  color: #333333;
+}
+
+.profile-info strong {
+  color: #1565c0;
+}
+
+/* קלט סיסמא חדשה */
+input[type="password"] {
+  width: 100%;
+  padding: 10px;
+  margin: 10px 0;
+  border: 1px solid #ddd;
+  border-radius: 5px;
+  transition: border-color 0.3s ease-in-out;
+}
+
+input[type="password"]:focus {
+  border-color: #1565c0;
+  outline: none;
+  box-shadow: 0 0 5px rgba(21, 101, 192, 0.5);
+}
+
+/* כפתור שינוי סיסמא */
+.change-password-btn {
+  background: linear-gradient(135deg, #2196f3, #1565c0);
+  color: white;
+  border: none;
+  padding: 10px 20px;
+  border-radius: 5px;
+  font-size: 16px;
+  cursor: pointer;
+  transition: background-color 0.3s, transform 0.2s;
+}
+
+.change-password-btn:hover {
+  background: linear-gradient(135deg, #1565c0, #2196f3);
+  transform: scale(1.05);
+}
+
+.change-password-btn:active {
+  transform: scale(1);
+}
+
+.sidebar {
+  background-color: #1565c0;
+  color: white;
+  padding: 20px;
+  min-width: 250px;
+}
+
+.sidebar ul {
+  list-style: none;
+  padding: 0;
+}
+
+.sidebar ul li {
+  padding: 10px 15px;
+  margin-bottom: 10px;
+  background-color: #2196f3;
+  border-radius: 5px;
+  text-align: center;
+  transition: background-color 0.3s;
+}
+
+.sidebar ul li:hover {
+  background-color: #0d47a1;
+}
+
+.sidebar ul li a {
+  color: white;
+  text-decoration: none;
+  font-size: 16px;
+}

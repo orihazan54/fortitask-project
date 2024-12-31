@@ -1,40 +1,93 @@
 .home-container {
-    display: flex;
-    justify-content: center;
-    align-items: center;
-    height: 100vh;
-    background: linear-gradient(135deg, #2196F3, #1565C0); /* גרדיאנט כחול */
-    color: white;
-    text-align: center;
-  }
-  
-  .home-content {
-    max-width: 600px;
-  }
-  
-  .home-content h1 {
-    font-size: 2.5rem;
-    margin-bottom: 20px;
-  }
-  
-  .home-content p {
-    font-size: 1.2rem;
-    margin-bottom: 30px;
-    line-height: 1.5;
-  }
-  
-  .home-buttons .btn {
-    padding: 12px 25px;
-    margin: 0 10px;
-    font-size: 1rem;
-    color: white;
-    text-decoration: none;
-    border-radius: 5px;
-    background: #2196F3;
-    transition: background-color 0.3s ease;
-  }
-  
-  .home-buttons .btn:hover {
-    background-color: #1565C0;
-  }
-  
+  display: flex;
+  flex-direction: column;
+  justify-content: center;
+  align-items: center;
+  height: 100vh;
+  background: linear-gradient(135deg, #1e3c72, #2a5298); /* צבעים עמוקים */
+  color: white;
+  text-align: center;
+  padding: 0 20px;
+}
+
+.home-content {
+  max-width: 800px;
+  animation: fadeIn 0.8s ease-out;
+}
+
+.home-content h1 {
+  font-size: 3rem;
+  font-weight: bold;
+  margin-bottom: 20px;
+}
+
+.home-content p {
+  font-size: 1.3rem;
+  margin-bottom: 40px;
+  color: #cfd8dc; /* גוון אפור בהיר */
+}
+
+.home-buttons {
+  display: flex;
+  justify-content: center;
+  gap: 20px;
+}
+
+.home-buttons .btn {
+  padding: 15px 30px;
+  font-size: 1rem;
+  font-weight: bold;
+  color: white;
+  text-decoration: none;
+  border-radius: 25px;
+  background: linear-gradient(135deg, #ff9800, #f57c00);
+  box-shadow: 0 4px 6px rgba(0, 0, 0, 0.2);
+  transition: all 0.3s ease;
+}
+
+.home-buttons .btn:hover {
+  background: linear-gradient(135deg, #f57c00, #ff9800);
+  transform: scale(1.1);
+  box-shadow: 0 6px 12px rgba(0, 0, 0, 0.3);
+}
+
+.info-cards {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 20px;
+  margin-top: 40px;
+  justify-content: center;
+}
+
+.card {
+  background: #1f2937; /* גוון כהה לכרטיסים */
+  color: white;
+  padding: 20px;
+  border-radius: 15px;
+  box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
+  text-align: center;
+  width: 250px;
+  transition: transform 0.3s ease, box-shadow 0.3s ease;
+}
+
+.card:hover {
+  transform: translateY(-10px);
+  box-shadow: 0 6px 12px rgba(0, 0, 0, 0.2);
+}
+
+.card-icon {
+  font-size: 3rem;
+  color: #03dac5;
+  margin-bottom: 15px;
+}
+
+.card-title {
+  font-size: 1.5rem;
+  font-weight: bold;
+  margin-bottom: 10px;
+}
+
+.card-description {
+  font-size: 1rem;
+  color: #cfd8dc;
+}

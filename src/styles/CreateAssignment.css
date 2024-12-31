@@ -1,0 +1,30 @@
+.create-assignment-form button {
+  background-color: #2196f3; /* כחול */
+  color: #fff;
+  font-weight: bold;
+  width: 100%;
+}
+
+.create-assignment-form button:hover {
+  background-color: #1e88e5; /* כחול כהה */
+}
+
+.create-assignment-form button.loading {
+  background-color: #64b5f6; /* כחול בהיר */
+}
+
+.create-assignment-form label {
+  font-weight: bold;
+  margin-bottom: 8px;
+  display: block;
+}
+
+.create-assignment-form input {
+  width: 100%;
+  padding: 10px;
+  margin-bottom: 20px;
+  border: 1px solid #ddd;
+  border-radius: 5px;
+  font-size: 16px;
+  box-sizing: border-box;
+}
