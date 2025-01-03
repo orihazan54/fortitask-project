@@ -1,28 +1,28 @@
 import React, { useState, useEffect } from "react";
 import NavBar from "../../components/NavBar";
 import Sidebar from "../../components/Sidebar";
-import { getAllAssignments } from "../../services/api";
+import { getCourses } from "../../services/api";
 import { toast } from "react-toastify";
-import "../../styles/Dashboard.css";
+import "../../styles/TeacherDashboard.css";
 
 const TeacherDashboard = () => {
-  const [assignments, setAssignments] = useState([]);
-  const [loading, setLoading] = useState(false); // מצב טעינה
+  const [courses, setCourses] = useState([]);
+  const [loading, setLoading] = useState(false);
 
   useEffect(() => {
-    const fetchAssignments = async () => {
-      setLoading(true); // הפעלת מצב טעינה
+    const fetchCourses = async () => {
+      setLoading(true);
       try {
-        const { data } = await getAllAssignments();
-        setAssignments(data);
+        const { data } = await getCourses();
+        setCourses(data.filter((course) => course.teacherId === localStorage.getItem("userId")));
       } catch (error) {
-        toast.error("Failed to fetch assignments.");
+        toast.error(error.response?.data?.message || "Failed to fetch courses.");
       } finally {
-        setLoading(false); // כיבוי מצב טעינה
+        setLoading(false);
       }
     };
 
-    fetchAssignments();
+    fetchCourses();
   }, []);
 
   return (
@@ -32,33 +32,35 @@ const TeacherDashboard = () => {
         <Sidebar role="Teacher" />
         <main className="main-content">
           <h1>Welcome to the Teacher Dashboard!</h1>
-          <section className="assignments-section">
-            <h2>Your Assignments</h2>
+          <section className="courses-section">
+            <h2>Your Courses</h2>
             {loading ? (
-              <p>Loading assignments...</p>
-            ) : assignments.length > 0 ? (
-              <table className="assignments-table">
+              <p>Loading courses...</p>
+            ) : courses.length > 0 ? (
+              <table className="courses-table">
                 <thead>
                   <tr>
                     <th>ID</th>
-                    <th>Name</th>
-                    <th>Due Date</th>
-                    <th>Created At</th>
+                    <th>Course Name</th>
+                    <th>Credit Points</th>
+                    <th>Deadline</th>
+                    <th>Students Enrolled</th>
                   </tr>
                 </thead>
                 <tbody>
-                  {assignments.map((assignment) => (
-                    <tr key={assignment.id}>
-                      <td>{assignment.id}</td>
-                      <td>{assignment.name}</td>
-                      <td>{assignment.dueDate}</td>
-                      <td>{new Date(assignment.createdAt).toLocaleString()}</td>
+                  {courses.map((course) => (
+                    <tr key={course._id}>
+                      <td>{course._id}</td>
+                      <td>{course.name}</td>
+                      <td>{course.creditPoints}</td>
+                      <td>{new Date(course.deadline).toLocaleDateString()}</td>
+                      <td>{course.students?.length || 0}</td>
                     </tr>
                   ))}
                 </tbody>
               </table>
             ) : (
-              <p>No assignments found.</p>
+              <p className="no-courses">No courses found.</p>
             )}
           </section>
         </main>

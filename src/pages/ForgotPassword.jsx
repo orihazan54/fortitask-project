@@ -10,8 +10,28 @@ const ForgotPassword = () => {
   const [verificationCode, setVerificationCode] = useState("");
   const [newPassword, setNewPassword] = useState("");
   const [confirmPassword, setConfirmPassword] = useState("");
+  const [passwordStrength, setPasswordStrength] = useState(""); // חיווי חוזק סיסמה
   const [step, setStep] = useState(1); // שלב הטופס: 1 - אימייל, 2 - קוד אימות וסיסמה
   const navigate = useNavigate();
+
+  const checkPasswordStrength = (password) => {
+    const strongRegex = new RegExp(
+      "^(?=.*[a-z])(?=.*[A-Z])(?=.*[0-9])(?=.*[!@#$%^&*])(?=.{8,})"
+    );
+    const mediumRegex = new RegExp(
+      "^(?=.*[a-z])(?=.*[A-Z])(?=.*[0-9])(?=.{6,})"
+    );
+
+    if (strongRegex.test(password)) return "Strong";
+    if (mediumRegex.test(password)) return "Medium";
+    return "Weak";
+  };
+
+  const handleNewPasswordChange = (e) => {
+    const value = e.target.value;
+    setNewPassword(value);
+    setPasswordStrength(checkPasswordStrength(value));
+  };
 
   const handleSendEmail = async () => {
     try {
@@ -28,10 +48,17 @@ const ForgotPassword = () => {
       toast.error("Please fill in all fields.");
       return;
     }
+
     if (newPassword !== confirmPassword) {
       toast.error("Passwords do not match.");
       return;
     }
+
+    if (passwordStrength === "Weak") {
+      toast.error("Password is too weak. Please choose a stronger password.");
+      return;
+    }
+
     try {
       await resetPassword({ email, verificationCode, newPassword });
       toast.success("Password reset successfully.");
@@ -75,8 +102,11 @@ const ForgotPassword = () => {
                 type="password"
                 placeholder="Enter new password"
                 value={newPassword}
-                onChange={(e) => setNewPassword(e.target.value)}
+                onChange={handleNewPasswordChange}
               />
+              <p className={`password-strength ${passwordStrength.toLowerCase()}`}>
+                Password Strength: {passwordStrength}
+              </p>
               <input
                 type="password"
                 placeholder="Confirm new password"

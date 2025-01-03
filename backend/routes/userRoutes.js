@@ -4,28 +4,9 @@ const jwt = require("jsonwebtoken");
 const nodemailer = require("nodemailer");
 const memoryCache = require("memory-cache");
 const User = require("../models/User");
+const { authenticateToken } = require("../middleware/auth");
 
 const router = express.Router();
-const MAX_ATTEMPTS = 5;
-const LOCK_TIME = 15 * 60 * 1000;
-
-// Middleware לאימות טוקן
-const authenticateToken = (req, res, next) => {
-  const authHeader = req.headers.authorization;
-  const token = authHeader && authHeader.split(" ")[1];
-
-  if (!token) {
-    return res.status(401).json({ message: "Access denied. No token provided." });
-  }
-
-  jwt.verify(token, process.env.JWT_SECRET, (err, user) => {
-    if (err) {
-      return res.status(403).json({ message: "Invalid or expired token." });
-    }
-    req.user = user;
-    next();
-  });
-};
 
 // Nodemailer transporter
 const transporter = nodemailer.createTransport({
@@ -91,6 +72,10 @@ router.get("/profile", authenticateToken, async (req, res) => {
     if (!user) {
       return res.status(404).json({ message: "User not found." });
     }
+
+    // Log the user's role to ensure it's set correctly
+    console.log("User role from backend:", user.role);
+
     res.status(200).json(user);
   } catch (error) {
     console.error("Profile fetch error:", error);

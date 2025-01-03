@@ -3,26 +3,31 @@
   justify-content: center;
   align-items: center;
   height: 100vh;
-  background: #f1f5f9;
+  background: linear-gradient(to right, #1e3c72, #2a5298);
+  color: white;
+  text-align: center;
+  overflow: hidden;
 }
 
 .card {
   background: white;
   padding: 30px;
   border-radius: 15px;
-  box-shadow: 0 10px 20px rgba(0, 0, 0, 0.1);
+  box-shadow: 0 10px 20px rgba(0, 0, 0, 0.3);
   width: 400px;
   text-align: center;
-  transition: transform 0.3s ease, box-shadow 0.3s ease;
-}
-
-.card:hover {
-  transform: translateY(-5px);
-  box-shadow: 0 15px 25px rgba(0, 0, 0, 0.15);
+  animation: fadeIn 0.8s ease-in-out;
+  position: relative;
 }
 
 .card h2 {
-  color: #1565c0;
+  color: #1e3c72;
+  margin-bottom: 20px;
+}
+
+.card p {
+  color: #666;
+  font-size: 0.9rem;
   margin-bottom: 20px;
 }
 
@@ -42,19 +47,37 @@
   border-radius: 5px;
   padding: 10px 20px;
   cursor: pointer;
-  transition: background-color 0.3s ease, transform 0.3s ease;
+  transition: transform 0.3s ease;
 }
 
 .card button:hover {
-  background: linear-gradient(135deg, #1565c0, #2196f3);
   transform: scale(1.05);
+  background: linear-gradient(135deg, #1565c0, #2196f3);
 }
 
 .link {
-  color: #1565c0;
+  color: #1e3c72;
   cursor: pointer;
+  font-weight: bold;
+  transition: color 0.3s;
+}
+
+.link:hover {
+  color: #2196f3;
 }
 
 .forgot-password {
   margin-top: 10px;
+  font-size: 0.9rem;
+}
+
+@keyframes fadeIn {
+  from {
+    opacity: 0;
+    transform: translateY(-20px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
 }

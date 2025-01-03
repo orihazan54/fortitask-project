@@ -26,15 +26,16 @@ const Login = () => {
     try {
       const { data } = await login(formData);
       toast.success("Login successful!");
-
+    
       // שמירת הטוקן ב-localStorage
       if (data.token) {
         localStorage.setItem("token", data.token);
+        localStorage.setItem("role", data.role); // שמירת התפקיד
       } else {
         toast.error("Failed to retrieve token.");
         return;
       }
-
+    
       // ניווט לפי תפקיד המשתמש
       if (data.role === "Student") {
         navigate("/student-dashboard");
@@ -48,6 +49,8 @@ const Login = () => {
     } finally {
       setLoading(false);
     }
+    
+    
   };
 
   return (

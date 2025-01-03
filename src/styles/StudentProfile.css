@@ -1,64 +1,66 @@
-/* הגדרות כלליות */
+/* עיצוב כללי */
 .profile-container {
   display: flex;
-  flex-direction: row;
-  background: #f4f6f8;
+  justify-content: center;
+  align-items: center;
   min-height: 100vh;
-  font-family: 'Arial', sans-serif;
+  background: linear-gradient(135deg, #2196f3, #1565c0);
+  font-family: "Arial", sans-serif;
 }
 
-/* עיצוב כרטיס פרופיל */
+/* כרטיס פרופיל */
 .profile-card {
-  margin: 20px auto;
-  background: #ffffff;
+  background: white;
   padding: 30px;
-  border-radius: 10px;
-  box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
+  border-radius: 15px;
+  box-shadow: 0 10px 20px rgba(0, 0, 0, 0.2);
   max-width: 500px;
+  width: 100%;
   text-align: center;
+  animation: fadeIn 0.5s ease-in-out;
 }
 
-/* כותרת הפרופיל */
+/* כותרת */
 .profile-header {
-  font-size: 24px;
+  font-size: 2rem;
   font-weight: bold;
   color: #1565c0;
   margin-bottom: 20px;
 }
 
-/* פרטי המשתמש */
+/* מידע פרופיל */
 .profile-info {
   text-align: left;
   margin-bottom: 20px;
 }
 
 .profile-info p {
-  font-size: 16px;
+  font-size: 1rem;
   margin: 10px 0;
-  color: #333333;
+  color: #333;
 }
 
 .profile-info strong {
   color: #1565c0;
 }
 
-/* קלט סיסמא חדשה */
-input[type="password"] {
+/* קלט לשינוי סיסמה */
+.change-password-section input {
   width: 100%;
   padding: 10px;
-  margin: 10px 0;
+  margin: 15px 0;
   border: 1px solid #ddd;
   border-radius: 5px;
   transition: border-color 0.3s ease-in-out;
 }
 
-input[type="password"]:focus {
+.change-password-section input:focus {
   border-color: #1565c0;
   outline: none;
   box-shadow: 0 0 5px rgba(21, 101, 192, 0.5);
 }
 
-/* כפתור שינוי סיסמא */
+/* כפתור שינוי סיסמה */
 .change-password-btn {
   background: linear-gradient(135deg, #2196f3, #1565c0);
   color: white;
@@ -67,7 +69,7 @@ input[type="password"]:focus {
   border-radius: 5px;
   font-size: 16px;
   cursor: pointer;
-  transition: background-color 0.3s, transform 0.2s;
+  transition: background-color 0.3s ease, transform 0.3s ease;
 }
 
 .change-password-btn:hover {
@@ -75,37 +77,20 @@ input[type="password"]:focus {
   transform: scale(1.05);
 }
 
-.change-password-btn:active {
-  transform: scale(1);
-}
-
-.sidebar {
-  background-color: #1565c0;
+/* כפתור חזרה ללוח המחוונים */
+.back-btn {
+  background-color: #ff9800;
   color: white;
-  padding: 20px;
-  min-width: 250px;
-}
-
-.sidebar ul {
-  list-style: none;
-  padding: 0;
-}
-
-.sidebar ul li {
-  padding: 10px 15px;
-  margin-bottom: 10px;
-  background-color: #2196f3;
+  border: none;
+  padding: 10px 20px;
   border-radius: 5px;
-  text-align: center;
-  transition: background-color 0.3s;
-}
-
-.sidebar ul li:hover {
-  background-color: #0d47a1;
-}
-
-.sidebar ul li a {
-  color: white;
-  text-decoration: none;
   font-size: 16px;
+  cursor: pointer;
+  margin-top: 15px;
+  transition: background-color 0.3s ease, transform 0.3s ease;
+}
+
+.back-btn:hover {
+  background-color: #e68a00;
+  transform: scale(1.05);
 }

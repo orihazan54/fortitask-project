@@ -1,17 +1,27 @@
 .sidebar {
-  width: 250px;
-  background: #1565c0;
+  width: 260px;
+  background: linear-gradient(135deg, #1565c0, #1e88e5);
   color: white;
-  padding: 20px;
+  padding: 25px 15px;
   display: flex;
   flex-direction: column;
-  align-items: center;
+  align-items: flex-start;
+  border-radius: 10px;
+  box-shadow: 0px 4px 12px rgba(0, 0, 0, 0.2);
+  position: sticky;
+  top: 20px; /* שומר על המיקום בזמן גלילה */
+  height: 100vh; /* גובה מלא */
+  overflow-y: auto; /* גלילה במידת הצורך */
 }
 
 .sidebar .header {
-  font-size: 1.5rem;
-  margin-bottom: 20px;
+  font-size: 1.8rem;
+  margin-bottom: 30px;
   font-weight: bold;
+  text-align: left;
+  width: 100%;
+  color: #ffeb3b; /* צהוב למראה מעניין */
+  text-shadow: 1px 1px 2px rgba(0, 0, 0, 0.3); /* הוספת צל לטקסט */
 }
 
 .sidebar .list {
@@ -23,21 +33,44 @@
 
 .sidebar .listItem {
   margin: 10px 0;
-  padding: 10px;
-  background: #2196f3;
-  text-align: center;
-  border-radius: 5px;
+  padding: 15px;
+  background: rgba(255, 255, 255, 0.1);
+  display: flex;
+  align-items: center;
+  border-radius: 8px;
   cursor: pointer;
-  transition: background-color 0.3s ease, transform 0.2s ease;
+  transition: all 0.3s ease;
+  width: 100%;
+  box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1); /* הצללה קלה */
 }
 
 .sidebar .listItem:hover {
-  background: #0d47a1;
-  transform: scale(1.05); /* אפקט קליק */
+  background: rgba(255, 255, 255, 0.2);
+  transform: scale(1.05);
+  box-shadow: 0 4px 8px rgba(0, 0, 0, 0.15); /* הצללה מוגברת */
 }
 
 .sidebar .link {
   color: white;
   text-decoration: none;
-  font-size: 1rem;
+  font-size: 1.2rem;
+  display: flex;
+  align-items: center;
+  gap: 10px; /* ריווח בין האייקון לטקסט */
+  width: 100%;
+}
+
+.sidebar .icon {
+  font-size: 1.4rem;
+  color: #ffeb3b; /* צהוב לאייקונים */
+}
+
+.sidebar .listItem.active {
+  background: rgba(255, 255, 255, 0.3);
+  font-weight: bold;
+  border-left: 5px solid #ffeb3b; /* תיחום בצד */
+}
+
+.sidebar .listItem.active .link {
+  color: #ffeb3b; /* טקסט צהוב */
 }

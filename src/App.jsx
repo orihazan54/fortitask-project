@@ -10,17 +10,15 @@ import NewPassword from "./pages/NewPassword";
 
 // Student Pages
 import StudentDashboard from "./pages/student/StudentDashboard";
-import ViewAssignments from "./pages/student/ViewAssignments";
-import SubmitAssignment from "./pages/student/SubmitAssignment";
 import StudentCourses from "./pages/student/StudentCourses";
 import StudentProfile from "./pages/student/StudentProfile";
 
 // Teacher Pages
 import TeacherDashboard from "./pages/teacher/TeacherDashboard";
-import CreateAssignment from "./pages/teacher/CreateAssignment";
-import ViewStudents from "./pages/teacher/ViewStudents";
-import TeacherCourses from "./pages/teacher/TeacherCourses";
+import CreateCourse from "./pages/teacher/CreateCourse";
+import ManageCourses from "./pages/teacher/ManageCourses";
 import TeacherProfile from "./pages/teacher/TeacherProfile";
+import ViewStudents from "./pages/teacher/ViewStudents";
 
 // Utility function for dynamic profile routing
 const ProfilePage = () => {
@@ -49,17 +47,15 @@ const App = () => {
 
       {/* Student Pages */}
       <Route path="/student-dashboard" element={<StudentDashboard />} />
-      <Route path="/student/view-assignments" element={<ViewAssignments />} />
-      <Route path="/student/submit-assignment" element={<SubmitAssignment />} />
       <Route path="/student/courses" element={<StudentCourses />} />
       <Route path="/student/profile" element={<StudentProfile />} />
 
       {/* Teacher Pages */}
       <Route path="/teacher-dashboard" element={<TeacherDashboard />} />
-      <Route path="/teacher/create-assignment" element={<CreateAssignment />} />
-      <Route path="/teacher/view-students" element={<ViewStudents />} />
-      <Route path="/teacher/courses" element={<TeacherCourses />} />
+      <Route path="/teacher/create-course" element={<CreateCourse />} />
+      <Route path="/teacher/manage-courses" element={<ManageCourses />} />
       <Route path="/teacher/profile" element={<TeacherProfile />} />
+      <Route path="/teacher/view-students" element={<ViewStudents />} />
 
       {/* Dynamic Profile Page */}
       <Route path="/profile" element={<ProfilePage />} />

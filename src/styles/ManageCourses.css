@@ -1,0 +1,124 @@
+.manage-courses-container {
+  padding: 20px;
+  background-color: #f4f7f6;
+}
+
+.header-section {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: 20px;
+}
+
+.back-to-dashboard-btn {
+  background-color: #007bff;
+  color: white;
+  border: none;
+  padding: 10px 15px;
+  border-radius: 5px;
+  font-size: 1rem;
+  cursor: pointer;
+  transition: background-color 0.3s ease;
+}
+
+.back-to-dashboard-btn:hover {
+  background-color: #0056b3;
+}
+
+.courses-list {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 20px;
+  justify-content: center;
+}
+
+.course-card {
+  background: #ffffff;
+  border: 1px solid #ddd;
+  border-radius: 8px;
+  padding: 20px;
+  width: 350px;
+  box-shadow: 0px 6px 10px rgba(0, 0, 0, 0.1);
+  transition: transform 0.3s ease, box-shadow 0.3s ease;
+  text-align: center;
+}
+
+.course-card:hover {
+  transform: scale(1.05);
+  box-shadow: 0px 8px 15px rgba(0, 0, 0, 0.2);
+}
+
+.course-card h3 {
+  font-size: 1.6rem;
+  margin-bottom: 15px;
+  color: #1d3557;
+}
+
+.course-card p {
+  margin: 5px 0;
+  color: #333;
+}
+
+.card-actions {
+  display: flex;
+  justify-content: space-between;
+  margin-top: 15px;
+}
+
+.card-actions .btn {
+  width: 48%;
+  padding: 10px;
+  font-size: 1rem;
+  border-radius: 5px;
+  cursor: pointer;
+  border: none;
+}
+
+.card-actions .btn.edit-btn {
+  background-color: #ffc107;
+  color: white;
+}
+
+.card-actions .btn.edit-btn:hover {
+  background-color: #e0a800;
+}
+
+.card-actions .btn.delete-btn {
+  background-color: #dc3545;
+  color: white;
+}
+
+.card-actions .btn.delete-btn:hover {
+  background-color: #c82333;
+}
+
+.form-actions {
+  display: flex;
+  justify-content: space-between;
+}
+
+.form-actions .btn {
+  width: 48%;
+  padding: 10px;
+  font-size: 1rem;
+  border-radius: 5px;
+  cursor: pointer;
+}
+
+.save-btn {
+  background-color: #28a745;
+  color: white;
+}
+
+.save-btn:hover {
+  background-color: #218838;
+}
+
+.cancel-btn {
+  background-color: #dc3545;
+  color: white;
+}
+
+.cancel-btn:hover {
+  background-color: #c82333;
+}

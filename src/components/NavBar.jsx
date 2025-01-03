@@ -1,14 +1,25 @@
-import React from "react";
+import React, { useState, useEffect } from "react";
 import { Link, useNavigate, useLocation } from "react-router-dom";
 import styles from "./NavBar.module.css";
-import logo from "../assets/logo.png"; // עדכן לנתיב של הלוגו בתיקייה
+import logo from "../assets/logo.png";
 
 const NavBar = () => {
   const navigate = useNavigate();
   const location = useLocation();
 
+  const [role, setRole] = useState(localStorage.getItem("role"));
+
+  useEffect(() => {
+    const storedRole = localStorage.getItem("role");
+    if (storedRole) {
+      setRole(storedRole);
+    }
+  }, []);
+
   const handleLogout = () => {
     localStorage.removeItem("token");
+    localStorage.removeItem("role");
+    setRole(null);
     navigate("/");
   };
 
@@ -32,10 +43,13 @@ const NavBar = () => {
             </button>
           </li>
         )}
-        {showProfileAndLogout && (
+        {showProfileAndLogout && role && (
           <>
             <li>
-              <Link to="/student/profile" className={styles.navLink}>
+              <Link
+                to={role === "Teacher" ? "/teacher/profile" : "/student/profile"}
+                className={styles.navLink}
+              >
                 Profile
               </Link>
             </li>

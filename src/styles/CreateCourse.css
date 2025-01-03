@@ -1,0 +1,91 @@
+.create-course-container {
+  max-width: 600px;
+  margin: 40px auto;
+  padding: 20px;
+  background: #f7f9fc;
+  border-radius: 10px;
+  box-shadow: 0 4px 10px rgba(0, 0, 0, 0.15);
+}
+
+.header-buttons {
+  display: flex;
+  justify-content: flex-start;
+  margin-bottom: 20px;
+}
+
+.back-btn {
+  background-color: #ff5722;
+  color: white;
+  border: none;
+  padding: 10px 20px;
+  border-radius: 5px;
+  font-size: 1rem;
+  cursor: pointer;
+  transition: all 0.3s ease;
+}
+
+.back-btn:hover {
+  background-color: #e64a19;
+  transform: translateY(-2px);
+}
+
+.create-course-form {
+  display: flex;
+  flex-direction: column;
+}
+
+.create-course-form h2 {
+  text-align: center;
+  margin-bottom: 20px;
+  color: #1565c0;
+}
+
+.form-group {
+  margin-bottom: 15px;
+}
+
+.form-group label {
+  font-weight: bold;
+  margin-bottom: 5px;
+  display: block;
+  color: #333;
+}
+
+.form-group input,
+.form-group textarea {
+  width: 100%;
+  padding: 10px;
+  border: 1px solid #ddd;
+  border-radius: 5px;
+  font-size: 1rem;
+}
+
+.form-group textarea {
+  resize: vertical;
+  height: 80px;
+}
+
+.form-actions {
+  display: flex;
+  justify-content: center;
+  margin-top: 20px;
+}
+
+.btn {
+  padding: 10px 20px;
+  border-radius: 5px;
+  border: none;
+  font-size: 1rem;
+  cursor: pointer;
+  transition: all 0.3s ease;
+}
+
+.primary-btn {
+  background-color: #4caf50;
+  color: white;
+}
+
+.primary-btn:hover {
+  background-color: #388e3c;
+  transform: translateY(-2px);
+}

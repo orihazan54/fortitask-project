@@ -1,12 +1,13 @@
 import React, { useEffect, useState } from "react";
 import NavBar from "../../components/NavBar";
 import { getUserDetails, updateUserDetails } from "../../services/api";
-import "../../styles/TeacherProfile.css";
 import { toast } from "react-toastify";
+import "../../styles/TeacherProfile.css";
 
 const TeacherProfile = () => {
   const [profile, setProfile] = useState(null);
   const [newPassword, setNewPassword] = useState("");
+  const [passwordStrength, setPasswordStrength] = useState(""); // חוזק סיסמה
   const [loading, setLoading] = useState(true);
 
   useEffect(() => {
@@ -24,27 +25,46 @@ const TeacherProfile = () => {
     fetchProfile();
   }, []);
 
+  const checkPasswordStrength = (password) => {
+    const strongRegex = new RegExp(
+      "^(?=.*[a-z])(?=.*[A-Z])(?=.*[0-9])(?=.*[!@#$%^&*])(?=.{8,})"
+    );
+    const mediumRegex = new RegExp(
+      "^(?=.*[a-z])(?=.*[A-Z])(?=.*[0-9])(?=.{6,})"
+    );
+
+    if (strongRegex.test(password)) return "Strong";
+    if (mediumRegex.test(password)) return "Medium";
+    return "Weak";
+  };
+
   const handlePasswordChange = async () => {
     if (!newPassword) {
       toast.error("Please enter a new password.");
       return;
     }
 
+    if (passwordStrength === "Weak") {
+      toast.error("Password is too weak. Please choose a stronger password.");
+      return;
+    }
+
     try {
       await updateUserDetails({ password: newPassword });
       toast.success("Password updated successfully!");
-      setNewPassword(""); // איפוס שדה הסיסמה
+      setNewPassword("");
+      setPasswordStrength("");
     } catch (error) {
       toast.error("Failed to update password.");
     }
   };
 
   if (loading) {
-    return <div>Loading profile...</div>;
+    return <div className="loading">Loading profile...</div>;
   }
 
   if (!profile) {
-    return <div>No profile data found.</div>;
+    return <div className="error">No profile data found.</div>;
   }
 
   return (
@@ -54,22 +74,34 @@ const TeacherProfile = () => {
         <div className="profile-card">
           <h2 className="profile-header">Teacher Profile</h2>
           <div className="profile-info">
+            <p><strong>Username:</strong> {profile.username}</p>
+            <p><strong>Email:</strong> {profile.email}</p>
+            <p><strong>Courses Taught:</strong> 5</p>
+            <p><strong>Students Managed:</strong> 50</p>
             <p>
-              <strong>Username:</strong> {profile.username}
-            </p>
-            <p>
-              <strong>Email:</strong> {profile.email}
+              <strong>Created At:</strong> {new Date(profile.createdAt).toLocaleString()}
             </p>
           </div>
-          <input
-            type="password"
-            placeholder="New Password"
-            value={newPassword}
-            onChange={(e) => setNewPassword(e.target.value)}
-          />
-          <button className="change-password-btn" onClick={handlePasswordChange}>
-            Change Password
-          </button>
+          <div className="profile-actions">
+            <input
+              type="password"
+              placeholder="Enter new password"
+              value={newPassword}
+              onChange={(e) => {
+                setNewPassword(e.target.value);
+                setPasswordStrength(checkPasswordStrength(e.target.value));
+              }}
+            />
+            <p className={`password-strength ${passwordStrength.toLowerCase()}`}>
+              Password Strength: {passwordStrength || "Not entered"}
+            </p>
+            <button className="change-password-btn" onClick={handlePasswordChange}>
+              Change Password
+            </button>
+            <button className="back-btn" onClick={() => window.location.href = "/teacher-dashboard"}>
+              Back to Dashboard
+            </button>
+          </div>
         </div>
       </div>
     </>
