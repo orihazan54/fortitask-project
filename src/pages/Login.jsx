@@ -8,6 +8,7 @@ import "../styles/Login.css";
 const Login = () => {
   const [formData, setFormData] = useState({ email: "", password: "" });
   const [loading, setLoading] = useState(false);
+  const [showPassword, setShowPassword] = useState(false); // מצב הצגת סיסמה
   const navigate = useNavigate();
 
   const handleChange = (e) => {
@@ -26,31 +27,16 @@ const Login = () => {
     try {
       const { data } = await login(formData);
       toast.success("Login successful!");
-    
+
       // שמירת הטוקן ב-localStorage
-      if (data.token) {
-        localStorage.setItem("token", data.token);
-        localStorage.setItem("role", data.role); // שמירת התפקיד
-      } else {
-        toast.error("Failed to retrieve token.");
-        return;
-      }
-    
-      // ניווט לפי תפקיד המשתמש
-      if (data.role === "Student") {
-        navigate("/student-dashboard");
-      } else if (data.role === "Teacher") {
-        navigate("/teacher-dashboard");
-      } else {
-        toast.error("User role not recognized.");
-      }
+      localStorage.setItem("token", data.token);
+      localStorage.setItem("role", data.role);
+      navigate(data.role === "Student" ? "/student-dashboard" : "/teacher-dashboard");
     } catch (error) {
       toast.error(error.response?.data?.message || "Login failed!");
     } finally {
       setLoading(false);
     }
-    
-    
   };
 
   return (
@@ -69,14 +55,26 @@ const Login = () => {
               onChange={handleChange}
               required
             />
-            <input
-              type="password"
-              name="password"
-              placeholder="Enter your password"
-              value={formData.password}
-              onChange={handleChange}
-              required
-            />
+            <div className="password-field">
+              <input
+                type={showPassword ? "text" : "password"}
+                name="password"
+                placeholder="Enter your password"
+                value={formData.password}
+                onChange={handleChange}
+                required
+              />
+              <span
+                className="password-toggle"
+                onClick={() => setShowPassword(!showPassword)}
+              >
+                {showPassword ? (
+                  <i className="fas fa-eye-slash"></i>
+                ) : (
+                  <i className="fas fa-eye"></i>
+                )}
+              </span>
+            </div>
             <button type="submit" className="btn" disabled={loading}>
               {loading ? "Logging in..." : "Login"}
             </button>

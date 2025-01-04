@@ -12,6 +12,8 @@ const ForgotPassword = () => {
   const [confirmPassword, setConfirmPassword] = useState("");
   const [passwordStrength, setPasswordStrength] = useState(""); // חיווי חוזק סיסמה
   const [step, setStep] = useState(1); // שלב הטופס: 1 - אימייל, 2 - קוד אימות וסיסמה
+  const [showNewPassword, setShowNewPassword] = useState(false);
+  const [showConfirmPassword, setShowConfirmPassword] = useState(false);
   const navigate = useNavigate();
 
   const checkPasswordStrength = (password) => {
@@ -98,21 +100,45 @@ const ForgotPassword = () => {
                 onChange={(e) => setVerificationCode(e.target.value)}
               />
               <h2>Reset Your Password</h2>
-              <input
-                type="password"
-                placeholder="Enter new password"
-                value={newPassword}
-                onChange={handleNewPasswordChange}
-              />
+              <div className="password-field">
+                <input
+                  type={showNewPassword ? "text" : "password"}
+                  placeholder="Enter new password"
+                  value={newPassword}
+                  onChange={handleNewPasswordChange}
+                />
+                <span
+                  className="password-toggle"
+                  onClick={() => setShowNewPassword(!showNewPassword)}
+                >
+                  {showNewPassword ? (
+                    <i className="fas fa-eye-slash"></i>
+                  ) : (
+                    <i className="fas fa-eye"></i>
+                  )}
+                </span>
+              </div>
               <p className={`password-strength ${passwordStrength.toLowerCase()}`}>
                 Password Strength: {passwordStrength}
               </p>
-              <input
-                type="password"
-                placeholder="Confirm new password"
-                value={confirmPassword}
-                onChange={(e) => setConfirmPassword(e.target.value)}
-              />
+              <div className="password-field">
+                <input
+                  type={showConfirmPassword ? "text" : "password"}
+                  placeholder="Confirm new password"
+                  value={confirmPassword}
+                  onChange={(e) => setConfirmPassword(e.target.value)}
+                />
+                <span
+                  className="password-toggle"
+                  onClick={() => setShowConfirmPassword(!showConfirmPassword)}
+                >
+                  {showConfirmPassword ? (
+                    <i className="fas fa-eye-slash"></i>
+                  ) : (
+                    <i className="fas fa-eye"></i>
+                  )}
+                </span>
+              </div>
               <button onClick={handleResetPassword} className="btn">
                 Reset Password
               </button>

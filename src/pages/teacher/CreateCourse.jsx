@@ -8,7 +8,6 @@ const CreateCourse = () => {
   const [formData, setFormData] = useState({
     courseName: "",
     creditPoints: "",
-    file: null,
     instructions: "",
     deadline: "",
   });
@@ -18,17 +17,12 @@ const CreateCourse = () => {
     setFormData({ ...formData, [name]: value });
   };
 
-  const handleFileChange = (e) => {
-    setFormData({ ...formData, file: e.target.files[0] });
-  };
-
   const handleSubmit = async (e) => {
     e.preventDefault();
 
     if (
       !formData.courseName ||
       !formData.creditPoints ||
-      !formData.file ||
       !formData.instructions ||
       !formData.deadline
     ) {
@@ -37,23 +31,27 @@ const CreateCourse = () => {
     }
 
     try {
-      const formDataToSend = new FormData();
-      formDataToSend.append("courseName", formData.courseName);
-      formDataToSend.append("creditPoints", formData.creditPoints);
-      formDataToSend.append("file", formData.file);
-      formDataToSend.append("instructions", formData.instructions);
-      formDataToSend.append("deadline", formData.deadline);
+      // הכנת הנתונים לשליחה לשרת
+      const courseData = {
+        courseName: formData.courseName,
+        creditPoints: formData.creditPoints,
+        instructions: formData.instructions,
+        deadline: formData.deadline,
+      };
 
-      await createCourse(formDataToSend);
+      // שליחת הבקשה לשרת
+      const response = await createCourse(courseData);
+      console.log("Course Created Successfully:", response); // דיבאג
+
       toast.success("Course created successfully!");
       setFormData({
         courseName: "",
         creditPoints: "",
-        file: null,
         instructions: "",
         deadline: "",
       });
     } catch (error) {
+      console.error("Error creating course:", error.response || error.message);
       toast.error(error.response?.data?.message || "Failed to create course.");
     }
   };
@@ -96,19 +94,10 @@ const CreateCourse = () => {
             />
           </div>
           <div className="form-group">
-            <label>Upload Assignment File</label>
-            <input
-              type="file"
-              name="file"
-              onChange={handleFileChange}
-              required
-            />
-          </div>
-          <div className="form-group">
             <label>Instructions</label>
             <textarea
               name="instructions"
-              placeholder="Instructions for the assignment"
+              placeholder="Instructions for the course"
               value={formData.instructions}
               onChange={handleChange}
               required

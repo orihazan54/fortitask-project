@@ -14,6 +14,8 @@ const SignUp = () => {
     role: "Student",
   });
   const [passwordStrength, setPasswordStrength] = useState("");
+  const [showPassword, setShowPassword] = useState(false); // מצב הצגת סיסמה
+  const [showConfirmPassword, setShowConfirmPassword] = useState(false); // מצב הצגת אימות סיסמה
   const navigate = useNavigate();
 
   const handleChange = (e) => {
@@ -85,30 +87,56 @@ const SignUp = () => {
               onChange={handleChange}
               required
             />
-            <input
-              type="password"
-              name="password"
-              placeholder="Enter your password"
-              value={formData.password}
-              onChange={handleChange}
-              required
-            />
+            <div className="password-field">
+              <input
+                type={showPassword ? "text" : "password"}
+                name="password"
+                placeholder="Enter your password"
+                value={formData.password}
+                onChange={handleChange}
+                required
+              />
+              <span
+                className="password-toggle"
+                onClick={() => setShowPassword(!showPassword)}
+              >
+                {showPassword ? (
+                  <i className="fas fa-eye-slash"></i>
+                ) : (
+                  <i className="fas fa-eye"></i>
+                )}
+              </span>
+            </div>
             <p className={`password-strength ${passwordStrength.toLowerCase()}`}>
               Password Strength: {passwordStrength}
             </p>
-            <input
-              type="password"
-              name="confirmPassword"
-              placeholder="Confirm your password"
-              value={formData.confirmPassword}
-              onChange={handleChange}
-              required
-            />
+            <div className="password-field">
+              <input
+                type={showConfirmPassword ? "text" : "password"}
+                name="confirmPassword"
+                placeholder="Confirm your password"
+                value={formData.confirmPassword}
+                onChange={handleChange}
+                required
+              />
+              <span
+                className="password-toggle"
+                onClick={() => setShowConfirmPassword(!showConfirmPassword)}
+              >
+                {showConfirmPassword ? (
+                  <i className="fas fa-eye-slash"></i>
+                ) : (
+                  <i className="fas fa-eye"></i>
+                )}
+              </span>
+            </div>
             <select name="role" value={formData.role} onChange={handleChange}>
               <option value="Student">Student</option>
               <option value="Teacher">Teacher</option>
             </select>
-            <button type="submit" className="btn">Sign Up</button>
+            <button type="submit" className="btn">
+              Sign Up
+            </button>
           </form>
           <p>
             Already have an account?{" "}

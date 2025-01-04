@@ -1,0 +1,100 @@
+.my-courses-container {
+    display: flex;
+    min-height: calc(100vh - 60px); /* התאמה לגובה המסך פחות ה-Navbar */
+  }
+  
+  .main-content {
+    flex: 1; /* מאפשר ל-main-content להתאים לגובה */
+    padding: 20px;
+    background-color: #f4f7f9;
+    margin-left: 260px; /* משאיר מקום ל-Sidebar */
+    max-width: calc(100% - 260px); /* מבטיח שהכרטיסייה לא תעלה על ה-Sidebar */
+    position: relative; /* נדרש עבור כפתור back-to-dashboard */
+  }
+  
+  .back-to-dashboard-btn {
+    position: absolute;
+    top: 20px;
+    right: 20px;
+    background-color: #007bff;
+    color: white;
+    border: none;
+    padding: 8px 12px;
+    font-size: 1rem;
+    border-radius: 5px;
+    cursor: pointer;
+    transition: background-color 0.3s ease, transform 0.2s ease;
+  }
+  
+  .back-to-dashboard-btn:hover {
+    background-color: #0056b3;
+    transform: scale(1.05);
+  }
+  
+  .header {
+    margin-top: 80px; /* מוסיף רווח בין הכפתור לכותרת */
+    font-size: 1.8rem;
+    font-weight: bold;
+    color: #1d3557;
+    text-align: center;
+  }
+  
+  .course-selector {
+    margin-top: 20px;
+    text-align: center; /* מרכז את התוכן */
+  }
+  
+  .course-selector label {
+    font-size: 1.2rem;
+    font-weight: bold;
+    margin-right: 10px;
+  }
+  
+  .course-selector select {
+    padding: 10px;
+    font-size: 1rem;
+    border-radius: 5px;
+    border: 1px solid #ddd;
+  }
+  
+  .selected-course-details {
+    background-color: #ffffff;
+    padding: 20px;
+    border-radius: 8px;
+    box-shadow: 0px 4px 8px rgba(0, 0, 0, 0.1);
+    margin-top: 20px;
+    text-align: center; /* מרכז את הכרטיסייה */
+    max-width: 500px; /* רוחב מקסימלי לכרטיסייה */
+    margin-left: auto; /* מרכז את הכרטיסייה */
+    margin-right: auto; /* מרכז את הכרטיסייה */
+  }
+  
+  .selected-course-details h3 {
+    font-size: 1.6rem;
+    color: #1e88e5;
+  }
+  
+  .selected-course-details p {
+    margin: 10px 0;
+    color: #555;
+  }
+  
+  .download-link {
+    display: inline-block;
+    margin-top: 10px;
+    color: #007bff;
+    font-weight: bold;
+    text-decoration: none;
+  }
+  
+  .download-link:hover {
+    text-decoration: underline;
+  }
+  
+  .no-courses {
+    font-size: 1.2rem;
+    color: #888;
+    text-align: center;
+    margin-top: 30px;
+  }
+  

@@ -14,7 +14,7 @@
 }
 
 .back-btn {
-  background-color: #ff5722;
+  background-color: #007bff;
   color: white;
   border: none;
   padding: 10px 20px;
@@ -25,7 +25,7 @@
 }
 
 .back-btn:hover {
-  background-color: #e64a19;
+  background-color: #0056b3;
   transform: translateY(-2px);
 }
 

@@ -1,6 +1,9 @@
 .manage-courses-container {
+  display: flex;
+  flex-direction: column;
   padding: 20px;
-  background-color: #f4f7f6;
+  background-color: #f4f7f9;
+  font-family: "Arial", sans-serif;
 }
 
 .header-section {
@@ -14,73 +17,92 @@
   background-color: #007bff;
   color: white;
   border: none;
-  padding: 10px 15px;
-  border-radius: 5px;
+  padding: 8px 16px;
   font-size: 1rem;
+  border-radius: 5px;
   cursor: pointer;
-  transition: background-color 0.3s ease;
+  transition: background-color 0.3s ease, transform 0.2s ease;
 }
 
 .back-to-dashboard-btn:hover {
   background-color: #0056b3;
+  transform: scale(1.05);
+}
+
+.content-section {
+  display: flex;
+  gap: 20px;
 }
 
 .courses-list {
-  display: flex;
-  flex-wrap: wrap;
-  gap: 20px;
-  justify-content: center;
-}
-
-.course-card {
-  background: #ffffff;
-  border: 1px solid #ddd;
-  border-radius: 8px;
+  width: 45%;
+  background-color: #ffffff;
   padding: 20px;
-  width: 350px;
+  border-radius: 8px;
   box-shadow: 0px 6px 10px rgba(0, 0, 0, 0.1);
-  transition: transform 0.3s ease, box-shadow 0.3s ease;
-  text-align: center;
+  height: fit-content;
 }
 
-.course-card:hover {
-  transform: scale(1.05);
-  box-shadow: 0px 8px 15px rgba(0, 0, 0, 0.2);
-}
-
-.course-card h3 {
+.courses-list h3 {
   font-size: 1.6rem;
-  margin-bottom: 15px;
   color: #1d3557;
+  text-align: center;
+  margin-bottom: 15px;
 }
 
-.course-card p {
+.course-dropdown {
+  width: 100%;
+  padding: 10px;
+  font-size: 1rem;
+  border-radius: 8px;
+  border: 1px solid #ddd;
+  margin-top: 10px;
+}
+
+.course-details {
+  margin-top: 20px;
+  padding: 15px;
+  background-color: #f8f9fa;
+  border-radius: 8px;
+  box-shadow: 0px 4px 8px rgba(0, 0, 0, 0.1);
+}
+
+.course-details h4 {
+  font-size: 1.4rem;
+  color: #007bff;
+  margin-bottom: 10px;
+}
+
+.course-details p {
   margin: 5px 0;
-  color: #333;
+  color: #495057;
 }
 
 .card-actions {
   display: flex;
-  justify-content: space-between;
+  justify-content: center;
+  gap: 15px;
   margin-top: 15px;
 }
 
 .card-actions .btn {
-  width: 48%;
-  padding: 10px;
+  padding: 10px 15px;
   font-size: 1rem;
   border-radius: 5px;
-  cursor: pointer;
+  font-weight: bold;
   border: none;
+  cursor: pointer;
+  transition: background-color 0.3s ease, transform 0.2s ease;
 }
 
 .card-actions .btn.edit-btn {
-  background-color: #ffc107;
+  background-color: #28a745;
   color: white;
 }
 
 .card-actions .btn.edit-btn:hover {
-  background-color: #e0a800;
+  background-color: #218838;
+  transform: scale(1.05);
 }
 
 .card-actions .btn.delete-btn {
@@ -90,35 +112,91 @@
 
 .card-actions .btn.delete-btn:hover {
   background-color: #c82333;
+  transform: scale(1.05);
+}
+
+.edit-course-form {
+  width: 45%;
+  background-color: #ffffff;
+  padding: 20px;
+  border-radius: 8px;
+  box-shadow: 0px 6px 10px rgba(0, 0, 0, 0.1);
+}
+
+.edit-course-form h3 {
+  font-size: 1.6rem;
+  color: #1d3557;
+  text-align: center;
+  margin-bottom: 15px;
+}
+
+.form-group {
+  margin-bottom: 15px;
+}
+
+.form-group label {
+  display: block;
+  font-weight: bold;
+  margin-bottom: 5px;
+  color: #495057;
+}
+
+.form-group input,
+.form-group textarea {
+  width: 100%;
+  padding: 10px;
+  border: 1px solid #ddd;
+  border-radius: 5px;
+  font-size: 1rem;
+  background-color: #f8f9fa;
+  transition: border-color 0.3s ease;
+}
+
+.form-group input:focus,
+.form-group textarea:focus {
+  border-color: #007bff;
+  outline: none;
 }
 
 .form-actions {
   display: flex;
-  justify-content: space-between;
+  justify-content: center;
+  gap: 10px;
 }
 
 .form-actions .btn {
-  width: 48%;
-  padding: 10px;
+  padding: 10px 20px;
   font-size: 1rem;
   border-radius: 5px;
+  font-weight: bold;
+  border: none;
   cursor: pointer;
+  transition: background-color 0.3s ease, transform 0.2s ease;
 }
 
-.save-btn {
+.form-actions .save-btn {
   background-color: #28a745;
   color: white;
 }
 
-.save-btn:hover {
+.form-actions .save-btn:hover {
   background-color: #218838;
+  transform: scale(1.05);
 }
 
-.cancel-btn {
+.form-actions .cancel-btn {
   background-color: #dc3545;
   color: white;
 }
 
-.cancel-btn:hover {
+.form-actions .cancel-btn:hover {
   background-color: #c82333;
+  transform: scale(1.05);
+}
+
+.no-courses {
+  font-size: 1.2rem;
+  color: #888;
+  text-align: center;
+  margin-top: 30px;
 }

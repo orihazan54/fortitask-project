@@ -1,76 +1,62 @@
 .sidebar {
-  width: 260px;
-  background: linear-gradient(135deg, #1565c0, #1e88e5);
+  width: 240px;
+  background-color: #1e3c72; 
   color: white;
-  padding: 25px 15px;
+  height: calc(100vh - 60px); /* מתחת ל-Navbar */
+  position: fixed;
+  top: 60px;
+  left: 0;
+  padding: 20px 15px;
+  box-shadow: 2px 0px 8px rgba(0, 0, 0, 0.1);
   display: flex;
   flex-direction: column;
-  align-items: flex-start;
-  border-radius: 10px;
-  box-shadow: 0px 4px 12px rgba(0, 0, 0, 0.2);
-  position: sticky;
-  top: 20px; /* שומר על המיקום בזמן גלילה */
-  height: 100vh; /* גובה מלא */
-  overflow-y: auto; /* גלילה במידת הצורך */
 }
 
 .sidebar .header {
   font-size: 1.8rem;
-  margin-bottom: 30px;
   font-weight: bold;
-  text-align: left;
-  width: 100%;
-  color: #ffeb3b; /* צהוב למראה מעניין */
-  text-shadow: 1px 1px 2px rgba(0, 0, 0, 0.3); /* הוספת צל לטקסט */
+  color: #ffeb3b; /* צהוב */
+  margin-bottom: 20px;
+  text-align: center;
 }
 
 .sidebar .list {
   list-style: none;
   padding: 0;
   margin: 0;
-  width: 100%;
+  flex-grow: 1; /* ממלא את כל השטח */
 }
 
 .sidebar .listItem {
   margin: 10px 0;
-  padding: 15px;
-  background: rgba(255, 255, 255, 0.1);
-  display: flex;
-  align-items: center;
+  padding: 12px; /* מרווח גדול יותר */
   border-radius: 8px;
-  cursor: pointer;
-  transition: all 0.3s ease;
-  width: 100%;
-  box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1); /* הצללה קלה */
+  transition: background-color 0.3s ease, transform 0.3s ease;
 }
 
 .sidebar .listItem:hover {
-  background: rgba(255, 255, 255, 0.2);
-  transform: scale(1.05);
-  box-shadow: 0 4px 8px rgba(0, 0, 0, 0.15); /* הצללה מוגברת */
+  background-color: rgba(255, 255, 255, 0.2);
+  transform: translateX(5px);
 }
 
 .sidebar .link {
-  color: white;
   text-decoration: none;
+  color: white;
   font-size: 1.2rem;
   display: flex;
   align-items: center;
-  gap: 10px; /* ריווח בין האייקון לטקסט */
-  width: 100%;
+  gap: 10px;
 }
 
 .sidebar .icon {
   font-size: 1.4rem;
-  color: #ffeb3b; /* צהוב לאייקונים */
+  color: #ffeb3b; /* צהוב */
 }
 
-.sidebar .listItem.active {
-  background: rgba(255, 255, 255, 0.3);
-  font-weight: bold;
-  border-left: 5px solid #ffeb3b; /* תיחום בצד */
-}
-
-.sidebar .listItem.active .link {
-  color: #ffeb3b; /* טקסט צהוב */
+.sidebar .footer {
+  margin-top: auto; /* דוחף את ה-Footer לסוף */
+  text-align: center;
+  font-size: 0.9rem;
+  color: rgba(255, 255, 255, 0.6);
+  padding: 10px 0; /* מרווח נוסף */
 }

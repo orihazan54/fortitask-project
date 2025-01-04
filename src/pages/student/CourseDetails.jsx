@@ -1,13 +1,14 @@
 import React, { useState, useEffect } from "react";
 import { useParams } from "react-router-dom";
 import { toast } from "react-toastify";
-import { getCourseDetails, uploadAssignment } from "../../services/api";
+import { getCourseDetails, uploadAssignment, getUserDetails } from "../../services/api";
 import NavBar from "../../components/NavBar";
 import "../../styles/CourseDetails.css";
 
 const CourseDetails = () => {
   const { courseId } = useParams(); // מזהה הקורס מהנתיב
   const [course, setCourse] = useState(null);
+  const [teacherName, setTeacherName] = useState("Unknown Teacher");
   const [file, setFile] = useState(null);
 
   useEffect(() => {
@@ -15,6 +16,12 @@ const CourseDetails = () => {
       try {
         const { data } = await getCourseDetails(courseId);
         setCourse(data);
+
+        // Fetching teacher details if teacherId exists
+        if (data.teacherId) {
+          const teacherResponse = await getUserDetails(data.teacherId);
+          setTeacherName(teacherResponse.data.username || "Unknown Teacher");
+        }
       } catch (error) {
         toast.error("Failed to load course details.");
       }
@@ -53,16 +60,19 @@ const CourseDetails = () => {
     <>
       <NavBar />
       <div className="course-details-container">
-        <h2>{course.name}</h2>
-        <p><strong>Credits:</strong> {course.creditPoints}</p>
-        <p><strong>Category:</strong> {course.category}</p>
-        <p><strong>Deadline:</strong> {new Date(course.deadline).toLocaleDateString()}</p>
-        <p><strong>Instructions:</strong> {course.instructions}</p>
+        <h2 className="course-title">{course.name}</h2>
+        <div className="course-info">
+          <p><strong>Credits:</strong> {course.creditPoints}</p>
+          <p><strong>Deadline:</strong> {new Date(course.deadline).toLocaleDateString()}</p>
+          <p><strong>Instructions:</strong> {course.instructions || "No instructions provided."}</p>
+          <p><strong>Teacher:</strong> {teacherName}</p>
+          <p><strong>Students Enrolled:</strong> {course.students?.length || 0}</p>
+        </div>
 
         <div className="upload-section">
           <h3>Upload Your Assignment</h3>
           <input type="file" onChange={handleFileChange} />
-          <button className="btn" onClick={handleFileUpload}>
+          <button className="btn upload-btn" onClick={handleFileUpload}>
             Upload
           </button>
         </div>

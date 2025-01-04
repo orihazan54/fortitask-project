@@ -12,6 +12,8 @@ import NewPassword from "./pages/NewPassword";
 import StudentDashboard from "./pages/student/StudentDashboard";
 import StudentCourses from "./pages/student/StudentCourses";
 import StudentProfile from "./pages/student/StudentProfile";
+import MyCourses from "./pages/student/MyCourses";
+
 
 // Teacher Pages
 import TeacherDashboard from "./pages/teacher/TeacherDashboard";
@@ -49,6 +51,7 @@ const App = () => {
       <Route path="/student-dashboard" element={<StudentDashboard />} />
       <Route path="/student/courses" element={<StudentCourses />} />
       <Route path="/student/profile" element={<StudentProfile />} />
+      <Route path="/student/my-courses" element={<MyCourses />} />
 
       {/* Teacher Pages */}
       <Route path="/teacher-dashboard" element={<TeacherDashboard />} />

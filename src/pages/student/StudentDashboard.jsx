@@ -1,11 +1,27 @@
-import React from "react";
-import { useNavigate } from "react-router-dom";
+import React, { useEffect, useState } from "react";
 import NavBar from "../../components/NavBar";
 import Sidebar from "../../components/Sidebar";
-import "../../styles/StudentDashboard.css"; // נוודא שיש קובץ CSS מותאם
+import { getUserDetails } from "../../services/api";
+import { toast } from "react-toastify";
+import "../../styles/StudentDashboard.css";
 
 const StudentDashboard = () => {
-  const navigate = useNavigate();
+  const [studentName, setStudentName] = useState("Student");
+
+  useEffect(() => {
+    const fetchStudentName = async () => {
+      try {
+        const userId = localStorage.getItem("userId");
+        const { data } = await getUserDetails(userId);
+        setStudentName(data.username || "Student");
+      } catch (error) {
+        console.error("Failed to fetch student name:", error);
+        toast.error("Failed to load student name.");
+      }
+    };
+
+    fetchStudentName();
+  }, []);
 
   return (
     <>
@@ -13,28 +29,16 @@ const StudentDashboard = () => {
       <div className="dashboard-container">
         <Sidebar role="Student" />
         <main className="main-content">
-          <div className="welcome-section animate__animated animate__fadeInDown">
-            <h1 className="welcome-header">Welcome, Student!</h1>
-            <p className="welcome-subtext">
-              Manage your courses, track your assignments, and achieve academic success!
+          <div className="welcome-section">
+            <h1 className="welcome-header">Welcome, {studentName}!</h1>
+            <p className="welcome-description">
+              Access your courses, view uploaded materials, and track your academic progress.
             </p>
           </div>
-          <div className="quick-actions animate__animated animate__fadeInUp">
-            <h2 className="section-header">Quick Actions</h2>
-            <div className="cards-container">
-              <div className="card" onClick={() => navigate("/student/courses")}>
-                <h3>My Courses</h3>
-                <p>View and enroll in available courses.</p>
-              </div>
-              <div className="card" onClick={() => navigate("/student/profile")}>
-                <h3>Profile</h3>
-                <p>Update your profile and manage your settings.</p>
-              </div>
-              <div className="card" onClick={() => navigate("/student/assignments")}>
-                <h3>Assignments</h3>
-                <p>Track your assignments and submit solutions.</p>
-              </div>
-            </div>
+          <div className="info-section">
+            <p className="info-text">
+              Explore the available courses, stay up-to-date with deadlines, and make the most out of your studies using Fortitask.
+            </p>
           </div>
         </main>
       </div>

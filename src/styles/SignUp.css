@@ -37,6 +37,31 @@
   width: 100%;
   padding: 10px;
   border-radius: 5px;
+  font-size: 1rem;
+}
+
+.password-field {
+  position: relative;
+}
+
+.password-field input {
+  width: 100%;
+  padding-right: 40px; /* מקום לאייקון */
+}
+
+.password-toggle {
+  position: absolute;
+  right: 10px;
+  top: 50%;
+  transform: translateY(-50%);
+  font-size: 1.2rem;
+  cursor: pointer;
+  color: #666;
+  transition: color 0.3s ease;
+}
+
+.password-toggle:hover {
+  color: #000;
 }
 
 .card button {

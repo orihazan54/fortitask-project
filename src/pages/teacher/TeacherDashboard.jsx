@@ -1,28 +1,27 @@
 import React, { useState, useEffect } from "react";
 import NavBar from "../../components/NavBar";
 import Sidebar from "../../components/Sidebar";
-import { getCourses } from "../../services/api";
+import { getUserDetails } from "../../services/api";
 import { toast } from "react-toastify";
 import "../../styles/TeacherDashboard.css";
 
 const TeacherDashboard = () => {
-  const [courses, setCourses] = useState([]);
-  const [loading, setLoading] = useState(false);
+  const [teacherName, setTeacherName] = useState("");
 
   useEffect(() => {
-    const fetchCourses = async () => {
-      setLoading(true);
+    // שליפת שם המשתמש מהשרת
+    const fetchTeacherName = async () => {
       try {
-        const { data } = await getCourses();
-        setCourses(data.filter((course) => course.teacherId === localStorage.getItem("userId")));
+        const userId = localStorage.getItem("userId");
+        const { data } = await getUserDetails(userId);
+        setTeacherName(data.username || "Teacher");
       } catch (error) {
-        toast.error(error.response?.data?.message || "Failed to fetch courses.");
-      } finally {
-        setLoading(false);
+        console.error("Failed to fetch teacher name:", error);
+        toast.error("Failed to load teacher's name.");
       }
     };
 
-    fetchCourses();
+    fetchTeacherName();
   }, []);
 
   return (
@@ -31,38 +30,20 @@ const TeacherDashboard = () => {
       <div className="dashboard-container">
         <Sidebar role="Teacher" />
         <main className="main-content">
-          <h1>Welcome to the Teacher Dashboard!</h1>
-          <section className="courses-section">
-            <h2>Your Courses</h2>
-            {loading ? (
-              <p>Loading courses...</p>
-            ) : courses.length > 0 ? (
-              <table className="courses-table">
-                <thead>
-                  <tr>
-                    <th>ID</th>
-                    <th>Course Name</th>
-                    <th>Credit Points</th>
-                    <th>Deadline</th>
-                    <th>Students Enrolled</th>
-                  </tr>
-                </thead>
-                <tbody>
-                  {courses.map((course) => (
-                    <tr key={course._id}>
-                      <td>{course._id}</td>
-                      <td>{course.name}</td>
-                      <td>{course.creditPoints}</td>
-                      <td>{new Date(course.deadline).toLocaleDateString()}</td>
-                      <td>{course.students?.length || 0}</td>
-                    </tr>
-                  ))}
-                </tbody>
-              </table>
-            ) : (
-              <p className="no-courses">No courses found.</p>
-            )}
-          </section>
+          <div className="welcome-section">
+            <h1 className="welcome-header">Welcome, {teacherName}!</h1>
+            <p className="welcome-description">
+              This is your teacher's dashboard. Use the panel on the left to manage your courses,
+              track student progress, and create new learning opportunities.
+            </p>
+          </div>
+          <div className="info-section">
+            <p className="info-text">
+              Fortitask is your ultimate tool to simplify course management and enhance student
+              engagement. Dive in and explore the features designed to make your teaching
+              experience seamless and efficient.
+            </p>
+          </div>
         </main>
       </div>
     </>

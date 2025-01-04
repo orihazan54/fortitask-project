@@ -27,7 +27,7 @@
   padding: 10px 20px;
   font-size: 1rem;
   color: white;
-  background-color: #f44336;
+  background-color: #007bff;
   border: none;
   border-radius: 8px;
   cursor: pointer;
@@ -36,7 +36,7 @@
 }
 
 .btn.back-btn:hover {
-  background-color: #d32f2f;
+  background-color: #0056b3;
   transform: scale(1.05);
 }
 
