@@ -13,9 +13,14 @@ const courseSchema = new mongoose.Schema({
   students: [
     { type: mongoose.Schema.Types.ObjectId, ref: "User" }
   ], // רשימת סטודנטים שנרשמו
-  filePath: { type: String }, // נתיב הקובץ (אופציונלי)
-  fileUrl: { type: String }, // URL להורדת הקובץ (אופציונלי)
+  assignments: [
+    {
+      fileUrl: String,
+      fileName: String,
+      uploadedAt: { type: Date, default: Date.now },
+    },
+  ], // מערך מטלות לכל קורס
 }, 
-{ timestamps: true }); // הוספת תאריך יצירה ועדכון אוטומטי
+{ timestamps: true });
 
 module.exports = mongoose.model("Course", courseSchema);

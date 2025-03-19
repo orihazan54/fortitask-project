@@ -1,13 +1,21 @@
+body, html {
+  margin: 0;
+  padding: 0;
+  font-family: Arial, sans-serif;
+  overflow-x: hidden; /* מניעת גלילה רוחבית */
+}
+
 .home-container {
   display: flex;
   flex-direction: column;
   justify-content: center;
   align-items: center;
-  height: 100vh;
+  min-height: 100vh; /* מאפשר גלילה במידת הצורך */
   background: linear-gradient(135deg, #1e3c72, #2a5298); /* צבעים עמוקים */
   color: white;
   text-align: center;
-  padding: 0 20px;
+  padding: 20px; /* הוספתי padding קל */
+  overflow-y: auto; /* מאפשר גלילה אנכית */
 }
 
 .home-content {

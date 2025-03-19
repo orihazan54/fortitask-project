@@ -7,15 +7,18 @@ import "../../styles/TeacherProfile.css";
 const TeacherProfile = () => {
   const [profile, setProfile] = useState(null);
   const [newPassword, setNewPassword] = useState("");
-  const [passwordStrength, setPasswordStrength] = useState(""); // חוזק סיסמה
+  const [passwordStrength, setPasswordStrength] = useState("");
   const [loading, setLoading] = useState(true);
 
   useEffect(() => {
     const fetchProfile = async () => {
       try {
+        console.log("🔍 Fetching user profile...");
         const { data } = await getUserDetails();
+        console.log("✅ Profile data received:", data);
         setProfile(data);
       } catch (error) {
+        console.error("❌ Failed to load profile:", error.response?.data || error.message);
         toast.error("Failed to load profile.");
       } finally {
         setLoading(false);
@@ -55,6 +58,7 @@ const TeacherProfile = () => {
       setNewPassword("");
       setPasswordStrength("");
     } catch (error) {
+      console.error("❌ Failed to update password:", error.response?.data || error.message);
       toast.error("Failed to update password.");
     }
   };
@@ -76,11 +80,7 @@ const TeacherProfile = () => {
           <div className="profile-info">
             <p><strong>Username:</strong> {profile.username}</p>
             <p><strong>Email:</strong> {profile.email}</p>
-            <p><strong>Courses Taught:</strong> 5</p>
-            <p><strong>Students Managed:</strong> 50</p>
-            <p>
-              <strong>Created At:</strong> {new Date(profile.createdAt).toLocaleString()}
-            </p>
+            <p><strong>Created At:</strong> {new Date(profile.createdAt).toLocaleString()}</p>
           </div>
           <div className="profile-actions">
             <input
