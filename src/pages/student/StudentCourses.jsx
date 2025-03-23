@@ -1,13 +1,19 @@
+
 import React, { useState, useEffect } from "react";
 import { useNavigate } from "react-router-dom";
 import { toast } from "react-toastify";
 import { getCourses, registerToCourse } from "../../services/api";
 import NavBar from "../../components/NavBar";
+import Sidebar from "../../components/Sidebar";
+import { FaSearch, FaGraduationCap, FaUserTie, FaCalendarAlt, FaUserGraduate, FaInfoCircle } from "react-icons/fa";
 import "../../styles/StudentCourses.css";
 
 const StudentCourses = () => {
   const [courses, setCourses] = useState([]);
+  const [filteredCourses, setFilteredCourses] = useState([]);
   const [selectedCourse, setSelectedCourse] = useState(null);
+  const [searchTerm, setSearchTerm] = useState("");
+  const [loading, setLoading] = useState(true);
   const navigate = useNavigate();
 
   useEffect(() => {
@@ -15,13 +21,32 @@ const StudentCourses = () => {
       try {
         const { data } = await getCourses();
         setCourses(data);
+        setFilteredCourses(data);
       } catch (error) {
-        toast.error("Failed to load courses.");
+        console.error("Failed to load courses:", error);
+        toast.error("Failed to load available courses.");
+      } finally {
+        setLoading(false);
       }
     };
 
     fetchCourses();
   }, []);
+
+  const handleSearchChange = (e) => {
+    const term = e.target.value.toLowerCase();
+    setSearchTerm(term);
+    
+    if (term === "") {
+      setFilteredCourses(courses);
+    } else {
+      const filtered = courses.filter(course => 
+        course.name.toLowerCase().includes(term) || 
+        (course.teacherName && course.teacherName.toLowerCase().includes(term))
+      );
+      setFilteredCourses(filtered);
+    }
+  };
 
   const handleSelectCourse = (courseId) => {
     const course = courses.find((c) => c._id === courseId);
@@ -36,9 +61,10 @@ const StudentCourses = () => {
 
     try {
       await registerToCourse(selectedCourse._id);
-      toast.success("Registered successfully!");
-      navigate("/student-dashboard");
+      toast.success("Registered successfully to course!");
+      navigate("/student/my-courses");
     } catch (error) {
+      console.error("Registration error:", error);
       toast.error(
         error.response?.data?.message || "Failed to register for the course."
       );
@@ -48,68 +74,142 @@ const StudentCourses = () => {
   return (
     <>
       <NavBar />
-      <div className="student-courses-container">
-        <div className="header-section">
-          <h2 className="header">Explore Available Courses</h2>
-          <button
-            className="btn back-btn"
-            onClick={() => navigate("/student-dashboard")}
-          >
-            ← Back to Dashboard
-          </button>
-        </div>
-
-        <div className="course-selection">
-          <label htmlFor="course-list" className="select-label">
-            Select a course:
-          </label>
-          <select
-            id="course-list"
-            className="course-select"
-            value={selectedCourse?._id || ""}
-            onChange={(e) => handleSelectCourse(e.target.value)}
-          >
-            <option value="" disabled>
-              -- Select a course --
-            </option>
-            {courses.map((course) => (
-              <option key={course._id} value={course._id}>
-                {course.name}
-              </option>
-            ))}
-          </select>
-        </div>
-
-        {selectedCourse && (
-          <div className="course-details">
-            <h3>Course Details</h3>
-            <div className="course-info">
-              <p>
-                <strong>Course Name:</strong> {selectedCourse.name}
-              </p>
-              <p>
-                <strong>Credits:</strong> {selectedCourse.creditPoints}
-              </p>
-              <p>
-                <strong>Deadline:</strong>{" "}
-                {new Date(selectedCourse.deadline).toLocaleDateString()}
-              </p>
-              <p>
-                <strong>Instructions:</strong> {selectedCourse.instructions}
-              </p>
-              <p>
-                <strong>Teacher:</strong> {selectedCourse.teacherName || "N/A"}
-              </p>
-              <p>
-                <strong>Students Enrolled:</strong>{" "}
-                {selectedCourse.students?.length || 0}
-              </p>
+      <div className="courses-container">
+        <Sidebar role="Student" />
+        <main className="main-content">
+          <div className="courses-header">
+            <div>
+              <h1 className="page-title">Available Courses</h1>
+              <p className="page-description">Discover and enroll in new academic opportunities</p>
             </div>
-            <button className="btn register-btn" onClick={handleRegister}>
-              Register
+            <button
+              className="back-button"
+              onClick={() => navigate("/student-dashboard")}
+            >
+              ← Back to Dashboard
             </button>
           </div>
-        )}
+
+          <div className="search-container">
+            <div className="search-box">
+              <FaSearch className="search-icon" />
+              <input
+                type="text"
+                placeholder="Search courses by name or teacher..."
+                value={searchTerm}
+                onChange={handleSearchChange}
+                className="search-input"
+              />
+            </div>
+          </div>
+
+          {loading ? (
+            <div className="loading-container">
+              <div className="spinner"></div>
+              <p>Loading courses...</p>
+            </div>
+          ) : filteredCourses.length === 0 ? (
+            <div className="no-courses">
+              <FaInfoCircle size={48} className="no-courses-icon" />
+              <h3>No Courses Found</h3>
+              <p>Try adjusting your search or check back later for new courses.</p>
+            </div>
+          ) : (
+            <div className="courses-grid">
+              {filteredCourses.map((course) => (
+                <div 
+                  key={course._id} 
+                  className={`course-card ${selectedCourse?._id === course._id ? 'selected' : ''}`}
+                  onClick={() => handleSelectCourse(course._id)}
+                >
+                  <div className="course-header">
+                    <h3 className="course-title">{course.name}</h3>
+                    <div className="course-credits">
+                      <FaGraduationCap />
+                      <span>{course.creditPoints} Credits</span>
+                    </div>
+                  </div>
+                  
+                  <div className="course-info">
+                    <div className="info-item">
+                      <FaUserTie className="info-icon" />
+                      <span>Instructor: {course.teacherName || "TBA"}</span>
+                    </div>
+                    
+                    <div className="info-item">
+                      <FaCalendarAlt className="info-icon" />
+                      <span>Deadline: {new Date(course.deadline).toLocaleDateString()}</span>
+                    </div>
+                    
+                    <div className="info-item">
+                      <FaUserGraduate className="info-icon" />
+                      <span>Students: {course.students?.length || 0}</span>
+                    </div>
+                  </div>
+                  
+                  <p className="course-description">
+                    {course.instructions?.slice(0, 100)}
+                    {course.instructions?.length > 100 ? "..." : ""}
+                  </p>
+                  
+                  <button className="view-details-btn">
+                    View Details
+                  </button>
+                </div>
+              ))}
+            </div>
+          )}
+
+          {selectedCourse && (
+            <div className="course-details-modal">
+              <div className="modal-content">
+                <h2 className="modal-title">{selectedCourse.name}</h2>
+                
+                <div className="modal-info">
+                  <div className="info-group">
+                    <span className="info-label">Credits:</span>
+                    <span className="info-value">{selectedCourse.creditPoints}</span>
+                  </div>
+                  
+                  <div className="info-group">
+                    <span className="info-label">Instructor:</span>
+                    <span className="info-value">{selectedCourse.teacherName || "TBA"}</span>
+                  </div>
+                  
+                  <div className="info-group">
+                    <span className="info-label">Deadline:</span>
+                    <span className="info-value">{new Date(selectedCourse.deadline).toLocaleDateString()}</span>
+                  </div>
+                  
+                  <div className="info-group">
+                    <span className="info-label">Students Enrolled:</span>
+                    <span className="info-value">{selectedCourse.students?.length || 0}</span>
+                  </div>
+                </div>
+                
+                <div className="instructions-container">
+                  <h3>Course Description & Instructions</h3>
+                  <p>{selectedCourse.instructions}</p>
+                </div>
+                
+                <div className="modal-actions">
+                  <button 
+                    className="register-btn"
+                    onClick={handleRegister}
+                  >
+                    Register for This Course
+                  </button>
+                  <button 
+                    className="cancel-btn"
+                    onClick={() => setSelectedCourse(null)}
+                  >
+                    Cancel
+                  </button>
+                </div>
+              </div>
+            </div>
+          )}
+        </main>
       </div>
     </>
   );

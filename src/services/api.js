@@ -1,3 +1,4 @@
+
 import axios from "axios";
 
 const API = axios.create({
@@ -27,15 +28,15 @@ export const resetPassword = (data) => API.post("/users/reset-password", data);
 
 // 🔹 פונקציות עבור קורסים
 export const getCourses = () => API.get("/courses");
-export const createCourse = (data) =>
-  API.post("/courses/create", data, {
+export const createCourse = (formData) =>
+  API.post("/courses/create", formData, {
     headers: { "Content-Type": "multipart/form-data" },
   });
 export const registerToCourse = (courseId) => API.post(`/courses/register/${courseId}`);
 export const getCourseDetails = (courseId) => API.get(`/courses/${courseId}`);
 export const deleteCourse = (courseId) => API.delete(`/courses/${courseId}`);
-export const updateCourse = (courseId, data) =>
-  API.put(`/courses/${courseId}`, data, {
+export const updateCourse = (courseId, formData) =>
+  API.put(`/courses/${courseId}`, formData, {
     headers: { "Content-Type": "multipart/form-data" },
   });
 export const getMyCourses = () => API.get("/courses/my-courses");
@@ -49,3 +50,6 @@ export const uploadAssignment = (courseId, formData) =>
 export const getAssignments = (courseId) => API.get(`/courses/${courseId}/assignments`);
 
 export const downloadAssignment = (fileUrl) => window.open(fileUrl, "_blank");
+
+// 🔹 חדש - פונקציה למחיקת מטלה
+export const deleteAssignment = (courseId, assignmentId) => API.delete(`/courses/${courseId}/assignments/${assignmentId}`);

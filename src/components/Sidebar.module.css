@@ -1,62 +1,103 @@
+
 .sidebar {
-  width: 240px;
-  background-color: #1e3c72; 
+  width: 260px;
+  background: linear-gradient(135deg, #1e1e40, #162447);
   color: white;
-  height: calc(100vh - 60px); /* מתחת ל-Navbar */
-  position: fixed;
-  top: 60px;
+  height: 100vh;
+  position: sticky;
+  top: 0;
   left: 0;
-  padding: 20px 15px;
-  box-shadow: 2px 0px 8px rgba(0, 0, 0, 0.1);
+  padding: 1.5rem 1rem;
+  box-shadow: 2px 0 10px rgba(0, 0, 0, 0.1);
   display: flex;
   flex-direction: column;
+  z-index: 10;
+  overflow-y: auto;
+  user-select: none;
 }
 
 .sidebar .header {
-  font-size: 1.8rem;
-  font-weight: bold;
-  color: #ffeb3b; /* צהוב */
-  margin-bottom: 20px;
+  font-size: 1.5rem;
+  font-weight: 600;
+  color: white;
+  margin-bottom: 1.5rem;
   text-align: center;
+  padding-bottom: 1rem;
+  border-bottom: 1px solid rgba(255, 255, 255, 0.2);
 }
 
 .sidebar .list {
   list-style: none;
   padding: 0;
   margin: 0;
-  flex-grow: 1; /* ממלא את כל השטח */
+  flex-grow: 1;
+  display: flex;
+  flex-direction: column;
+  gap: 0.5rem;
 }
 
 .sidebar .listItem {
-  margin: 10px 0;
-  padding: 12px; /* מרווח גדול יותר */
-  border-radius: 8px;
-  transition: background-color 0.3s ease, transform 0.3s ease;
+  margin: 0.25rem 0;
+  padding: 0.75rem 1rem;
+  border-radius: 0.5rem;
+  position: relative;
+  overflow: hidden;
+  background-color: rgba(255, 255, 255, 0.1);
 }
 
-.sidebar .listItem:hover {
+.sidebar .listItem.active {
   background-color: rgba(255, 255, 255, 0.2);
-  transform: translateX(5px);
+}
+
+.sidebar .listItem::before {
+  content: '';
+  position: absolute;
+  left: 0;
+  top: 0;
+  height: 100%;
+  width: 4px;
+  background-color: rgba(255, 255, 255, 0.2);
+  border-radius: 0 4px 4px 0;
 }
 
 .sidebar .link {
   text-decoration: none;
   color: white;
-  font-size: 1.2rem;
+  font-size: 1rem;
   display: flex;
   align-items: center;
-  gap: 10px;
+  gap: 0.75rem;
+  width: 100%;
 }
 
 .sidebar .icon {
-  font-size: 1.4rem;
-  color: #ffeb3b; /* צהוב */
+  font-size: 1.2rem;
+  color: rgba(255, 255, 255, 0.9);
 }
 
 .sidebar .footer {
-  margin-top: auto; /* דוחף את ה-Footer לסוף */
+  margin-top: auto;
   text-align: center;
-  font-size: 0.9rem;
+  font-size: 0.8rem;
   color: rgba(255, 255, 255, 0.6);
-  padding: 10px 0; /* מרווח נוסף */
+  padding-top: 1rem;
+  border-top: 1px solid rgba(255, 255, 255, 0.2);
+}
+
+@media (max-width: 768px) {
+  .sidebar {
+    width: 220px;
+  }
+  
+  .sidebar .header {
+    font-size: 1.25rem;
+  }
+  
+  .sidebar .listItem {
+    padding: 0.625rem 0.75rem;
+  }
+  
+  .sidebar .link {
+    font-size: 0.9rem;
+  }
 }

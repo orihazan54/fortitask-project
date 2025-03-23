@@ -6,6 +6,7 @@ const multer = require("multer");
 const { CloudinaryStorage } = require("multer-storage-cloudinary");
 const Course = require("../models/Course");
 const User = require("../models/User");
+const mongoose = require("mongoose");
 
 // 📌 הגדרת Cloudinary
 cloudinary.config({
@@ -38,7 +39,7 @@ const upload = multer({ storage });
 // -------------------- 📚 Routes -------------------- //
 
 // 📌 יצירת קורס חדש (למורים בלבד)
-router.post("/create", authenticateToken, async (req, res) => {
+router.post("/create", authenticateToken, upload.single("file"), async (req, res) => {
   if (req.user.role !== "Teacher") {
     return res.status(403).json({ message: "Access denied. Only teachers can create courses." });
   }
@@ -58,6 +59,20 @@ router.post("/create", authenticateToken, async (req, res) => {
       teacherId: req.user.id,
     });
 
+    // אם יש קובץ מצורף, הוסף אותו למערך המטלות
+    if (req.file) {
+      console.log("📄 File uploaded with course creation:", req.file);
+      
+      newCourse.assignments.push({
+        fileUrl: req.file.path,
+        fileName: req.file.originalname,
+        lastModified: req.file.lastModified ? new Date(req.file.lastModified) : new Date(),
+        originalSize: req.file.size,
+        fileType: req.file.mimetype,
+        uploadedAt: new Date(),
+      });
+    }
+
     await newCourse.save();
     return res.status(201).json({ message: "Course created successfully!", course: newCourse });
   } catch (error) {
@@ -66,7 +81,6 @@ router.post("/create", authenticateToken, async (req, res) => {
   }
 });
 
-// 📂 העלאת מטלה ל-Cloudinary
 // 📂 העלאת מטלה ל-Cloudinary
 router.post("/:id/upload-assignment", authenticateToken, upload.single("file"), async (req, res) => {
   try {
@@ -78,17 +92,13 @@ router.post("/:id/upload-assignment", authenticateToken, upload.single("file"), 
     }
 
     console.log("🚀 Uploading file to Cloudinary...");
-    const uploadResponse = await cloudinary.uploader.upload(req.file.path, {
-      folder: "assignments",
-      resource_type: "auto",
+    console.log("File details:", {
+      name: req.file.originalname,
+      size: req.file.size,
+      mimetype: req.file.mimetype,
+      path: req.file.path,
+      lastModified: req.file.lastModified
     });
-
-    if (!uploadResponse || !uploadResponse.secure_url) {
-      console.error("❌ Cloudinary upload failed! Response:", JSON.stringify(uploadResponse, null, 2));
-      return res.status(500).json({ message: "Cloudinary upload failed!", error: uploadResponse });
-    }
-
-    console.log("✅ File uploaded to Cloudinary:", uploadResponse.secure_url);
 
     const course = await Course.findById(req.params.id);
     if (!course) {
@@ -97,9 +107,12 @@ router.post("/:id/upload-assignment", authenticateToken, upload.single("file"), 
     }
 
     const newAssignment = {
-      fileUrl: uploadResponse.secure_url,
+      fileUrl: req.file.path,
       fileName: req.file.originalname,
       uploadedAt: new Date(),
+      lastModified: req.file.lastModified ? new Date(req.file.lastModified) : new Date(),
+      originalSize: req.file.size,
+      fileType: req.file.mimetype
     };
 
     course.assignments.push(newAssignment);
@@ -114,6 +127,53 @@ router.post("/:id/upload-assignment", authenticateToken, upload.single("file"), 
   }
 });
 
+// 📌 עדכון קורס קיים
+router.put("/:id", authenticateToken, upload.single("file"), async (req, res) => {
+  if (req.user.role !== "Teacher") {
+    return res.status(403).json({ message: "Access denied. Only teachers can update courses." });
+  }
+
+  const { name, creditPoints, instructions, deadline } = req.body;
+  
+  try {
+    const course = await Course.findById(req.params.id);
+    
+    if (!course) {
+      return res.status(404).json({ message: "Course not found." });
+    }
+    
+    if (course.teacherId.toString() !== req.user.id) {
+      return res.status(403).json({ message: "You can only update courses you created." });
+    }
+
+    // עדכון פרטי הקורס
+    if (name) course.name = name;
+    if (creditPoints) course.creditPoints = parseFloat(creditPoints);
+    if (instructions) course.instructions = instructions;
+    if (deadline) course.deadline = new Date(deadline);
+
+    // אם יש קובץ מצורף, הוסף אותו למערך המטלות
+    if (req.file) {
+      console.log("📄 File uploaded with course update:", req.file);
+      
+      course.assignments.push({
+        fileUrl: req.file.path,
+        fileName: req.file.originalname,
+        lastModified: req.file.lastModified ? new Date(req.file.lastModified) : new Date(),
+        originalSize: req.file.size,
+        fileType: req.file.mimetype,
+        uploadedAt: new Date(),
+      });
+    }
+
+    await course.save();
+    
+    return res.status(200).json({ message: "Course updated successfully!", course });
+  } catch (error) {
+    console.error("❌ Error updating course:", error);
+    return res.status(500).json({ message: "Failed to update course.", error });
+  }
+});
 
 // 📚 שליפת כל הקורסים
 router.get("/", authenticateToken, async (req, res) => {
@@ -196,6 +256,88 @@ router.delete("/:id", authenticateToken, async (req, res) => {
   } catch (error) {
     console.error("❌ Error deleting course:", error);
     return res.status(500).json({ message: "Failed to delete course." });
+  }
+});
+
+// 📂 קבלת מטלות של קורס
+router.get("/:id/assignments", authenticateToken, async (req, res) => {
+  try {
+    const course = await Course.findById(req.params.id);
+    if (!course) {
+      return res.status(404).json({ message: "Course not found." });
+    }
+
+    return res.status(200).json(course.assignments);
+  } catch (error) {
+    console.error("❌ Error fetching assignments:", error);
+    return res.status(500).json({ message: "Failed to fetch assignments." });
+  }
+});
+
+// 📌 מחיקת מטלה מקורס
+router.delete("/:id/assignments/:assignmentId", authenticateToken, async (req, res) => {
+  if (req.user.role !== "Teacher") {
+    return res.status(403).json({ message: "Access denied. Only teachers can delete assignments." });
+  }
+
+  try {
+    const { id, assignmentId } = req.params;
+    
+    // ודא שה-ID של הקורס תקין
+    if (!mongoose.Types.ObjectId.isValid(id)) {
+      return res.status(400).json({ message: "Invalid course ID format." });
+    }
+    
+    // ודא שה-ID של המטלה תקין
+    if (!mongoose.Types.ObjectId.isValid(assignmentId)) {
+      return res.status(400).json({ message: "Invalid assignment ID format." });
+    }
+
+    const course = await Course.findById(id);
+    
+    if (!course) {
+      return res.status(404).json({ message: "Course not found." });
+    }
+    
+    if (course.teacherId.toString() !== req.user.id) {
+      return res.status(403).json({ message: "You can only delete assignments in courses you teach." });
+    }
+
+    // מצא את המטלה לפי ID
+    const assignment = course.assignments.id(assignmentId);
+    
+    if (!assignment) {
+      return res.status(404).json({ message: "Assignment not found." });
+    }
+
+    // נסה למחוק את הקובץ מ-Cloudinary אם קיים
+    if (assignment.fileUrl) {
+      try {
+        // חלץ את מזהה הקובץ מה-URL (פתרון ספציפי ל-Cloudinary)
+        const publicId = assignment.fileUrl.split('/').pop().split('.')[0];
+        
+        if (publicId) {
+          await cloudinary.uploader.destroy(publicId, { resource_type: 'raw' });
+          console.log(`✅ File ${publicId} deleted from Cloudinary`);
+        }
+      } catch (cloudinaryError) {
+        console.error("❌ Error deleting file from Cloudinary:", cloudinaryError);
+        // ממשיך למרות שגיאה במחיקת הקובץ מ-Cloudinary
+      }
+    }
+
+    // מחק את המטלה מהמערך
+    course.assignments.pull(assignmentId);
+    await course.save();
+
+    return res.status(200).json({ 
+      message: "Assignment deleted successfully.", 
+      remainingAssignments: course.assignments 
+    });
+    
+  } catch (error) {
+    console.error("❌ Error deleting assignment:", error);
+    return res.status(500).json({ message: "Failed to delete assignment." });
   }
 });
 

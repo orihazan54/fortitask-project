@@ -1,8 +1,12 @@
+
 import React from "react";
-import { Link } from "react-router-dom";
+import { Link, useLocation } from "react-router-dom";
 import styles from "./Sidebar.module.css";
 
 const Sidebar = ({ role }) => {
+  const location = useLocation();
+  const currentPath = location.pathname;
+  
   const menuItems =
     role === "Student"
       ? [
@@ -22,7 +26,10 @@ const Sidebar = ({ role }) => {
       </div>
       <ul className={styles.list}>
         {menuItems.map((item, index) => (
-          <li key={index} className={styles.listItem}>
+          <li 
+            key={index} 
+            className={`${styles.listItem} ${currentPath === item.path ? styles.active : ""}`}
+          >
             <Link to={item.path} className={styles.link}>
               <span className={styles.icon}>{item.icon}</span>
               <span className={styles.label}>{item.label}</span>
