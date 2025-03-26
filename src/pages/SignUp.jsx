@@ -1,3 +1,4 @@
+
 import React, { useState } from "react";
 import { useNavigate } from "react-router-dom";
 import { signup } from "../services/api";
@@ -14,8 +15,9 @@ const SignUp = () => {
     role: "Student",
   });
   const [passwordStrength, setPasswordStrength] = useState("");
-  const [showPassword, setShowPassword] = useState(false); // מצב הצגת סיסמה
-  const [showConfirmPassword, setShowConfirmPassword] = useState(false); // מצב הצגת אימות סיסמה
+  const [showPassword, setShowPassword] = useState(false);
+  const [showConfirmPassword, setShowConfirmPassword] = useState(false);
+  const [isSubmitting, setIsSubmitting] = useState(false);
   const navigate = useNavigate();
 
   const handleChange = (e) => {
@@ -29,11 +31,12 @@ const SignUp = () => {
   };
 
   const checkPasswordStrength = (password) => {
+    // משתמשים ב-regex פשוט יותר שתואם לבדיקה בצד השרת
     const strongRegex = new RegExp(
-      "^(?=.*[a-z])(?=.*[A-Z])(?=.*[0-9])(?=.*[!@#$%^&*])(?=.{8,})"
+      "^(?=.*[a-z])(?=.*[A-Z])(?=.*[0-9])(?=.*[!@#$%^&*])[A-Za-z0-9!@#$%^&*]{8,}$"
     );
     const mediumRegex = new RegExp(
-      "^(?=.*[a-z])(?=.*[A-Z])(?=.*[0-9])(?=.{6,})"
+      "^(?=.*[a-z])(?=.*[A-Z])(?=.*[0-9])[A-Za-z0-9]{6,}$"
     );
 
     if (strongRegex.test(password)) return "Strong";
@@ -43,6 +46,14 @@ const SignUp = () => {
 
   const handleSubmit = async (e) => {
     e.preventDefault();
+    
+    if (isSubmitting) return; // מניעת שליחה כפולה
+    
+    // בדיקות בסיסיות לפני שליחה
+    if (!formData.username || !formData.email || !formData.password || !formData.confirmPassword) {
+      toast.error("Please fill in all fields.");
+      return;
+    }
 
     if (formData.password !== formData.confirmPassword) {
       toast.error("Passwords do not match.");
@@ -54,12 +65,31 @@ const SignUp = () => {
       return;
     }
 
+    setIsSubmitting(true);
+    
     try {
-      await signup(formData);
+      console.log("Attempting to sign up with:", {
+        ...formData,
+        password: "***hidden***",
+        confirmPassword: "***hidden***"
+      });
+      
+      const response = await signup({
+        username: formData.username,
+        email: formData.email,
+        password: formData.password,
+        role: formData.role
+      });
+      
+      console.log("Signup response:", response);
       toast.success("Account created successfully!");
       navigate("/login");
     } catch (error) {
-      toast.error(error.response?.data?.message || "Sign-up failed!");
+      console.error("Signup error:", error);
+      const errorMessage = error.response?.data?.message || "Sign-up failed!";
+      toast.error(errorMessage);
+    } finally {
+      setIsSubmitting(false);
     }
   };
 
@@ -134,8 +164,8 @@ const SignUp = () => {
               <option value="Student">Student</option>
               <option value="Teacher">Teacher</option>
             </select>
-            <button type="submit" className="btn">
-              Sign Up
+            <button type="submit" className="btn" disabled={isSubmitting}>
+              {isSubmitting ? "Signing Up..." : "Sign Up"}
             </button>
           </form>
           <p>

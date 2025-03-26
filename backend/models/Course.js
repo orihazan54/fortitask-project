@@ -10,10 +10,10 @@ const courseSchema = new mongoose.Schema({
     type: mongoose.Schema.Types.ObjectId, 
     ref: "User", 
     required: true 
-  }, // קישור למשתמש המרצה
+  },
   students: [
     { type: mongoose.Schema.Types.ObjectId, ref: "User" }
-  ], // רשימת סטודנטים שנרשמו
+  ],
   assignments: [
     {
       _id: { type: mongoose.Schema.Types.ObjectId, auto: true },
@@ -23,8 +23,11 @@ const courseSchema = new mongoose.Schema({
       lastModified: { type: Date }, // תאריך העריכה האחרון של הקובץ
       originalSize: { type: Number }, // גודל הקובץ המקורי
       fileType: { type: String }, // סוג הקובץ
+      isLateSubmission: { type: Boolean, default: false }, // האם הוגש באיחור
+      isModifiedAfterDeadline: { type: Boolean, default: false }, // האם הקובץ נערך אחרי הדדליין
+      studentId: { type: mongoose.Schema.Types.ObjectId, ref: "User" } // מזהה הסטודנט שהגיש
     },
-  ], // מערך מטלות לכל קורס
+  ],
 }, 
 { timestamps: true });
 

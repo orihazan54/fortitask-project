@@ -1,168 +1,188 @@
 
-import React, { useState, useEffect } from "react";
+import React, { useState, useEffect, useCallback } from "react";
 import { useNavigate } from "react-router-dom";
-import { toast } from "react-toastify";
-import { getMyCourses, getCourseDetails, downloadAssignment } from "../../services/api";
+import { getMyCourses } from "../../services/api";
 import NavBar from "../../components/NavBar";
 import Sidebar from "../../components/Sidebar";
-import { FaBook, FaCalendarAlt, FaClipboardList, FaDownload, FaExclamationCircle, FaGraduationCap, FaInfoCircle } from "react-icons/fa";
+import { toast } from "react-toastify";
+import { Search, RefreshCw, Calendar, Clock, AlertTriangle, FileText, Info, ArrowLeft } from "lucide-react";
 import "../../styles/MyCourses.css";
 
 const MyCourses = () => {
   const [courses, setCourses] = useState([]);
-  const [selectedCourse, setSelectedCourse] = useState(null);
-  const [courseDetails, setCourseDetails] = useState(null);
+  const [filteredCourses, setFilteredCourses] = useState([]);
+  const [searchTerm, setSearchTerm] = useState("");
   const [loading, setLoading] = useState(true);
-  const [error, setError] = useState(false);
+  const [error, setError] = useState(null);
+  const [retryCount, setRetryCount] = useState(0);
+  const [showToasts, setShowToasts] = useState(false); // Control toast display
   const navigate = useNavigate();
 
-  useEffect(() => {
-    const fetchMyCourses = async () => {
-      try {
-        setLoading(true);
-        setError(false);
-        
-        // For testing purposes, we'll try the real API call first
-        try {
-          const { data } = await getMyCourses();
-          
-          if (Array.isArray(data) && data.length > 0) {
-            console.log("Fetched real courses:", data);
-            setCourses(data);
-          } else {
-            // If data is empty or not an array, use mock data
-            throw new Error("No courses found or invalid data format");
-          }
-        } catch (apiError) {
-          console.error("API call failed, using mock data instead:", apiError);
-          
-          // Mock data for demonstration
-          const mockCourses = [
-            {
-              _id: "mockid1",
-              name: "Introduction to Web Development",
-              creditPoints: 3,
-              deadline: new Date(Date.now() + 30 * 24 * 60 * 60 * 1000), // 30 days from now
-              assignments: [{}, {}, {}], // 3 mock assignments
-              teacherId: { username: "Dr. Smith" }
-            },
-            {
-              _id: "mockid2",
-              name: "Database Design",
-              creditPoints: 4,
-              deadline: new Date(Date.now() + 14 * 24 * 60 * 60 * 1000), // 14 days from now
-              assignments: [{}, {}], // 2 mock assignments
-              teacherId: { username: "Prof. Johnson" }
-            },
-            {
-              _id: "mockid3",
-              name: "Advanced JavaScript",
-              creditPoints: 5,
-              deadline: new Date(Date.now() + 21 * 24 * 60 * 60 * 1000), // 21 days from now
-              assignments: [{}, {}, {}, {}], // 4 mock assignments
-              teacherId: { username: "Mrs. Williams" }
-            }
-          ];
-          
-          setCourses(mockCourses);
-          console.log("Using mock data:", mockCourses);
-        }
-      } catch (error) {
-        console.error("Error in fetchMyCourses:", error);
-        setError(true);
-        toast.error("Failed to load your courses.");
-      } finally {
-        setLoading(false);
-      }
-    };
-
-    fetchMyCourses();
-  }, []);
-
-  const handleCourseSelection = async (courseId) => {
-    if (!courseId) {
-      setSelectedCourse(null);
-      setCourseDetails(null);
-      return;
-    }
+  const fetchCourses = useCallback(async () => {
+    setLoading(true);
+    setError(null);
     
     try {
-      setLoading(true);
-      const course = courses.find((c) => c._id === courseId);
-      setSelectedCourse(course);
+      console.log(`Attempt ${retryCount + 1}: Fetching enrolled courses...`);
+      const { data } = await getMyCourses();
       
-      // Try to fetch additional course details from API
-      try {
-        const { data } = await getCourseDetails(courseId);
-        setCourseDetails(data);
-      } catch (apiError) {
-        console.error("Error fetching course details, using mock details:", apiError);
+      if (Array.isArray(data) && data.length > 0) {
+        console.log("Enrolled courses fetched successfully:", data);
+        setCourses(data);
+        setFilteredCourses(data);
+        setRetryCount(0);
+      } else if (Array.isArray(data) && data.length === 0) {
+        console.log("No enrolled courses found");
+        setCourses([]);
+        setFilteredCourses([]);
+        setRetryCount(0);
+      } else {
+        console.error("Invalid data format received:", data);
+        setError("Received invalid data format. Please try again.");
         
-        // Mock course details if API fails
-        const mockDetails = {
-          ...course,
-          description: "This is a comprehensive course covering all essential topics. Students will learn through practical exercises and theory.",
-          fileUrl: "#", // Mock file URL
-          assignments: [
-            { 
-              fileName: "Assignment 1: Introduction", 
-              dueDate: new Date(Date.now() + 7 * 24 * 60 * 60 * 1000),
-              fileUrl: "#"
-            },
-            { 
-              fileName: "Assignment 2: Core Concepts", 
-              dueDate: new Date(Date.now() + 14 * 24 * 60 * 60 * 1000),
-              fileUrl: "#"
-            },
-            { 
-              fileName: "Final Project", 
-              dueDate: new Date(Date.now() + 30 * 24 * 60 * 60 * 1000),
-              fileUrl: "#"
-            }
-          ]
-        };
+        // Only show toast if enabled (not on initial load)
+        if (showToasts) {
+          toast.error("Received invalid data format. Please try again.");
+        }
         
-        setCourseDetails(mockDetails);
+        if (retryCount < 2) {
+          setRetryCount(prev => prev + 1);
+        }
       }
     } catch (error) {
-      console.error("Error selecting course:", error);
-      toast.error("Failed to load course details.");
+      console.error("Failed to load enrolled courses:", error);
+      setError("Failed to load your courses. Please try again.");
+      
+      // Only show toast if enabled (not on initial load)
+      if (showToasts) {
+        toast.error("Failed to load your courses. Please try again.");
+      }
+      
+      if (retryCount < 2) {
+        setRetryCount(prev => prev + 1);
+      }
     } finally {
       setLoading(false);
+      
+      // Once first load is complete, enable toasts for subsequent operations
+      if (!showToasts) {
+        setShowToasts(true);
+      }
+    }
+  }, [retryCount, showToasts]);
+
+  useEffect(() => {
+    fetchCourses();
+  }, [fetchCourses]);
+
+  // Only attempt auto-retry once, and only if there's an error
+  useEffect(() => {
+    if (error && retryCount > 0 && retryCount <= 1) {
+      const timeout = setTimeout(() => {
+        console.log(`Auto-retry ${retryCount} for enrolled courses...`);
+        fetchCourses();
+      }, 2000);
+      
+      return () => clearTimeout(timeout);
+    }
+  }, [retryCount, fetchCourses, error]);
+
+  const handleSearchChange = (e) => {
+    const term = e.target.value.toLowerCase();
+    setSearchTerm(term);
+    
+    if (term === "") {
+      setFilteredCourses(courses);
+    } else {
+      const filtered = courses.filter(course => 
+        course.name.toLowerCase().includes(term) || 
+        (course.teacherName && course.teacherName.toLowerCase().includes(term))
+      );
+      setFilteredCourses(filtered);
     }
   };
 
-  // Calculate progress for a course
-  const calculateProgress = (course) => {
-    if (!course) return 0;
-    
-    // In real implementation, this would be based on completed assignments, grades, etc.
-    // For mock data, generate a random but consistent progress based on course ID
-    const hash = course._id.split('').reduce((acc, char) => acc + char.charCodeAt(0), 0);
-    return Math.min(100, Math.max(0, (hash % 100)));
+  const navigateToCourseDetails = (courseId) => {
+    navigate(`/course/${courseId}`);
   };
 
-  const handleRetry = () => {
-    window.location.reload();
+  const getTimeRemaining = (deadline) => {
+    const now = new Date();
+    const deadlineDate = new Date(deadline);
+    const timeRemaining = deadlineDate - now;
+    
+    if (timeRemaining < 0) {
+      return { expired: true, text: "Expired" };
+    }
+    
+    const days = Math.floor(timeRemaining / (1000 * 60 * 60 * 24));
+    const hours = Math.floor((timeRemaining % (1000 * 60 * 60 * 24)) / (1000 * 60 * 60));
+    
+    if (days > 0) {
+      return { expired: false, text: `${days} days ${hours} hours remaining` };
+    } else {
+      return { expired: false, text: `${hours} hours remaining` };
+    }
+  };
+
+  const countSubmittedAssignments = (course) => {
+    if (!course.assignments) return 0;
+    
+    const userId = localStorage.getItem("userId");
+    return course.assignments.filter(assignment => 
+      assignment.studentId && assignment.studentId === userId
+    ).length;
   };
 
   return (
     <>
       <NavBar />
-      <div className="my-courses-container">
+      <div className="courses-container">
         <Sidebar role="Student" />
         <main className="main-content">
           <div className="courses-header">
             <div>
-              <h1 className="page-title">My Courses</h1>
-              <p className="page-description">Track your enrolled courses and academic progress</p>
+              <h1 className="page-title">My Enrolled Courses</h1>
+              <p className="page-description">Manage your course progress and assignments</p>
             </div>
-            <button
-              className="back-button"
-              onClick={() => navigate("/student-dashboard")}
-            >
-              ← Back to Dashboard
-            </button>
+            <div className="header-actions">
+              <button
+                className="refresh-btn"
+                onClick={fetchCourses}
+                disabled={loading}
+              >
+                <RefreshCw size={16} className={loading ? "spinning" : ""} />
+                {loading ? "Refreshing..." : "Refresh Courses"}
+              </button>
+              <button
+                className="back-button"
+                onClick={() => navigate("/student-dashboard")}
+              >
+                <ArrowLeft size={16} />
+                Back to Dashboard
+              </button>
+            </div>
+          </div>
+
+          {error && (
+            <div className="error-banner">
+              <AlertTriangle size={20} />
+              <p>{error}</p>
+              <button onClick={fetchCourses}>Try Again</button>
+            </div>
+          )}
+
+          <div className="search-container">
+            <div className="search-box">
+              <Search className="search-icon" size={18} />
+              <input
+                type="text"
+                placeholder="Search courses by name or teacher..."
+                value={searchTerm}
+                onChange={handleSearchChange}
+                className="search-input"
+              />
+            </div>
           </div>
 
           {loading ? (
@@ -170,171 +190,81 @@ const MyCourses = () => {
               <div className="spinner"></div>
               <p>Loading your courses...</p>
             </div>
-          ) : error ? (
-            <div className="error-container">
-              <FaExclamationCircle size={48} className="error-icon" />
-              <h3>Error Loading Courses</h3>
-              <p>There was a problem loading your courses. Please try again.</p>
-              <button 
-                className="retry-btn"
-                onClick={handleRetry}
-              >
-                Retry
-              </button>
-            </div>
-          ) : courses.length === 0 ? (
+          ) : filteredCourses.length === 0 ? (
             <div className="no-courses">
-              <FaExclamationCircle size={48} className="no-courses-icon" />
-              <h3>No Enrolled Courses</h3>
+              <Info size={48} className="no-courses-icon" />
+              <h3>No Enrolled Courses Found</h3>
               <p>You haven't enrolled in any courses yet. Browse available courses to get started.</p>
               <button 
-                className="browse-courses-btn"
+                className="browse-courses-btn" 
                 onClick={() => navigate("/student/courses")}
               >
                 Browse Available Courses
               </button>
             </div>
           ) : (
-            <div className="enrolled-courses-container">
-              <div className="courses-grid">
-                {courses.map((course) => (
-                  <div 
-                    key={course._id} 
-                    className={`course-card ${selectedCourse?._id === course._id ? 'selected' : ''}`}
-                    onClick={() => handleCourseSelection(course._id)}
-                  >
+            <div className="courses-grid">
+              {filteredCourses.map((course) => {
+                const timeRemaining = getTimeRemaining(course.deadline);
+                const submittedAssignments = countSubmittedAssignments(course);
+                
+                return (
+                  <div key={course._id} className="course-card">
                     <div className="course-header">
-                      <h3 className="course-title">{course.name}</h3>
-                      <div className="course-credits">
-                        <FaGraduationCap />
-                        <span>{course.creditPoints} Credits</span>
-                      </div>
+                      <FileText className="course-icon" size={20} />
+                      <span className={`course-status ${timeRemaining.expired ? 'missed' : 'upcoming'}`}>
+                        {timeRemaining.expired ? 'Expired' : 'Active'}
+                      </span>
                     </div>
                     
-                    <div className="progress-container">
-                      <div className="progress-info">
-                        <span>Progress</span>
-                        <span>{calculateProgress(course)}%</span>
-                      </div>
-                      <div className="progress-bar">
-                        <div 
-                          className="progress-fill" 
-                          style={{ width: `${calculateProgress(course)}%` }}
-                        ></div>
-                      </div>
-                    </div>
+                    <h3 className="course-title">{course.name}</h3>
                     
                     <div className="course-info">
-                      <div className="info-item">
-                        <FaCalendarAlt className="info-icon" />
-                        <span>Deadline: {new Date(course.deadline).toLocaleDateString()}</span>
+                      <div className="info-row">
+                        <span className="info-label">Instructor:</span>
+                        <span className="info-value">{course.teacherName || "Not assigned"}</span>
                       </div>
                       
-                      <div className="info-item">
-                        <FaClipboardList className="info-icon" />
-                        <span>Assignments: {course.assignments?.length || 0}</span>
+                      <div className="info-row">
+                        <span className="info-label">Credits:</span>
+                        <span className="info-value">{course.creditPoints}</span>
+                      </div>
+                      
+                      <div className="info-row">
+                        <span className="info-label">Assignments:</span>
+                        <span className="info-value">
+                          {submittedAssignments} submitted / {course.assignments?.length || 0} total
+                        </span>
+                      </div>
+                      
+                      <div className="info-row deadline-row">
+                        <span className="info-label">Deadline:</span>
+                        <span className={`info-value ${timeRemaining.expired ? 'missed' : 'upcoming'}`}>
+                          {new Date(course.deadline).toLocaleDateString()}
+                        </span>
                       </div>
                     </div>
                     
-                    <button className="view-details-btn">
+                    <div className="course-metrics">
+                      <div className="metric">
+                        <Calendar size={16} />
+                        <span>{new Date(course.deadline).toLocaleDateString()}</span>
+                      </div>
+                      <div className="metric">
+                        <Clock size={16} />
+                        <span>{timeRemaining.text}</span>
+                      </div>
+                    </div>
+                    
+                    <button 
+                      className="view-course-btn"
+                      onClick={() => navigateToCourseDetails(course._id)}
+                    >
                       View Course Details
                     </button>
                   </div>
-                ))}
-              </div>
-
-              {selectedCourse && (
-                <div className="course-details-section">
-                  <h2 className="section-title">{selectedCourse.name} - Details</h2>
-                  
-                  {courseDetails ? (
-                    <div className="details-content">
-                      <div className="details-header">
-                        <div className="header-item">
-                          <span className="item-label">Credits</span>
-                          <span className="item-value">{selectedCourse.creditPoints}</span>
-                        </div>
-                        <div className="header-item">
-                          <span className="item-label">Instructor</span>
-                          <span className="item-value">
-                            {courseDetails.teacherId?.username || "Unknown Teacher"}
-                          </span>
-                        </div>
-                        <div className="header-item">
-                          <span className="item-label">Deadline</span>
-                          <span className="item-value">
-                            {new Date(selectedCourse.deadline).toLocaleDateString()}
-                          </span>
-                        </div>
-                      </div>
-                      
-                      <div className="details-description">
-                        <h3>Course Description</h3>
-                        <p>{selectedCourse.instructions || "No description provided"}</p>
-                      </div>
-                      
-                      <div className="materials-section">
-                        <h3>Course Materials</h3>
-                        {courseDetails.fileUrl ? (
-                          <div className="material-item">
-                            <div className="material-info">
-                              <FaBook className="material-icon" />
-                              <span>Course Material</span>
-                            </div>
-                            <button 
-                              className="download-btn"
-                              onClick={() => downloadAssignment(courseDetails.fileUrl)}
-                            >
-                              <FaDownload /> Download
-                            </button>
-                          </div>
-                        ) : (
-                          <p className="no-materials">No course materials available yet</p>
-                        )}
-                      </div>
-                      
-                      <div className="assignments-section">
-                        <h3>Assignments</h3>
-                        {courseDetails.assignments && courseDetails.assignments.length > 0 ? (
-                          <div className="assignments-list">
-                            {courseDetails.assignments.map((assignment, index) => (
-                              <div className="assignment-item" key={index}>
-                                <div className="assignment-info">
-                                  <FaClipboardList className="assignment-icon" />
-                                  <div>
-                                    <span className="assignment-name">{assignment.fileName || `Assignment ${index + 1}`}</span>
-                                    <span className="assignment-date">
-                                      Due: {new Date(assignment.dueDate || courseDetails.deadline).toLocaleDateString()}
-                                    </span>
-                                  </div>
-                                </div>
-                                <div className="assignment-actions">
-                                  <button 
-                                    className="download-btn sm"
-                                    onClick={() => downloadAssignment(assignment.fileUrl)}
-                                  >
-                                    <FaDownload /> Download
-                                  </button>
-                                  <button className="submit-btn sm">
-                                    Submit Work
-                                  </button>
-                                </div>
-                              </div>
-                            ))}
-                          </div>
-                        ) : (
-                          <p className="no-assignments">No assignments available yet</p>
-                        )}
-                      </div>
-                    </div>
-                  ) : (
-                    <div className="loading-details">
-                      <div className="spinner small"></div>
-                      <p>Loading course details...</p>
-                    </div>
-                  )}
-                </div>
-              )}
+                );
+              })}
             </div>
           )}
         </main>

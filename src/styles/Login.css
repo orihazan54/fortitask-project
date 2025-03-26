@@ -46,7 +46,7 @@
 
 .password-field input {
   width: 100%;
-  padding-right: 40px; /* מספיק מקום לאייקון */
+  padding-right: 40px;
 }
 
 .password-toggle {
@@ -105,4 +105,40 @@
     opacity: 1;
     transform: translateY(0);
   }
+}
+
+.two-factor-section {
+  margin: 15px 0;
+  padding: 15px;
+  background-color: #f8f9fa;
+  border-radius: 5px;
+  border-left: 3px solid #007bff;
+}
+
+.two-factor-section h3 {
+  margin-top: 0;
+  font-size: 1.1rem;
+  color: #333;
+}
+
+.two-factor-section p {
+  font-size: 0.9rem;
+  margin-bottom: 10px;
+  color: #666;
+}
+
+.two-factor-input {
+  letter-spacing: 3px;
+  font-size: 1.2rem;
+  text-align: center;
+  font-weight: bold;
+}
+
+.btn-secondary {
+  background-color: #6c757d;
+  margin-top: 10px;
+}
+
+.btn-secondary:hover {
+  background-color: #5a6268;
 }
