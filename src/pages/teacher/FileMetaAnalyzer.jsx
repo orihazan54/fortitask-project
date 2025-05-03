@@ -7,6 +7,7 @@ import {
   CheckCircle,
   Info,
   ServerCrash,
+  Shield,
 } from "lucide-react";
 
 /**
@@ -18,6 +19,11 @@ function FileMetaAnalyzer({ file, fileMeta, deadline, onCheatingDetected }) {
   // Move all useMemo hooks to the top level - they will return undefined values if dependencies are missing
   const lastModified = useMemo(() => 
     fileMeta ? new Date(fileMeta.lastModifiedUTC || fileMeta.lastModified) : null, 
+    [fileMeta]
+  );
+  
+  const clientReportedDate = useMemo(() => 
+    fileMeta && fileMeta.clientReportedDate ? new Date(fileMeta.clientReportedDate) : null, 
     [fileMeta]
   );
   
@@ -53,21 +59,34 @@ function FileMetaAnalyzer({ file, fileMeta, deadline, onCheatingDetected }) {
     [nowUTC, deadlineDate]
   );
 
+  // Detecting difference between client reported date and actual date
+  const clientServerTimeDiff = useMemo(() => {
+    if (!clientReportedDate || !lastModified) return 0;
+    return Math.abs(clientReportedDate - lastModified);
+  }, [clientReportedDate, lastModified]);
+
+  const hasDateDiscrepancy = useMemo(() => 
+    clientServerTimeDiff > 60000, // More than 1 minute difference is suspicious
+    [clientServerTimeDiff]
+  );
+
   // Always call useEffect at the top level
   useEffect(() => {
-    if ((isModifiedAfterDeadline || isPossibleTimeManipulation) && file && typeof onCheatingDetected === "function") {
+    if ((isModifiedAfterDeadline || isPossibleTimeManipulation || hasDateDiscrepancy) && file && typeof onCheatingDetected === "function") {
       onCheatingDetected({
         fileName: file.name,
         lastModified: lastModified?.toUTCString(),
+        clientReportedDate: clientReportedDate?.toUTCString(),
         deadline: deadlineDate?.toUTCString(),
         suspectedTimeManipulation: isPossibleTimeManipulation,
+        hasDateDiscrepancy,
         timeDifference
       });
     }
-  }, [isModifiedAfterDeadline, isPossibleTimeManipulation, file, lastModified, deadlineDate, onCheatingDetected, timeDifference]);
+  }, [isModifiedAfterDeadline, isPossibleTimeManipulation, hasDateDiscrepancy, file, lastModified, clientReportedDate, deadlineDate, onCheatingDetected, timeDifference, clientServerTimeDiff]);
 
   // Status color based on conditions
-  const statusColor = isModifiedAfterDeadline || isPossibleTimeManipulation
+  const statusColor = isModifiedAfterDeadline || isPossibleTimeManipulation || hasDateDiscrepancy
     ? "#ea384c" // אדום - רמאות או בעיה
     : isLateSubmission
     ? "#f59e0b" // כתום - איחור
@@ -127,7 +146,26 @@ function FileMetaAnalyzer({ file, fileMeta, deadline, onCheatingDetected }) {
 
         <div style={{ color: "#7E69AB", textAlign: "right" }}>
           <Clock size={16} style={{ verticalAlign: "middle" }} />
-          <span style={{ marginLeft: 5 }}>Last Modified (UTC)</span>
+          <span style={{ marginLeft: 5 }}>Client Reported Last Modified</span>
+        </div>
+        <div>
+          <span style={{ 
+            color: hasDateDiscrepancy ? "#ea384c" : "#1A1F2C", 
+            fontWeight: hasDateDiscrepancy ? 700 : 600 
+          }}>
+            {clientReportedDate ? clientReportedDate.toUTCString() : "Not available"}
+            {hasDateDiscrepancy && (
+              <span style={{ marginLeft: 10, color: "#ea384c", fontWeight: 700 }}>
+                <AlertTriangle size={18} style={{ verticalAlign: "middle" }} /> 
+                Client date suspicious!
+              </span>
+            )}
+          </span>
+        </div>
+
+        <div style={{ color: "#7E69AB", textAlign: "right" }}>
+          <Shield size={16} style={{ verticalAlign: "middle" }} />
+          <span style={{ marginLeft: 5 }}>Server Verified Last Modified (UTC)</span>
         </div>
         <div>
           <span style={{ color: isModifiedAfterDeadline ? "#ea384c" : "#1A1F2C", fontWeight: 600 }}>
@@ -163,17 +201,28 @@ function FileMetaAnalyzer({ file, fileMeta, deadline, onCheatingDetected }) {
           </>
         )}
 
+        {hasDateDiscrepancy && (
+          <>
+            <div style={{ color: "#ea384c", textAlign: "right", gridColumn: "1/-1", background: "#FFE8E8", padding: "8px 12px", borderRadius: "6px" }}>
+              <AlertTriangle size={18} style={{ verticalAlign: "middle" }} />
+              <span style={{ marginRight: 5, fontWeight: "bold" }}>
+                זמן שונה מדווח על ידי המשתמש! הפרש של {Math.round(clientServerTimeDiff / 1000 / 60)} דקות בין הזמן המדווח לזמן האמיתי
+              </span>
+            </div>
+          </>
+        )}
+
         <div style={{ color: "#7E69AB", textAlign: "right" }}>
           <Info size={16} style={{ verticalAlign: "middle" }} />
           <span style={{ marginLeft: 5 }}>Submission Status</span>
         </div>
         <div>
-          {!isLateSubmission && !isModifiedAfterDeadline && !isPossibleTimeManipulation && (
+          {!isLateSubmission && !isModifiedAfterDeadline && !isPossibleTimeManipulation && !hasDateDiscrepancy && (
             <span style={{ color: "#10b981", fontWeight: 600 }}>
               <CheckCircle size={18} style={{ verticalAlign: "middle" }} /> On time, not modified after deadline
             </span>
           )}
-          {isLateSubmission && !isModifiedAfterDeadline && !isPossibleTimeManipulation && (
+          {isLateSubmission && !isModifiedAfterDeadline && !isPossibleTimeManipulation && !hasDateDiscrepancy && (
             <span style={{ color: "#f59e0b", fontWeight: 600 }}>
               <AlertTriangle size={18} style={{ verticalAlign: "middle" }} /> 
               Submitted after deadline (but file was not modified after deadline)
@@ -189,6 +238,12 @@ function FileMetaAnalyzer({ file, fileMeta, deadline, onCheatingDetected }) {
             <span style={{ color: "#ea384c", fontWeight: 700, display: "block", marginTop: "5px" }}>
               <AlertTriangle size={20} style={{ verticalAlign: "middle" }} /> 
               Suspected time manipulation detected!
+            </span>
+          )}
+          {hasDateDiscrepancy && !isPossibleTimeManipulation && !isModifiedAfterDeadline && (
+            <span style={{ color: "#ea384c", fontWeight: 700, display: "block", marginTop: "5px" }}>
+              <AlertTriangle size={20} style={{ verticalAlign: "middle" }} /> 
+              Client reported date differs from server verified date!
             </span>
           )}
         </div>

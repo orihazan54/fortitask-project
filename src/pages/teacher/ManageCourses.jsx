@@ -304,7 +304,7 @@ const ManageCourses = () => {
   }, []);
 
   return (
-    <>
+    <div className="bg-gradient">
       <NavBar />
       <div className="manage-courses-container">
         <div className="header-section">
@@ -315,7 +315,7 @@ const ManageCourses = () => {
             onClick={() => (window.location.href = "/teacher-dashboard")}
           >
             <ArrowLeft size={16} />
-            Back to Dashboard
+            Back
           </Button>
         </div>
 
@@ -490,12 +490,12 @@ const ManageCourses = () => {
                               <div className="submission-status">
                                 {submission.isLateSubmission ? (
                                   <span className="late-status">
-                                    <AlertTriangle size={16} color="orange" />
+                                    <AlertTriangle size={16} />
                                     Late Submission
                                   </span>
                                 ) : (
                                   <span className="on-time-status">
-                                    <CheckCircle size={16} color="green" />
+                                    <CheckCircle size={16} />
                                     On Time
                                   </span>
                                 )}
@@ -521,7 +521,7 @@ const ManageCourses = () => {
                                 
                                 {submission.isModifiedAfterDeadline && (
                                   <span className="warning-text">
-                                    <AlertTriangle size={14} color="orange" />
+                                    <AlertTriangle size={14} />
                                     Modified after deadline: {formatDate(submission.lastModified)}
                                   </span>
                                 )}
@@ -570,7 +570,7 @@ const ManageCourses = () => {
                               </button>
                               <button
                                 className="action-btn"
-                                style={{ color: "#14b8a6" }}
+                                style={{ color: "#4ade80" }}
                                 onClick={() => exportMetaReport(submission)}
                                 title="Download Metadata Report"
                               >
@@ -673,7 +673,7 @@ const ManageCourses = () => {
           )}
         </div>
       </div>
-    </>
+    </div>
   );
 };
 

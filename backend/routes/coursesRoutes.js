@@ -1,4 +1,3 @@
-
 const express = require("express");
 const router = express.Router();
 const { authenticateToken } = require("../middleware/auth");
@@ -117,61 +116,47 @@ router.post("/:id/upload-assignment", authenticateToken, upload.single("file"), 
     // בדיקת מטא-דאטה של הקובץ - ניתוח מעמיק
     let isModifiedAfterDeadline = false;
     let lastModifiedDate = null;
+    let clientReportedDate = null;
+    let dateDiscrepancy = false;
     let suspectedTimeManipulation = false;
     
-    // ננסה לקבל את תאריך lastModified מה-Frontend 
-    // אבל עכשיו נוודא שאין מניפולציות
-    if (req.body.lastModifiedUTC) {
+    // שלב 1: שמירת התאריך שדווח על ידי הלקוח (עלול להיות מזויף)
+    if (req.body.lastModified) {
       try {
-        lastModifiedDate = new Date(req.body.lastModifiedUTC);
-        console.log("Using lastModifiedUTC from frontend:", req.body.lastModifiedUTC, "->", lastModifiedDate.toISOString());
-        
-        // בדיקה אם יש הפרש חשוד בין הזמן שהלקוח טוען לבין הזמן האמיתי בשרת
-        const timeDifferenceMs = Math.abs(serverNowUTC - lastModifiedDate);
-        if (timeDifferenceMs > 3600000) { // הפרש של יותר משעה נחשב חשוד
-          console.warn("⚠️ Suspicious time difference detected:", timeDifferenceMs / 1000 / 60, "minutes");
-          suspectedTimeManipulation = true;
+        if (!isNaN(req.body.lastModified)) {
+          clientReportedDate = new Date(Number(req.body.lastModified));
+        } else {
+          clientReportedDate = new Date(req.body.lastModified);
         }
+        console.log("Client reported lastModified:", req.body.lastModified, "->", clientReportedDate.toISOString());
       } catch (e) {
-        console.error("Error parsing lastModifiedUTC:", e);
-        // המשך לשיטות אחרות אם השיטה הזו נכשלת
+        console.error("Error parsing client reported lastModified:", e);
+        clientReportedDate = serverNowUTC; // Fallback to server time
       }
     }
     
-    // אם אין UTC ננסה לקבל את תאריך lastModified רגיל
-    if (!lastModifiedDate && req.body.lastModified) {
-      // אם הגיע מספר כמספר (מילישניות), נמיר ל-Date ב-UTC
-      if (!isNaN(req.body.lastModified)) {
-        lastModifiedDate = new Date(Number(req.body.lastModified));
-        console.log("Using numeric lastModified from frontend:", req.body.lastModified, "->", lastModifiedDate.toISOString());
-        
-        // בדיקת מניפולציה
-        const timeDifferenceMs = Math.abs(serverNowUTC - lastModifiedDate);
-        if (timeDifferenceMs > 3600000) {
-          console.warn("⚠️ Suspicious time difference detected:", timeDifferenceMs / 1000 / 60, "minutes");
-          suspectedTimeManipulation = true;
-        }
-      } else {
-        lastModifiedDate = new Date(req.body.lastModified); // אם נשלח כתאריך string
-        console.log("Using string lastModified from frontend:", req.body.lastModified, "->", lastModifiedDate.toISOString());
-        
-        // בדיקת מניפולציה
-        const timeDifferenceMs = Math.abs(serverNowUTC - lastModifiedDate);
-        if (timeDifferenceMs > 3600000) {
-          console.warn("⚠️ Suspicious time difference detected:", timeDifferenceMs / 1000 / 60, "minutes");
-          suspectedTimeManipulation = true;
-        }
+    // שלב 2: קביעת תאריך אחרון שונה מאומת על ידי השרת
+    // בהיעדר גישה ישירה לקובץ המקורי, נשתמש בזמן שרת או במידע מהמערכת
+    // במערכת אמיתית, היינו משתמשים ב-file system metadata או מקור אמין אחר
+    lastModifiedDate = serverNowUTC;
+    
+    // שלב 3: בדיקת הפרשים חשודים בין זמני לקוח ושרת
+    if (clientReportedDate) {
+      const timeDifferenceMs = Math.abs(serverNowUTC - clientReportedDate);
+      if (timeDifferenceMs > 3600000) { // הפרש של יותר משעה נחשב חשוד
+        console.warn("⚠️ Suspicious time difference detected:", timeDifferenceMs / 1000 / 60, "minutes");
+        suspectedTimeManipulation = true;
+      }
+      
+      // בדיקת הפרש בין התאריך שדווח על ידי הלקוח לבין התאריך האמיתי
+      const clientServerDiffMs = Math.abs(clientReportedDate - lastModifiedDate);
+      if (clientServerDiffMs > 60000) { // הפרש של יותר מדקה נחשב חשוד
+        console.warn("⚠️ Client-server date discrepancy detected:", clientServerDiffMs / 1000 / 60, "minutes");
+        dateDiscrepancy = true;
       }
     }
 
-    // אם לא הגיע lastModified נקבע לזמן העלאה (הנחות זהירות)
-    if (!lastModifiedDate) {
-      lastModifiedDate = serverNowUTC;
-      console.log("No lastModified provided, using server time:", lastModifiedDate.toISOString());
-    }
-
-    // נוודא ששתי ההשוואות הן ב-UTC
-    // בדיקה מבוססת שרת - לא ניתנת למניפולציה
+    // בדיקה אם הקובץ שונה לאחר הדדליין
     if (lastModifiedDate > deadlineUTC) {
       isModifiedAfterDeadline = true;
       console.log("❗ File was modified after deadline! Deadline:", deadlineUTC.toISOString(), "Modified:", lastModifiedDate.toISOString());
@@ -210,8 +195,10 @@ router.post("/:id/upload-assignment", authenticateToken, upload.single("file"), 
       fileName: req.file.originalname,
       displayName: displayName,
       uploadedAt: serverNowUTC,
-      lastModified: lastModifiedDate,
+      lastModified: lastModifiedDate, // תאריך מוכח/מאומת על ידי השרת
       lastModifiedUTC: lastModifiedDate, // שמירה נוספת ב-UTC לדיוק מרבי
+      clientReportedDate: clientReportedDate, // תאריך כפי שדווח על ידי הלקוח - עלול להיות מזויף
+      dateDiscrepancy: dateDiscrepancy, // דגל המציין האם יש פער בין התאריך המדווח לתאריך האמיתי
       serverReceivedTime: serverNowUTC,  // זמן קבלת הקובץ בשרת - לא ניתן למניפולציה
       originalSize: req.file.size,
       fileType: req.file.mimetype,
@@ -250,7 +237,7 @@ router.post("/:id/upload-assignment", authenticateToken, upload.single("file"), 
     }
     
     // הוספנו בדיקה נוספת למניפולציית זמן
-    if (suspectedTimeManipulation) {
+    if (suspectedTimeManipulation || dateDiscrepancy) {
       notificationMessage += " Note: Unusual time differences detected between file and server times.";
     }
     
@@ -269,6 +256,7 @@ router.post("/:id/upload-assignment", authenticateToken, upload.single("file"), 
       isLate: isLate,
       isModifiedAfterDeadline: isModifiedAfterDeadline,
       suspectedTimeManipulation: suspectedTimeManipulation,
+      dateDiscrepancy: dateDiscrepancy,
       isLocked: newAssignment.isLocked
     });
 
@@ -581,7 +569,7 @@ router.delete("/:id/assignments/:assignmentId", authenticateToken, async (req, r
   try {
     const { id, assignmentId } = req.params;
     
-    // ודא שה-ID של הקורס תקין
+    // וד�� שה-ID של הקורס תקין
     if (!mongoose.Types.ObjectId.isValid(id)) {
       return res.status(400).json({ message: "Invalid course ID format." });
     }

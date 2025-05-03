@@ -1,17 +1,20 @@
 
 import React from 'react';
-import { FileText, Download, Trash2, Clock, AlertTriangle, Check, Info } from 'lucide-react';
+import { FileText, Download, Trash2, Clock, AlertTriangle, Check, Info, Shield } from 'lucide-react';
 
 const StudentSubmissions = ({ assignments, onDownload, onDelete }) => {
   const getFileIcon = (fileType) => {
-    if (!fileType) return <FileText size={20} />;
-    if (fileType.includes("pdf")) return <FileText size={20} />;
-    if (fileType.includes("image")) return <FileText size={20} />;
-    if (fileType.includes("word") || fileType.includes("doc")) return <FileText size={20} />;
-    return <FileText size={20} />;
+    if (!fileType) return <FileText size={20} className="file-icon" />;
+    if (fileType.includes("pdf")) return <FileText size={20} className="file-icon" />;
+    if (fileType.includes("image")) return <FileText size={20} className="file-icon" />;
+    if (fileType.includes("word") || fileType.includes("doc")) return <FileText size={20} className="file-icon" />;
+    return <FileText size={20} className="file-icon" />;
   };
 
   const getStatusIcon = (assignment) => {
+    if (assignment.dateDiscrepancy || assignment.suspectedTimeManipulation) {
+      return <AlertTriangle size={18} className="status-icon suspicious" title="Suspicious date detected" />;
+    }
     if (assignment.isLateSubmission) {
       return <AlertTriangle size={18} className="status-icon late" title="Submitted late" />;
     }
@@ -49,11 +52,28 @@ const StudentSubmissions = ({ assignments, onDownload, onDelete }) => {
                       <Clock size={14} />
                       Submitted: {new Date(assignment.uploadedAt).toLocaleDateString()}
                     </span>
-                    {assignment.lastModified && (
-                      <span className="modified-date">
-                        Last modified: {new Date(assignment.lastModified).toLocaleDateString()}
+                    
+                    {assignment.clientReportedDate && (
+                      <span className="reported-date">
+                        <Clock size={14} />
+                        Client reported: {new Date(assignment.clientReportedDate).toLocaleDateString()}
                       </span>
                     )}
+                    
+                    {assignment.lastModified && (
+                      <span className="modified-date">
+                        <Shield size={14} />
+                        Server verified: {new Date(assignment.lastModified).toLocaleDateString()}
+                      </span>
+                    )}
+                    
+                    {assignment.dateDiscrepancy && (
+                      <span className="date-discrepancy">
+                        <AlertTriangle size={14} style={{color: '#ea384c'}} />
+                        Date discrepancy detected
+                      </span>
+                    )}
+                    
                     {assignment.submissionComment && (
                       <span className="submission-comment">
                         Comment: {assignment.submissionComment}

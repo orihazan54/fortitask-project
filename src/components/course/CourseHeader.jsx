@@ -8,9 +8,12 @@ const CourseHeader = ({ courseName }) => {
 
   return (
     <div className="course-header">
-      <button className="back-btn" onClick={() => navigate("/student/my-courses")}>
+      <button 
+        className="back-btn" 
+        onClick={() => navigate("/student/my-courses")}
+      >
         <ArrowLeft size={16} />
-        Back to My Courses
+        <span>Back to My Courses</span>
       </button>
       <h2 className="course-title">{courseName}</h2>
     </div>

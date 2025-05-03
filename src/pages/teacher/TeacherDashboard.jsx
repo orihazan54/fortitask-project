@@ -5,12 +5,11 @@ import Sidebar from "../../components/Sidebar";
 import { getCourses, getCourseDetails } from "../../services/api";
 import { toast } from "react-toastify";
 import "../../styles/TeacherDashboard.css";
-import { Book, User, Calendar } from "lucide-react";
+import { BookOpen, Users, Calendar, FileText } from "lucide-react";
 
 const TeacherDashboard = () => {
   const [courseId, setCourseId] = useState("");
   const [courses, setCourses] = useState([]);
-  const [assignments, setAssignments] = useState([]);
   const [stats, setStats] = useState({
     totalCourses: 0,
     totalStudents: 0,
@@ -30,6 +29,11 @@ const TeacherDashboard = () => {
           sum + (course.students?.length || 0), 0);
         setStats(prev => ({...prev, totalStudents}));
         
+        // חישוב סך כל המטלות (סכום המטלות בכל הקורסים)
+        const totalAssignments = data.reduce((sum, course) =>
+          sum + (course.assignments?.length || 0), 0);
+        setStats(prev => ({...prev, totalAssignments}));
+        
       } catch (error) {
         toast.error("❌ Failed to load courses.");
         console.error("Error fetching courses:", error);
@@ -38,31 +42,15 @@ const TeacherDashboard = () => {
     fetchCourses();
   }, []);
 
-  // שליפת רשימת המטלות של הקורס שנבחר
-  useEffect(() => {
-    const fetchAssignments = async () => {
-      if (!courseId) return;
-      try {
-        const { data } = await getCourseDetails(courseId);
-        setAssignments(data.assignments || []);
-        setStats(prev => ({...prev, totalAssignments: data.assignments?.length || 0}));
-      } catch (error) {
-        toast.error("❌ Failed to load assignments.");
-        console.error("Error fetching assignments:", error);
-      }
-    };
-    fetchAssignments();
-  }, [courseId]);
-
   // בחירת קורס
-  const handleCourseChange = (e) => setCourseId(e.target.value);
+  const handleCourseClick = (id) => setCourseId(id);
 
   return (
-    <>
+    <div className="flex flex-col h-screen bg-gradient">
       <NavBar />
       <div className="dashboard-container">
         <Sidebar role="Teacher" />
-        <main className="main-content">
+        <main className="main-content animate-fade-in">
           <h2 className="dashboard-title">
             <span className="dashboard-icon">📊</span> Teacher Dashboard
           </h2>
@@ -70,7 +58,7 @@ const TeacherDashboard = () => {
           <div className="stats-container">
             <div className="stat-card">
               <div className="stat-icon">
-                <Book size={24} />
+                <BookOpen size={24} />
               </div>
               <div className="stat-content">
                 <h3>{stats.totalCourses}</h3>
@@ -80,7 +68,7 @@ const TeacherDashboard = () => {
             
             <div className="stat-card">
               <div className="stat-icon">
-                <User size={24} />
+                <Users size={24} />
               </div>
               <div className="stat-content">
                 <h3>{stats.totalStudents}</h3>
@@ -99,65 +87,46 @@ const TeacherDashboard = () => {
             </div>
           </div>
 
-          {/* הצגת רשימת הקורסים */}
+          {/* הצגת רשימת הקורסים כטבלה */}
           <div className="courses-section">
-            <h3 className="section-title">📋 Your Courses</h3>
-            <select 
-              value={courseId} 
-              onChange={handleCourseChange} 
-              className="course-select"
-            >
-              <option value="">-- Choose a Course --</option>
-              {courses.map((course) => (
-                <option key={course._id} value={course._id}>
-                  {course.name}
-                </option>
-              ))}
-            </select>
-          </div>
-
-          {/* הצגת רשימת המטלות של הקורס שנבחר */}
-          {courseId && assignments.length > 0 && (
-            <div className="assignments-section">
-              <h3 className="section-title">📄 Course Assignments</h3>
-              <div className="assignments-table-container">
-                <table className="assignments-table">
-                  <thead>
-                    <tr>
-                      <th>File Name</th>
-                      <th>Actions</th>
-                    </tr>
-                  </thead>
-                  <tbody>
-                    {assignments.map((assignment, index) => (
-                      <tr key={index}>
-                        <td>{assignment.fileName}</td>
-                        <td>
-                          <a 
-                            href={assignment.fileUrl} 
-                            target="_blank" 
-                            rel="noopener noreferrer"
-                            className="download-btn"
-                          >
-                            Download
-                          </a>
-                        </td>
+            <h3 className="section-title">
+              <FileText className="section-icon" size={20} /> Your Courses
+            </h3>
+            
+            <div className="courses-table-container">
+              <table className="courses-table">
+                <thead>
+                  <tr>
+                    <th>Course Name</th>
+                    <th>Enrolled Students</th>
+                  </tr>
+                </thead>
+                <tbody>
+                  {courses.length > 0 ? (
+                    courses.map((course) => (
+                      <tr 
+                        key={course._id}
+                        className={courseId === course._id ? "selected-row" : ""}
+                        onClick={() => handleCourseClick(course._id)}
+                      >
+                        <td>{course.name}</td>
+                        <td>{course.students?.length || 0}</td>
                       </tr>
-                    ))}
-                  </tbody>
-                </table>
-              </div>
+                    ))
+                  ) : (
+                    <tr>
+                      <td colSpan="2" className="no-courses">
+                        <p>No courses available. Create your first course to get started.</p>
+                      </td>
+                    </tr>
+                  )}
+                </tbody>
+              </table>
             </div>
-          )}
-          
-          {courseId && assignments.length === 0 && (
-            <div className="no-assignments">
-              <p>This course doesn't have any assignments yet.</p>
-            </div>
-          )}
+          </div>
         </main>
       </div>
-    </>
+    </div>
   );
 };
 

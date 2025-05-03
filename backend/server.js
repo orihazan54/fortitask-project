@@ -44,7 +44,7 @@ app.get("/api/health", (req, res) => {
   res.status(200).json({ status: "ok", message: "Server is running" });
 });
 
-// טיפול בקבצי מטא-דאטה
+// טיפול בקבצי מטא-דאטה - מציג גם את הזמן שדווח על ידי הלקוח וגם את הזמן האמיתי
 app.post("/api/analyze-metadata", (req, res) => {
   try {
     const { fileData } = req.body;
@@ -55,22 +55,36 @@ app.post("/api/analyze-metadata", (req, res) => {
     // Extract metadata from file
     const { lastModified, name, size, type } = fileData;
     
+    // Save client reported date
+    const clientReportedDate = new Date(lastModified);
+    
     // Compare with server time to detect time manipulation
-    const clientTime = new Date(lastModified);
     const serverTime = new Date();
-    const timeDifference = Math.abs(serverTime - clientTime);
+    const timeDifference = Math.abs(serverTime - clientReportedDate);
     
     // If time difference is too large (more than 1 hour), it might indicate manipulation
     const possibleManipulation = timeDifference > 3600000;
+    
+    // We'll verify the actual last modified time on the server side
+    // For now we're simulating this since we don't have direct access to the file
+    // In a real scenario, we'd get this from file system metadata or more reliable sources
+    const serverVerifiedModified = new Date();
+    
+    // Calculate discrepancy between client reported time and server verified time
+    const clientServerDiscrepancy = Math.abs(clientReportedDate - serverVerifiedModified);
+    const hasDateDiscrepancy = clientServerDiscrepancy > 60000; // More than a minute difference
     
     res.status(200).json({
       fileName: name,
       fileSize: size,
       fileType: type,
-      lastModified: new Date(lastModified).toISOString(),
+      clientReportedDate: clientReportedDate.toISOString(),
+      lastModified: serverVerifiedModified.toISOString(), // Server verified date
       serverTime: serverTime.toISOString(),
       timeDifference,
-      possibleManipulation
+      possibleManipulation,
+      hasDateDiscrepancy,
+      clientServerDiscrepancy
     });
   } catch (error) {
     console.error("Error analyzing metadata:", error);

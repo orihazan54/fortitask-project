@@ -1,9 +1,10 @@
-
 import React, { useState } from "react";
 import { toast } from "react-toastify";
 import { createCourse } from "../../services/api";
 import NavBar from "../../components/NavBar";
-import { Upload } from "lucide-react"; // ייבוא אייקון
+import { Upload, ArrowLeft } from "lucide-react";
+import { Button } from "../../components/ui/button";
+import { Card, CardContent, CardHeader, CardTitle } from "../../components/ui/card";
 import "../../styles/CreateCourse.css";
 
 const CreateCourse = () => {
@@ -43,21 +44,18 @@ const CreateCourse = () => {
     try {
       setUploading(true);
 
-      // הכנת הטופס לשליחה עם הקובץ
       const courseFormData = new FormData();
       courseFormData.append("courseName", formData.courseName);
       courseFormData.append("creditPoints", formData.creditPoints);
       courseFormData.append("instructions", formData.instructions);
       courseFormData.append("deadline", formData.deadline);
 
-      // הוספת הקובץ אם יש
       if (file) {
         courseFormData.append("file", file);
       }
 
-      // שליחת הבקשה לשרת
       const response = await createCourse(courseFormData);
-      console.log("Course Created Successfully:", response); // דיבאג
+      console.log("Course Created Successfully:", response);
 
       toast.success("Course created successfully!");
       setFormData({
@@ -76,95 +74,109 @@ const CreateCourse = () => {
   };
 
   return (
-    <>
+    <div className="bg-gradient">
       <NavBar />
-      <div className="create-course-container">
-        <div className="header-buttons">
-          <button
-            className="back-btn"
+      <div className="dashboard-container">
+        <div className="create-course-container">
+          <Button
+            variant="outline"
             onClick={() => (window.location.href = "/teacher-dashboard")}
+            className="back-btn mb-6"
           >
-            ← Back to Dashboard
-          </button>
+            <ArrowLeft size={16} className="mr-2" />
+            Back
+          </Button>
+
+          <Card className="create-course-card animate-fade-in">
+            <CardHeader>
+              <CardTitle className="text-center text-2xl">Create New Course</CardTitle>
+            </CardHeader>
+            <CardContent>
+              <form onSubmit={handleSubmit} className="create-course-form space-y-4">
+                <div className="form-group">
+                  <label className="text-white/90 font-medium mb-1 block">Course Name</label>
+                  <input
+                    type="text"
+                    name="courseName"
+                    placeholder="Course Name"
+                    value={formData.courseName}
+                    onChange={handleChange}
+                    required
+                    className="form-input"
+                  />
+                </div>
+
+                <div className="form-group">
+                  <label className="text-white/90 font-medium mb-1 block">Credit Points</label>
+                  <input
+                    type="number"
+                    name="creditPoints"
+                    placeholder="Credit Points"
+                    value={formData.creditPoints}
+                    onChange={handleChange}
+                    required
+                    className="form-input"
+                  />
+                </div>
+
+                <div className="form-group">
+                  <label className="text-white/90 font-medium mb-1 block">Instructions</label>
+                  <textarea
+                    name="instructions"
+                    placeholder="Instructions for the course"
+                    value={formData.instructions}
+                    onChange={handleChange}
+                    required
+                    className="form-textarea"
+                  ></textarea>
+                </div>
+
+                <div className="form-group">
+                  <label className="text-white/90 font-medium mb-1 block">Deadline</label>
+                  <input
+                    type="date"
+                    name="deadline"
+                    value={formData.deadline}
+                    onChange={handleChange}
+                    required
+                    className="form-input"
+                  />
+                </div>
+
+                <div className="form-group file-upload-section">
+                  <label>
+                    <div className="file-upload-box">
+                      <Upload size={24} className="file-icon" />
+                      <span>Upload Assignment File (Optional)</span>
+                      <input
+                        type="file"
+                        onChange={handleFileChange}
+                        style={{ display: "none" }}
+                      />
+                    </div>
+                  </label>
+                  {file && (
+                    <div className="selected-file">
+                      <p>Selected file: {file.name}</p>
+                    </div>
+                  )}
+                </div>
+
+                <div className="form-actions">
+                  <Button
+                    type="submit"
+                    className="submit-btn"
+                    disabled={uploading}
+                  >
+                    {uploading ? "Creating..." : "Create Course"}
+                  </Button>
+                </div>
+              </form>
+            </CardContent>
+          </Card>
         </div>
-
-        <form onSubmit={handleSubmit} className="create-course-form">
-          <h2>Create New Course</h2>
-          <div className="form-group">
-            <label>Course Name</label>
-            <input
-              type="text"
-              name="courseName"
-              placeholder="Course Name"
-              value={formData.courseName}
-              onChange={handleChange}
-              required
-            />
-          </div>
-          <div className="form-group">
-            <label>Credit Points</label>
-            <input
-              type="number"
-              name="creditPoints"
-              placeholder="Credit Points"
-              value={formData.creditPoints}
-              onChange={handleChange}
-              required
-            />
-          </div>
-          <div className="form-group">
-            <label>Instructions</label>
-            <textarea
-              name="instructions"
-              placeholder="Instructions for the course"
-              value={formData.instructions}
-              onChange={handleChange}
-              required
-            ></textarea>
-          </div>
-          <div className="form-group">
-            <label>Deadline</label>
-            <input
-              type="date"
-              name="deadline"
-              value={formData.deadline}
-              onChange={handleChange}
-              required
-            />
-          </div>
-
-          {/* הוספת אזור העלאת קובץ */}
-          <div className="form-group file-upload-section">
-            <label>
-              <div className="file-upload-box">
-                <Upload size={24} />
-                <span>Upload Assignment File (Optional)</span>
-                <input 
-                  type="file" 
-                  onChange={handleFileChange} 
-                  style={{ display: "none" }}
-                />
-              </div>
-            </label>
-            {file && (
-              <div className="selected-file">
-                <p>Selected file: {file.name}</p>
-              </div>
-            )}
-          </div>
-
-          <div className="form-actions">
-            <button 
-              type="submit" 
-              className="btn primary-btn"
-              disabled={uploading}
-            >
-              {uploading ? "Creating..." : "Create Course"}
-            </button>
-          </div>
-        </form>
       </div>
-    </>
+    </div>
   );
 };
 

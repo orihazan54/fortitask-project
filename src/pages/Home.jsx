@@ -13,6 +13,7 @@ import {
   Laptop, 
   Brain 
 } from 'lucide-react';
+import logo from "../assets/logo.png";
 
 const Home = () => {
   return (
@@ -21,6 +22,7 @@ const Home = () => {
       <main className="flex-1">
         <header className="hero-section">
           <div className="hero-content animate-fade-in">
+            <div className="hero-shine"></div>
             <h1 className="hero-title">Fortitask</h1>
             <h2 className="hero-subtitle">Educational Task Management Platform</h2>
             <p className="hero-description">
@@ -42,6 +44,10 @@ const Home = () => {
         </header>
 
         <section className="features-section animate-fade-in">
+          <div className="section-header">
+            <h2 className="section-title">Platform Features</h2>
+            <div className="title-underline"></div>
+          </div>
           <div className="info-cards">
             <div className="card glass-effect">
               <ListChecks className="card-icon" />
@@ -68,10 +74,13 @@ const Home = () => {
         </section>
         
         <section className="roles-section">
+          <div className="section-header">
+            <h2 className="section-title">Designed For Everyone</h2>
+            <div className="title-underline"></div>
+          </div>
           <div className="roles-content">
             <div className="role-info animate-fade-in">
-              <h2>Tailored for Education</h2>
-              <p>
+              <p className="roles-description">
                 Experience a platform specifically designed for modern educational needs. 
                 Whether you're teaching or learning, Fortitask adapts to your workflow.
               </p>
@@ -81,7 +90,7 @@ const Home = () => {
                   <div className="role-icon-wrapper">
                     <GraduationCap className="role-icon" />
                   </div>
-                  <div>
+                  <div className="role-content">
                     <h3>Student Experience</h3>
                     <p>Track assignments, manage deadlines, and submit work seamlessly - everything you need for academic excellence.</p>
                   </div>
@@ -91,7 +100,7 @@ const Home = () => {
                   <div className="role-icon-wrapper">
                     <BookOpenText className="role-icon" />
                   </div>
-                  <div>
+                  <div className="role-content">
                     <h3>Teacher Dashboard</h3>
                     <p>Comprehensive tools for course management, student evaluation, and performance tracking in one intuitive interface.</p>
                   </div>
@@ -142,7 +151,7 @@ const Home = () => {
         <div className="footer-content">
           <div className="footer-logo">
             <img 
-              src={require("../assets/logo.png")} 
+              src={logo} 
               alt="Fortitask Logo" 
               className="footer-logo-img"
             />

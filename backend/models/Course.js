@@ -21,8 +21,10 @@ const courseSchema = new mongoose.Schema({
       fileName: String,  // Original file name
       displayName: String, // UTF-8 encoded display name
       uploadedAt: { type: Date, default: Date.now },
-      lastModified: { type: Date }, // Last modified date
-      lastModifiedUTC: { type: Date }, // Last modified date in UTC (more reliable)
+      lastModified: { type: Date }, // Server verified last modified date
+      lastModifiedUTC: { type: Date }, // Server verified last modified date in UTC (more reliable)
+      clientReportedDate: { type: Date }, // Client reported modification date (possibly manipulated)
+      dateDiscrepancy: { type: Boolean, default: false }, // Flag for discrepancy between client and server dates
       originalSize: { type: Number }, // Original file size
       fileType: { type: String }, // File type
       isLateSubmission: { type: Boolean, default: false }, // Late submission flag

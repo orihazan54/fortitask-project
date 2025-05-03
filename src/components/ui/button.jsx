@@ -11,19 +11,19 @@ export const Button = ({
   const getVariantClasses = () => {
     switch (variant) {
       case "default":
-        return "bg-primary text-primary-foreground hover:bg-primary/90";
+        return "bg-gradient-to-br from-indigo-500 to-indigo-700 text-white hover:from-indigo-600 hover:to-indigo-800";
       case "destructive":
-        return "bg-destructive text-destructive-foreground hover:bg-destructive/90";
+        return "bg-gradient-to-br from-red-500 to-red-700 text-white hover:from-red-600 hover:to-red-800";
       case "outline":
-        return "border border-input bg-background hover:bg-accent hover:text-accent-foreground";
+        return "border border-white/20 bg-transparent text-white hover:bg-white/10";
       case "secondary":
-        return "bg-secondary text-secondary-foreground hover:bg-secondary/80";
+        return "bg-white/10 text-white hover:bg-white/20";
       case "ghost":
-        return "hover:bg-accent hover:text-accent-foreground";
+        return "hover:bg-white/10 text-white";
       case "link":
-        return "text-primary underline-offset-4 hover:underline";
+        return "text-indigo-400 underline-offset-4 hover:underline";
       default:
-        return "bg-primary text-primary-foreground hover:bg-primary/90";
+        return "bg-gradient-to-br from-indigo-500 to-indigo-700 text-white hover:from-indigo-600 hover:to-indigo-800";
     }
   };
 
