@@ -1,0 +1,114 @@
+/* כללית */
+.profile-page {
+  min-height: 100vh;
+  background: linear-gradient(to bottom right, #0f172a, #1e1b4b);
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  padding: 40px 20px;
+  color: #fff;
+  font-family: 'Inter', sans-serif;
+}
+
+.profile-card {
+  width: 100%;
+  max-width: 600px;
+  background-color: rgba(30, 41, 59, 0.8);
+  padding: 30px;
+  border-radius: 1rem;
+  box-shadow: 0 20px 50px rgba(0, 0, 0, 0.4);
+  position: relative;
+}
+
+.glass-effect {
+  backdrop-filter: blur(12px);
+  border: 1px solid rgba(255, 255, 255, 0.1);
+}
+
+/* כפתור חזרה */
+.back-link-btn {
+  position: absolute;
+  top: 20px;
+  left: 25px;
+  font-size: 14px;
+  color: #90caf9;
+  background: none;
+  border: none;
+  cursor: pointer;
+  text-decoration: none;
+  transition: color 0.3s ease;
+}
+
+.back-link-btn:hover {
+  color: #ffffff;
+  text-decoration: underline;
+}
+
+.profile-title {
+  font-size: 24px;
+  font-weight: 700;
+  margin-bottom: 25px;
+  text-align: center;
+  color: #ffffff;
+}
+
+.profile-info p {
+  margin: 10px 0;
+  font-size: 16px;
+  color: #d1d5db;
+}
+
+/* שינוי סיסמה */
+.password-update {
+  margin-top: 30px;
+}
+
+.password-update input[type="password"] {
+  width: 100%;
+  padding: 12px;
+  border-radius: 8px;
+  background-color: rgba(255, 255, 255, 0.05);
+  border: 1px solid rgba(255, 255, 255, 0.2);
+  color: white;
+  font-size: 14px;
+  margin-bottom: 10px;
+  transition: border-color 0.3s ease;
+}
+
+.password-update input:focus {
+  outline: none;
+  border-color: #818cf8;
+  box-shadow: 0 0 0 3px rgba(99, 102, 241, 0.3);
+}
+
+.password-strength {
+  font-size: 14px;
+  margin-bottom: 15px;
+}
+
+.password-strength.strong {
+  color: #10b981;
+}
+.password-strength.medium {
+  color: #fbbf24;
+}
+.password-strength.weak {
+  color: #ef4444;
+}
+
+.change-password-btn {
+  width: 100%;
+  padding: 12px;
+  background: linear-gradient(to right, #818cf8, #6366f1);
+  color: white;
+  font-weight: 600;
+  border: none;
+  border-radius: 8px;
+  cursor: pointer;
+  transition: all 0.2s;
+}
+
+.change-password-btn:hover {
+  opacity: 0.9;
+  transform: translateY(-1px);
+}

@@ -1,0 +1,539 @@
+
+/* Main Courses Layout */
+.dashboard-container {
+  display: flex;
+  min-height: 100vh;
+}
+
+.main-content {
+  flex: 1;
+  margin-left: 260px;
+  padding: 2rem;
+  background-color: #f4f7fc;
+}
+
+/* Header Section */
+.courses-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: 2rem;
+}
+
+.page-title {
+  font-size: 2rem;
+  font-weight: 600;
+  color: #1e293b;
+  margin-bottom: 0.5rem;
+}
+
+.page-description {
+  color: #64748b;
+  font-size: 1.1rem;
+}
+
+.header-actions {
+  display: flex;
+  gap: 1rem;
+}
+
+.refresh-btn, .add-course-btn {
+  padding: 0.5rem 1rem;
+  border-radius: 0.5rem;
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  cursor: pointer;
+  font-weight: 500;
+  border: none;
+  transition: all 0.3s ease;
+}
+
+.refresh-btn {
+  background-color: #f1f5f9;
+  color: #1e293b;
+  border: 1px solid #e2e8f0;
+}
+
+.refresh-btn:hover {
+  background-color: #e2e8f0;
+}
+
+.add-course-btn {
+  background-color: #1d4ed8;
+  color: white;
+}
+
+.add-course-btn:hover {
+  background-color: #1e40af;
+}
+
+/* Error Banner */
+.error-banner {
+  background-color: #fef2f2;
+  border: 1px solid #fee2e2;
+  border-left: 4px solid #ef4444;
+  color: #b91c1c;
+  padding: 1rem;
+  border-radius: 0.5rem;
+  margin-bottom: 2rem;
+  display: flex;
+  align-items: center;
+  gap: 1rem;
+}
+
+.error-banner p {
+  flex: 1;
+  margin: 0;
+}
+
+.error-banner button {
+  padding: 0.5rem 1rem;
+  background-color: #ef4444;
+  color: white;
+  border: none;
+  border-radius: 0.375rem;
+  cursor: pointer;
+  transition: background-color 0.3s;
+}
+
+.error-banner button:hover {
+  background-color: #dc2626;
+}
+
+/* Deadlines Section */
+.deadlines-section {
+  background-color: white;
+  padding: 1.5rem;
+  border-radius: 0.75rem;
+  box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.1);
+  margin-bottom: 2rem;
+}
+
+.section-title {
+  display: flex;
+  align-items: center;
+  gap: 0.75rem;
+  font-size: 1.25rem;
+  font-weight: 600;
+  color: #1e293b;
+  margin-bottom: 1.5rem;
+  padding-bottom: 0.75rem;
+  border-bottom: 1px solid #e2e8f0;
+}
+
+.section-icon {
+  color: #1d4ed8;
+}
+
+.deadlines-list {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(320px, 1fr));
+  gap: 1rem;
+}
+
+.deadline-card {
+  background-color: #f8fafc;
+  padding: 1rem;
+  border-radius: 0.5rem;
+  cursor: pointer;
+  transition: transform 0.3s, box-shadow 0.3s;
+  border: 1px solid #e2e8f0;
+  display: flex;
+  align-items: center;
+  gap: 1rem;
+}
+
+.deadline-card:hover {
+  transform: translateY(-2px);
+  box-shadow: 0 10px 15px -3px rgba(0, 0, 0, 0.1);
+}
+
+.deadline-status {
+  width: 40px;
+  height: 40px;
+  border-radius: 50%;
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  flex-shrink: 0;
+}
+
+.deadline-card.missed .deadline-status {
+  background-color: #fee2e2;
+}
+
+.deadline-card.urgent .deadline-status {
+  background-color: #fef3c7;
+}
+
+.deadline-card.soon .deadline-status,
+.deadline-card.upcoming .deadline-status {
+  background-color: #dcfce7;
+}
+
+.status-icon {
+  color: #1e293b;
+}
+
+.deadline-card.missed .status-icon {
+  color: #ef4444;
+}
+
+.deadline-card.urgent .status-icon {
+  color: #f59e0b;
+}
+
+.deadline-card.soon .status-icon,
+.deadline-card.upcoming .status-icon {
+  color: #10b981;
+}
+
+.deadline-details {
+  flex: 1;
+}
+
+.deadline-course {
+  font-weight: 600;
+  font-size: 1rem;
+  color: #1e293b;
+  margin-bottom: 0.25rem;
+}
+
+.deadline-date {
+  color: #64748b;
+  font-size: 0.875rem;
+  margin-bottom: 0.25rem;
+}
+
+.deadline-teacher {
+  display: flex;
+  align-items: center;
+  gap: 0.375rem;
+  color: #64748b;
+  font-size: 0.75rem;
+}
+
+.deadline-time {
+  padding: 0.375rem 0.75rem;
+  border-radius: 0.375rem;
+  font-size: 0.75rem;
+  font-weight: 500;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  white-space: nowrap;
+}
+
+.deadline-time.missed {
+  background-color: #fee2e2;
+  color: #dc2626;
+}
+
+.deadline-time.urgent {
+  background-color: #fef3c7;
+  color: #d97706;
+}
+
+.deadline-time.soon {
+  background-color: #e0f2fe;
+  color: #0369a1;
+}
+
+.deadline-time.upcoming {
+  background-color: #dcfce7;
+  color: #059669;
+}
+
+.no-deadlines {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  padding: 2rem;
+  color: #10b981;
+  gap: 0.75rem;
+}
+
+/* Search Section */
+.search-container {
+  margin-bottom: 2rem;
+}
+
+.search-box {
+  display: flex;
+  align-items: center;
+  background-color: white;
+  padding: 0.5rem 1rem;
+  border-radius: 0.5rem;
+  box-shadow: 0 1px 3px rgba(0, 0, 0, 0.1);
+  border: 1px solid #e2e8f0;
+}
+
+.search-icon {
+  color: #64748b;
+  margin-right: 0.75rem;
+}
+
+.search-input {
+  flex: 1;
+  border: none;
+  padding: 0.5rem 0;
+  outline: none;
+  font-size: 1rem;
+  color: #1e293b;
+}
+
+.search-input::placeholder {
+  color: #94a3b8;
+}
+
+/* Courses Grid */
+.courses-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(320px, 1fr));
+  gap: 1.5rem;
+}
+
+.course-card {
+  background-color: white;
+  border-radius: 0.75rem;
+  overflow: hidden;
+  box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.1);
+  transition: transform 0.3s, box-shadow 0.3s;
+  cursor: pointer;
+}
+
+.course-card:hover {
+  transform: translateY(-5px);
+  box-shadow: 0 20px 25px -5px rgba(0, 0, 0, 0.1);
+}
+
+.course-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  padding: 1.25rem;
+  background-color: #f8fafc;
+  border-bottom: 1px solid #e2e8f0;
+}
+
+.course-icon {
+  color: #1d4ed8;
+}
+
+.course-status {
+  padding: 0.25rem 0.75rem;
+  border-radius: 0.375rem;
+  font-size: 0.75rem;
+  font-weight: 500;
+}
+
+.course-status.missed {
+  background-color: #fee2e2;
+  color: #dc2626;
+}
+
+.course-status.urgent {
+  background-color: #fef3c7;
+  color: #d97706;
+}
+
+.course-status.soon {
+  background-color: #e0f2fe;
+  color: #0369a1;
+}
+
+.course-status.upcoming {
+  background-color: #dcfce7;
+  color: #059669;
+}
+
+.course-title {
+  padding: 1.25rem;
+  padding-bottom: 0.5rem;
+  font-size: 1.25rem;
+  font-weight: 600;
+  color: #1e293b;
+  margin: 0;
+}
+
+.course-info {
+  padding: 0 1.25rem 1rem;
+  border-bottom: 1px solid #e2e8f0;
+}
+
+.info-row {
+  display: flex;
+  justify-content: space-between;
+  margin-bottom: 0.5rem;
+}
+
+.info-label {
+  font-weight: 500;
+  color: #64748b;
+}
+
+.info-value {
+  color: #1e293b;
+  display: flex;
+  align-items: center;
+  gap: 0.25rem;
+}
+
+.info-value.missed {
+  color: #dc2626;
+}
+
+.info-value.urgent {
+  color: #d97706;
+}
+
+.info-value.soon {
+  color: #0369a1;
+}
+
+.info-value.upcoming {
+  color: #059669;
+}
+
+.deadline-row .info-label {
+  margin-right: 0.5rem;
+}
+
+.credit-icon {
+  color: #f59e0b;
+}
+
+.course-metrics {
+  padding: 1rem 1.25rem;
+  display: flex;
+  flex-wrap: wrap;
+  gap: 1rem;
+}
+
+.metric {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  color: #64748b;
+  font-size: 0.875rem;
+}
+
+.metric-icon {
+  color: #1d4ed8;
+}
+
+.view-course-btn {
+  margin: 0 1.25rem 1.25rem;
+  width: calc(100% - 2.5rem);
+  padding: 0.75rem 0;
+  background-color: #1d4ed8;
+  color: white;
+  border: none;
+  border-radius: 0.5rem;
+  cursor: pointer;
+  font-weight: 500;
+  transition: background-color 0.3s;
+}
+
+.view-course-btn:hover {
+  background-color: #1e40af;
+}
+
+/* No Courses State */
+.no-courses {
+  background-color: white;
+  padding: 3rem 2rem;
+  border-radius: 0.75rem;
+  box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.1);
+  text-align: center;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 1.5rem;
+}
+
+.no-courses h3 {
+  font-size: 1.5rem;
+  color: #1e293b;
+  margin: 0;
+}
+
+.no-courses p {
+  color: #64748b;
+  max-width: 400px;
+  margin: 0 auto;
+}
+
+.browse-courses-btn {
+  padding: 0.75rem 1.5rem;
+  background-color: #1d4ed8;
+  color: white;
+  border: none;
+  border-radius: 0.5rem;
+  cursor: pointer;
+  font-weight: 500;
+  transition: background-color 0.3s;
+}
+
+.browse-courses-btn:hover {
+  background-color: #1e40af;
+}
+
+/* Loading Container */
+.loading-container {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  min-height: 60vh;
+}
+
+.spinner {
+  width: 50px;
+  height: 50px;
+  border: 4px solid rgba(29, 78, 216, 0.1);
+  border-radius: 50%;
+  border-top-color: #1d4ed8;
+  animation: spin 1s linear infinite;
+  margin-bottom: 1rem;
+}
+
+@keyframes spin {
+  to {
+    transform: rotate(360deg);
+  }
+}
+
+/* Add this new class for spinning refresh icon */
+.spinning {
+  animation: spin 1s linear infinite;
+}
+
+/* Responsive Styling */
+@media (max-width: 768px) {
+  .main-content {
+    margin-left: 0;
+    padding: 1rem;
+  }
+
+  .courses-header {
+    flex-direction: column;
+    align-items: flex-start;
+    gap: 1rem;
+  }
+
+  .header-actions {
+    width: 100%;
+  }
+
+  .refresh-btn, .add-course-btn {
+    flex: 1;
+    justify-content: center;
+  }
+
+  .deadlines-list, .courses-grid {
+    grid-template-columns: 1fr;
+  }
+}
