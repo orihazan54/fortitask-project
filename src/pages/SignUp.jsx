@@ -1,8 +1,10 @@
+
 import React, { useState } from "react";
 import { useNavigate } from "react-router-dom";
 import { signup } from "../services/api";
 import { toast } from "react-toastify";
 import NavBar from "../components/NavBar";
+import { Button } from "../components/ui/button";
 import "../styles/SignUp.css";
 
 const SignUp = () => {
@@ -163,13 +165,13 @@ const SignUp = () => {
               </select>
             </div>
 
-            <button
+            <Button 
               type="submit"
               className="signup-button"
               disabled={isSubmitting}
             >
               {isSubmitting ? "Signing Up..." : "Sign Up"}
-            </button>
+            </Button>
           </form>
 
           <p className="signup-footer">

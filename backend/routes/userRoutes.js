@@ -123,9 +123,17 @@ router.post("/signup", async (req, res) => {
   const passwordRegex = /^(?=.*[a-z])(?=.*[A-Z])(?=.*\d)(?=.*[@$!%*?&#])[A-Za-z\d@$!%*?&#]{8,}$/;
   const passwordToCheck = req.body.encryptedPassword ? 
     decryptAES(req.body.encryptedPassword) : password;
+  
+  console.log("Password validation check:", { 
+    hasLowercase: /[a-z]/.test(passwordToCheck),
+    hasUppercase: /[A-Z]/.test(passwordToCheck),
+    hasNumber: /\d/.test(passwordToCheck),
+    hasSpecialChar: /[@$!%*?&#]/.test(passwordToCheck),
+    length: passwordToCheck.length
+  });
     
   if (!passwordRegex.test(passwordToCheck)) {
-    console.log("Password validation failed:", passwordToCheck);
+    console.log("Password validation failed");
     return res.status(400).json({ 
       message: "Password must be at least 8 characters and include uppercase, lowercase, number and special character." 
     });
@@ -310,16 +318,32 @@ router.get("/profile", authenticateToken, async (req, res) => {
 
 // עדכון פרטי משתמש
 router.put("/profile", authenticateToken, async (req, res) => {
-  const { username, email, password } = req.body;
+  const { username, email, password, currentPassword } = req.body;
 
   try {
+    const user = await User.findById(req.user.id);
+    if (!user) {
+      return res.status(404).json({ message: "User not found." });
+    }
+
     const updates = {};
     if (username) updates.username = username;
     if (email) updates.email = email;
     
     if (password) {
+      // בדיקת הסיסמה הנוכחית לפני שאנו מאפשרים עדכון סיסמה
+      if (!currentPassword) {
+        return res.status(400).json({ message: "Current password is required to update password." });
+      }
+      
+      // בדיקה שהסיסמה הנוכחית נכונה
+      const isCurrentPasswordValid = await bcrypt.compare(currentPassword, user.password);
+      if (!isCurrentPasswordValid) {
+        return res.status(401).json({ message: "Current password is incorrect." });
+      }
+      
       // בדיקת תוקף סיסמה חדשה
-      const passwordRegex = /^(?=.*[a-z])(?=.*[A-Z])(?=.*\d)(?=.*[@$!%*?&])[A-Za-z\d@$!%*?&]{8,}$/;
+      const passwordRegex = /^(?=.*[a-z])(?=.*[A-Z])(?=.*\d)(?=.*[@$!%*?&#])[A-Za-z\d@$!%*?&#]{8,}$/;
       const passwordToCheck = req.body.encryptedPassword ? 
         decryptAES(req.body.encryptedPassword) : password;
         
@@ -554,7 +578,8 @@ router.post("/reset-password", async (req, res) => {
     email, 
     codeProvided: !!verificationCode,
     codeLength: verificationCode?.length,
-    passwordProvided: !!newPassword
+    passwordProvided: !!newPassword,
+    password: newPassword?.substring(0, 3) + '...'  // רק לוג חלקי מטעמי אבטחה
   });
 
   if (!email || !verificationCode || !newPassword) {
@@ -574,7 +599,14 @@ router.post("/reset-password", async (req, res) => {
       userCode: user.resetPasswordCode,
       providedCode: verificationCode,
       codeExpiry: user.resetPasswordExpiry,
-      isExpired: user.resetPasswordExpiry < new Date()
+      isExpired: user.resetPasswordExpiry < new Date(),
+      passwordFormat: {
+        length: newPassword?.length,
+        hasLowercase: /[a-z]/.test(newPassword),
+        hasUppercase: /[A-Z]/.test(newPassword),
+        hasNumber: /\d/.test(newPassword),
+        hasSpecialChar: /[@$!%*?&#]/.test(newPassword),
+      }
     });
     
     // Check if verification code matches and is not expired
@@ -582,12 +614,33 @@ router.post("/reset-password", async (req, res) => {
       return res.status(400).json({ message: "Invalid or expired verification code." });
     }
 
+    // הורדת קוד ההצפנה כדי לבדוק את הסיסמה המקורית ישירות
+    let passwordToCheck = newPassword;
+    if (req.body.encryptedPassword) {
+      try {
+        passwordToCheck = decryptAES(req.body.encryptedPassword);
+        console.log("Successfully decrypted password");
+      } catch (e) {
+        console.log("Error decrypting password:", e);
+        passwordToCheck = newPassword;
+      }
+    }
+    
     // בדיקת תוקף סיסמה חדשה
     const passwordRegex = /^(?=.*[a-z])(?=.*[A-Z])(?=.*\d)(?=.*[@$!%*?&#])[A-Za-z\d@$!%*?&#]{8,}$/;
-    const passwordToCheck = req.body.encryptedPassword ? 
-      decryptAES(req.body.encryptedPassword) : newPassword;
+    
+    // מדפיס למטרת ניפוי באגים (בלי הסיסמה עצמה)
+    console.log("Password validation check:", { 
+      hasLowercase: /[a-z]/.test(passwordToCheck),
+      hasUppercase: /[A-Z]/.test(passwordToCheck),
+      hasNumber: /\d/.test(passwordToCheck),
+      hasSpecialChar: /[@$!%*?&#]/.test(passwordToCheck),
+      length: passwordToCheck.length,
+      regexTest: passwordRegex.test(passwordToCheck)
+    });
       
     if (!passwordRegex.test(passwordToCheck)) {
+      console.log("Password validation failed");
       return res.status(400).json({ 
         message: "Password must be at least 8 characters and include uppercase, lowercase, number and special character." 
       });

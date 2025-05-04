@@ -1,19 +1,22 @@
+
 import React, { useState } from "react";
 import { useNavigate } from "react-router-dom";
 import { toast } from "react-toastify";
 import { sendPasswordResetEmail, resetPassword } from "../services/api";
 import NavBar from "../components/NavBar";
 import "../styles/ForgotPassword.css";
+import { Eye, EyeOff } from "lucide-react";
 
 const ForgotPassword = () => {
   const [email, setEmail] = useState("");
   const [verificationCode, setVerificationCode] = useState("");
   const [newPassword, setNewPassword] = useState("");
   const [confirmPassword, setConfirmPassword] = useState("");
-  const [passwordStrength, setPasswordStrength] = useState(""); // חיווי חוזק סיסמה
-  const [step, setStep] = useState(1); // שלב הטופס: 1 - אימייל, 2 - קוד אימות וסיסמה
+  const [passwordStrength, setPasswordStrength] = useState(""); 
+  const [step, setStep] = useState(1); // Step 1: Email, Step 2: Verification code and password
   const [showNewPassword, setShowNewPassword] = useState(false);
   const [showConfirmPassword, setShowConfirmPassword] = useState(false);
+  const [isLoading, setIsLoading] = useState(false);
   const navigate = useNavigate();
 
   const checkPasswordStrength = (password) => {
@@ -36,17 +39,29 @@ const ForgotPassword = () => {
   };
 
   const handleSendEmail = async () => {
+    if (!email || !/\S+@\S+\.\S+/.test(email)) {
+      toast.error("Please enter a valid email address.");
+      return;
+    }
+
+    setIsLoading(true);
     try {
-      await sendPasswordResetEmail({ email });
+      console.log("Sending password reset email to:", email);
+      const response = await sendPasswordResetEmail({ email });
+      console.log("Response:", response);
+      
       toast.success("Verification code sent to your email.");
-      setStep(2); // מעבר לשלב הבא
+      setStep(2); // Move to next step
     } catch (error) {
-      toast.error(error.response?.data?.message || "Failed to send email.");
+      console.error("Password reset error:", error);
+      toast.error(error.response?.data?.message || "Failed to send email. Please try again.");
+    } finally {
+      setIsLoading(false);
     }
   };
 
   const handleResetPassword = async () => {
-    if (!newPassword || !confirmPassword) {
+    if (!verificationCode || !newPassword || !confirmPassword) {
       toast.error("Please fill in all fields.");
       return;
     }
@@ -61,12 +76,22 @@ const ForgotPassword = () => {
       return;
     }
 
+    setIsLoading(true);
     try {
+      console.log("Resetting password with:", { 
+        email, 
+        verificationCode,  
+        newPassword: "********" // Hide actual password in logs
+      });
+      
       await resetPassword({ email, verificationCode, newPassword });
       toast.success("Password reset successfully.");
-      navigate("/login"); // חזרה לדף ההתחברות
+      navigate("/login");
     } catch (error) {
-      toast.error(error.response?.data?.message || "Failed to reset password.");
+      console.error("Password reset error:", error);
+      toast.error(error.response?.data?.message || "Failed to reset password. Please try again.");
+    } finally {
+      setIsLoading(false);
     }
   };
 
@@ -84,9 +109,14 @@ const ForgotPassword = () => {
                 placeholder="Enter your email"
                 value={email}
                 onChange={(e) => setEmail(e.target.value)}
+                disabled={isLoading}
               />
-              <button onClick={handleSendEmail} className="btn">
-                Send Reset Email
+              <button 
+                onClick={handleSendEmail} 
+                className="btn"
+                disabled={isLoading}
+              >
+                {isLoading ? "Sending..." : "Send Reset Email"}
               </button>
             </>
           )}
@@ -98,6 +128,7 @@ const ForgotPassword = () => {
                 placeholder="Enter verification code"
                 value={verificationCode}
                 onChange={(e) => setVerificationCode(e.target.value)}
+                disabled={isLoading}
               />
               <h2>Reset Your Password</h2>
               <div className="password-field">
@@ -106,16 +137,13 @@ const ForgotPassword = () => {
                   placeholder="Enter new password"
                   value={newPassword}
                   onChange={handleNewPasswordChange}
+                  disabled={isLoading}
                 />
                 <span
                   className="password-toggle"
                   onClick={() => setShowNewPassword(!showNewPassword)}
                 >
-                  {showNewPassword ? (
-                    <i className="fas fa-eye-slash"></i>
-                  ) : (
-                    <i className="fas fa-eye"></i>
-                  )}
+                  {showNewPassword ? <EyeOff size={18} /> : <Eye size={18} />}
                 </span>
               </div>
               <p className={`password-strength ${passwordStrength.toLowerCase()}`}>
@@ -127,21 +155,51 @@ const ForgotPassword = () => {
                   placeholder="Confirm new password"
                   value={confirmPassword}
                   onChange={(e) => setConfirmPassword(e.target.value)}
+                  disabled={isLoading}
                 />
                 <span
                   className="password-toggle"
                   onClick={() => setShowConfirmPassword(!showConfirmPassword)}
                 >
-                  {showConfirmPassword ? (
-                    <i className="fas fa-eye-slash"></i>
-                  ) : (
-                    <i className="fas fa-eye"></i>
-                  )}
+                  {showConfirmPassword ? <EyeOff size={18} /> : <Eye size={18} />}
                 </span>
               </div>
-              <button onClick={handleResetPassword} className="btn">
-                Reset Password
+              <div className="password-requirements">
+                <h4>Password Requirements:</h4>
+                <ul>
+                  <li className={newPassword?.length >= 8 ? "met" : ""}>
+                    At least 8 characters
+                  </li>
+                  <li className={/[A-Z]/.test(newPassword) ? "met" : ""}>
+                    At least one uppercase letter
+                  </li>
+                  <li className={/[a-z]/.test(newPassword) ? "met" : ""}>
+                    At least one lowercase letter
+                  </li>
+                  <li className={/[0-9]/.test(newPassword) ? "met" : ""}>
+                    At least one number
+                  </li>
+                  <li className={/[!@#$%^&*]/.test(newPassword) ? "met" : ""}>
+                    At least one special character (!@#$%^&*)
+                  </li>
+                </ul>
+              </div>
+              <button 
+                onClick={handleResetPassword} 
+                className="btn"
+                disabled={isLoading}
+              >
+                {isLoading ? "Resetting..." : "Reset Password"}
               </button>
+              <p className="mt-4">
+                <button 
+                  className="text-link" 
+                  onClick={() => setStep(1)}
+                  disabled={isLoading}
+                >
+                  Back to email
+                </button>
+              </p>
             </>
           )}
         </div>

@@ -9,11 +9,11 @@ const CourseHeader = ({ courseName }) => {
   return (
     <div className="course-header">
       <button 
-        className="back-btn" 
+        className="back-button" 
         onClick={() => navigate("/student/my-courses")}
       >
         <ArrowLeft size={16} />
-        <span>Back to My Courses</span>
+        <span>Back</span>
       </button>
       <h2 className="course-title">{courseName}</h2>
     </div>

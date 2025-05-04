@@ -28,10 +28,35 @@ const userSchema = new mongoose.Schema({
   ]
 }, { timestamps: true });
 
-// מתודה לבדיקת סיסמה חזקה
+// מתודה לבדיקת סיסמה חזקה - ביטוי רגולרי מעודכן שתואם לבדיקות שנעשות בצד הלקוח
 userSchema.statics.isStrongPassword = function(password) {
-  const passwordRegex = /^(?=.*[a-z])(?=.*[A-Z])(?=.*\d)(?=.*[@$!%*?&])[A-Za-z\d@$!%*?&]{8,}$/;
-  return passwordRegex.test(password);
+  // שינוי הביטוי הרגולרי כדי לוודא שהוא תואם בדיוק לדרישות מצד הלקוח
+  const passwordRegex = /^(?=.*[a-z])(?=.*[A-Z])(?=.*\d)(?=.*[@$!%*?&#])[A-Za-z\d@$!%*?&#]{8,}$/;
+  
+  // בדיקה יותר פרטנית לכל דרישה בנפרד עם לוגים
+  const hasLowercase = /[a-z]/.test(password);
+  const hasUppercase = /[A-Z]/.test(password);
+  const hasNumber = /\d/.test(password);
+  const hasSpecial = /[@$!%*?&#]/.test(password);
+  const isLongEnough = password && password.length >= 8;
+  
+  console.log("Backend password validation:");
+  console.log("- Password:", password ? "provided" : "missing");
+  console.log("- Has lowercase:", hasLowercase);
+  console.log("- Has uppercase:", hasUppercase);
+  console.log("- Has number:", hasNumber);
+  console.log("- Has special char:", hasSpecial);
+  console.log("- Min length 8:", isLongEnough);
+  console.log("- Password length:", password ? password.length : 0);
+  
+  // תוצאה סופית
+  const result = hasLowercase && hasUppercase && hasNumber && hasSpecial && isLongEnough;
+  console.log("- Final manual check:", result);
+  console.log("- RegEx check:", passwordRegex.test(password || ""));
+  
+  // החזרת התוצאה של הבדיקה הידנית במקום הביטוי הרגולרי
+  // זה עשוי להיות יותר אמין כאשר מתמודדים עם סיסמאות מורכבות
+  return result;
 };
 
 // מתודה להוספת התראה למשתמש

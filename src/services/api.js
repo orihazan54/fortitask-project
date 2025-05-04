@@ -199,7 +199,7 @@ export const login = async (formData) => {
 };
 
 export const getUserDetails = (userId) => {
-  console.log("Fetching user details for ID:", userId);
+  console.log("Fetching user details for ID:", userId || "current user");
   if (userId) {
     return API.get(`/users/profile/${userId}`);
   }
@@ -207,12 +207,17 @@ export const getUserDetails = (userId) => {
 };
 
 export const updateUserDetails = (data) => {
-  if (data.password) {
-    data = {
-      ...data,
-      password: encryptData(data.password)
-    };
-  }
+  // תיקון חשוב: אל תצפין את הסיסמה פעמיים!
+  // השרת כבר מצפין את הסיסמה בעת שמירתה במסד הנתונים
+  // אם נצפין כאן, השרת יצפין שוב וזה יגרום לבעיות אימות
+
+  console.log("Updating user details:", {
+    hasPassword: !!data.password,
+    hasCurrentPassword: !!data.currentPassword,
+    otherFields: Object.keys(data).filter(k => k !== 'password' && k !== 'currentPassword')
+  });
+  
+  // שלח את הנתונים ללא הצפנה נוספת
   return API.put("/users/profile", data);
 };
 
@@ -233,14 +238,28 @@ export const resetPassword = async (data) => {
   console.log("Attempting to reset password for email:", data.email);
   
   try {
-    // Make sure we're sending the properly encrypted password
-    const secureData = {
-      ...data,
-      newPassword: encryptData(data.newPassword)
-    };
+    // יצירת עותק להימנע משינוי הפרמטר המקורי
+    const resetData = { ...data };
     
-    console.log("Sending reset password request with verification code length:", data.verificationCode.length);
-    const response = await API.post("/users/reset-password", secureData);
+    // בדיקה האם הסיסמה מכילה את כל הדרישות
+    const passwordRegex = /^(?=.*[a-z])(?=.*[A-Z])(?=.*\d)(?=.*[@$!%*?&#])[A-Za-z\d@$!%*?&#]{8,}$/;
+    
+    console.log("Password validation check:", { 
+      hasLowercase: /[a-z]/.test(data.newPassword),
+      hasUppercase: /[A-Z]/.test(data.newPassword),
+      hasNumber: /\d/.test(data.newPassword),
+      hasSpecialChar: /[@$!%*?&#]/.test(data.newPassword),
+      length: data.newPassword.length,
+      regexTest: passwordRegex.test(data.newPassword)
+    });
+    
+    if (!passwordRegex.test(data.newPassword)) {
+      throw new Error("Password does not meet requirements");
+    }
+    
+    // שליחה באופן רגיל, ללא הצפנה נוספת - שינוי חשוב!
+    console.log("Sending reset password request with verification code and valid password");
+    const response = await API.post("/users/reset-password", resetData);
     console.log("Password reset successful:", response.data);
     return response;
   } catch (error) {

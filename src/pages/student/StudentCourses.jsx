@@ -109,7 +109,7 @@ const StudentCourses = () => {
                 onClick={() => navigate("/student-dashboard")}
               >
                 <ArrowLeft size={16} />
-                Back to Dashboard
+                Back
               </button>
             </div>
           </div>

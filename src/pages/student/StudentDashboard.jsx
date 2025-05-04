@@ -6,12 +6,13 @@ import Sidebar from "../../components/Sidebar";
 import { getUserDetails, getMyCourses } from "../../services/api";
 import { toast } from "react-toastify";
 import { 
-  BookOpen, CalendarDays, ClipboardList, GraduationCap, 
-  LineChart, Clock, CheckCircle, AlertTriangle,
-  Bell, Trophy, Laptop, Award, BookMarked,
-  ChevronRight, ArrowUpRight, FileCheck, BarChart3
+  BookOpen, Calendar, ClipboardList, 
+  Clock, AlertTriangle, Bell,
+  ChevronRight, User, BellRing
 } from "lucide-react";
 import "../../styles/StudentDashboard.css";
+import { Card, CardHeader, CardTitle, CardContent } from "../../components/ui/card";
+import { Button } from "../../components/ui/button";
 
 const StudentDashboard = () => {
   const [studentName, setStudentName] = useState("Student");
@@ -21,9 +22,8 @@ const StudentDashboard = () => {
     enrolledCourses: 0,
     assignments: 0,
     upcomingDeadlines: [],
-    averageGrade: 0,
     recentActivities: [],
-    achievements: []
+    notices: []
   });
   const navigate = useNavigate();
   const [showToasts, setShowToasts] = useState(false); // Control toast display
@@ -45,6 +45,7 @@ const StudentDashboard = () => {
         const userResponse = await getUserDetails(userId);
         const username = userResponse.data.username || "Student";
         setStudentName(username);
+        console.log("Fetched student name:", username); // Debug log
       } catch (userError) {
         console.warn("Could not fetch user details:", userError);
         // Continue execution with default name
@@ -93,18 +94,17 @@ const StudentDashboard = () => {
 
       // Generate recent activities based on courses
       const recentActivities = generateRecentActivities(courses);
-
-      // Generate some sample achievements
-      const achievements = generateAchievements(courses);
+      
+      // Generate notices based on real course data
+      const notices = generateNotices(courses);
 
       // Set dashboard data
       setDashboardData({
         enrolledCourses: courses.length,
         assignments: totalAssignments,
         upcomingDeadlines: deadlines,
-        averageGrade: calculateAverageGrade(courses),
         recentActivities,
-        achievements
+        notices
       });
       
       // Allow toasts to be shown only after successful data loading for first time
@@ -153,11 +153,6 @@ const StudentDashboard = () => {
     return diffTime > 0 && diffTime < 2 * 24 * 60 * 60 * 1000; // Less than 2 days
   };
 
-  const calculateAverageGrade = (courses) => {
-    // Simulate a grade between 75-95
-    return courses.length > 0 ? Math.floor(75 + Math.random() * 20) : 0;
-  };
-
   const generateRecentActivities = (courses) => {
     const activities = [];
     
@@ -186,87 +181,88 @@ const StudentDashboard = () => {
       });
     });
     
-    // Add an assignment activity if there are assignments
-    if (courses.some(course => course.assignments && course.assignments.length > 0)) {
-      const courseWithAssignments = courses.find(course => 
-        course.assignments && course.assignments.length > 0
-      );
-      
-      if (courseWithAssignments) {
-        activities.push({
-          type: "assignment",
-          title: `${courseWithAssignments.name || "Course"} Assignment`,
-          time: "3 days ago"
-        });
-      }
-    }
-    
-    // Add a grade update activity
-    if (courses.length > 0) {
-      activities.push({
-        type: "grade",
-        title: `${courses[0].name || "Course"}: ${75 + Math.floor(Math.random() * 20)}%`,
-        time: "5 days ago"
-      });
-    }
-    
     return activities.slice(0, 3);
   };
 
-  // Generate sample achievements to make the dashboard more engaging
-  const generateAchievements = (courses) => {
-    const achievements = [];
+  // Generate notices based on real course data
+  const generateNotices = (courses) => {
+    const notices = [];
     
-    if (courses.length >= 1) {
-      achievements.push({
-        icon: <BookMarked size={20} />,
-        title: "First Steps",
-        description: "Enrolled in your first course",
-        earned: true
+    // Add an important upcoming deadline notice if there's an urgent deadline
+    const urgentDeadlines = courses
+      .filter(course => course && course.deadline)
+      .filter(course => {
+        const deadline = new Date(course.deadline);
+        const now = new Date();
+        const diffTime = deadline - now;
+        return diffTime > 0 && diffTime < 5 * 24 * 60 * 60 * 1000; // Less than 5 days
+      })
+      .sort((a, b) => new Date(a.deadline) - new Date(b.deadline));
+    
+    if (urgentDeadlines.length > 0) {
+      const mostUrgentCourse = urgentDeadlines[0];
+      notices.push({
+        title: "Upcoming Deadline",
+        content: `${mostUrgentCourse.name} deadline is approaching. Make sure to submit your work on time.`,
+        date: formatDate(new Date()),
+        important: true
       });
     }
     
-    if (courses.length >= 3) {
-      achievements.push({
-        icon: <BookOpen size={20} />,
-        title: "Knowledge Seeker",
-        description: "Enrolled in 3+ courses",
-        earned: true
+    // Add a notice about new courses if there are any recent courses
+    const recentCourses = courses
+      .filter(course => course && course.createdAt)
+      .filter(course => {
+        const createdDate = new Date(course.createdAt);
+        const now = new Date();
+        const diffTime = now - createdDate;
+        return diffTime <= 7 * 24 * 60 * 60 * 1000; // Created within the last 7 days
+      });
+    
+    if (recentCourses.length > 0) {
+      notices.push({
+        title: "New Courses Available",
+        content: `${recentCourses.length} new course${recentCourses.length === 1 ? '' : 's'} ${recentCourses.length === 1 ? 'has' : 'have'} been added to your curriculum.`,
+        date: formatDate(new Date(Date.now() - 2 * 24 * 60 * 60 * 1000)), // 2 days ago
+        important: false
       });
     }
     
-    // Always add some aspirational achievements
-    achievements.push({
-      icon: <Award size={20} />,
-      title: "Honor Roll",
-      description: "Achieve 90% or higher in all courses",
-      earned: false
-    });
+    // Add a notice about system maintenance if the user has been active
+    if (localStorage.getItem("userId")) {
+      notices.push({
+        title: "System Maintenance",
+        content: "The system will undergo maintenance this weekend. Some features may be temporarily unavailable.",
+        date: formatDate(new Date(Date.now() - 4 * 24 * 60 * 60 * 1000)), // 4 days ago
+        important: false
+      });
+    }
     
-    achievements.push({
-      icon: <Laptop size={20} />,
-      title: "Digital Scholar",
-      description: "Complete 5 online assignments",
-      earned: courses.length > 0
-    });
+    // Add a welcome notice for new students with 0-1 courses
+    if (courses.length <= 1) {
+      notices.push({
+        title: "Welcome to the Learning Portal",
+        content: "Welcome to your academic dashboard! You can track your courses, assignments, and progress here.",
+        date: formatDate(new Date(Date.now() - 1 * 24 * 60 * 60 * 1000)), // 1 day ago
+        important: false
+      });
+    }
     
-    return achievements;
+    return notices;
+  };
+  
+  const formatDate = (date) => {
+    if (!date || isNaN(date.getTime())) return "Unknown";
+    return date.toLocaleDateString('en-US', { 
+      month: 'short',
+      day: 'numeric',
+      year: 'numeric'
+    });
   };
 
   const navigateTo = (path) => {
     navigate(path);
   };
-
-  // Render a calendar event component
-  const CalendarEvent = ({ title, date, type }) => (
-    <div className={`calendar-event ${type}`}>
-      <div className="event-marker"></div>
-      <div className="event-content">
-        <h4>{title}</h4>
-        <p>{date}</p>
-      </div>
-    </div>
-  );
 
   // Only display the spinner or error message when actually loading or errored
   if (loading) {
@@ -314,219 +310,139 @@ const StudentDashboard = () => {
       <NavBar />
       <div className="dashboard-container">
         <Sidebar role="Student" />
-        <main className="main-content">
-          <div className="welcome-section">
-            <div className="welcome-content">
-              <h1 className="welcome-header">Welcome back, {studentName}!</h1>
-              <p className="welcome-description">
-                Your academic hub for course management, assignments, and progress tracking.
-              </p>
-              <div className="welcome-actions">
-                <button 
-                  className="primary-action-btn"
-                  onClick={() => navigateTo("/student/my-courses")}
-                >
-                  <BookOpen size={18} className="btn-icon" /> View My Courses
-                </button>
-                <button 
-                  className="secondary-action-btn"
-                  onClick={() => navigateTo("/student/courses")}
-                >
-                  <ClipboardList size={18} className="btn-icon" /> Browse Courses
-                </button>
-              </div>
-            </div>
-            <div className="welcome-decoration">
-              <div className="decoration-circle"></div>
-              <div className="decoration-circle"></div>
-            </div>
-          </div>
-          
-          <div className="stats-grid">
-            <div className="stat-card">
+        <main className="main-content animate-fade-in">
+          <h2 className="dashboard-title">
+            <span className="welcome-wave">👋</span> Welcome back, {studentName}!
+          </h2>
+
+          {/* Stats Container with Animation */}
+          <div className="stats-container animate-fade-in">
+            {/* Enrolled Courses */}
+            <div className="stat-card animate-pop" style={{"--index": 1}}>
               <div className="stat-icon">
-                <BookOpen size={24} />
+                <BookOpen size={28} />
               </div>
               <div className="stat-content">
-                <h3>Enrolled Courses</h3>
-                <p className="stat-value">{dashboardData.enrolledCourses}</p>
+                <h3>{dashboardData.enrolledCourses}</h3>
+                <p>Total Courses</p>
               </div>
             </div>
             
-            <div className="stat-card">
+            {/* Assignments */}
+            <div className="stat-card animate-pop" style={{"--index": 2}}>
               <div className="stat-icon">
-                <ClipboardList size={24} />
+                <ClipboardList size={28} />
               </div>
               <div className="stat-content">
-                <h3>Assignments</h3>
-                <p className="stat-value">{dashboardData.assignments}</p>
+                <h3>{dashboardData.assignments}</h3>
+                <p>Assignments</p>
               </div>
             </div>
             
-            <div className="stat-card">
+            {/* Upcoming Deadlines */}
+            <div className="stat-card animate-pop" style={{"--index": 3}}>
               <div className="stat-icon">
-                <CalendarDays size={24} />
+                <Calendar size={28} />
               </div>
               <div className="stat-content">
-                <h3>Upcoming Deadlines</h3>
-                <p className="stat-value">{dashboardData.upcomingDeadlines.length}</p>
-              </div>
-            </div>
-            
-            <div className="stat-card">
-              <div className="stat-icon">
-                <BarChart3 size={24} />
-              </div>
-              <div className="stat-content">
-                <h3>Average Grade</h3>
-                <p className="stat-value">
-                  {dashboardData.averageGrade > 0 ? `${dashboardData.averageGrade}%` : 'N/A'}
-                </p>
+                <h3>{dashboardData.upcomingDeadlines.length}</h3>
+                <p>Upcoming Deadlines</p>
               </div>
             </div>
           </div>
-          
-          <div className="dashboard-grid">
-            <div className="dashboard-column">
-              <div className="recent-activity-container">
-                <h2 className="section-title">Recent Activity</h2>
-                <div className="activity-list">
-                  {dashboardData.recentActivities.length > 0 ? (
-                    dashboardData.recentActivities.map((activity, index) => (
-                      <div className="activity-item" key={index}>
-                        <div className="activity-icon">
-                          {activity.type === "assignment" && <FileCheck size={20} />}
-                          {activity.type === "enrollment" && <BookOpen size={20} />}
-                          {activity.type === "grade" && <GraduationCap size={20} />}
-                        </div>
-                        <div className="activity-details">
-                          <h4 className="activity-title">
-                            {activity.type === "assignment" && "Assignment Submitted"}
-                            {activity.type === "enrollment" && "Course Enrolled"}
-                            {activity.type === "grade" && "Grade Updated"}
-                          </h4>
-                          <p className="activity-description">{activity.title}</p>
-                          <p className="activity-time">{activity.time}</p>
-                        </div>
+
+          {/* Notice Board */}
+          <Card className="notice-board-card animate-slide-in">
+            <div className="notice-header">
+              <div className="notice-board-icon">
+                <Bell size={20} />
+              </div>
+              <h3 className="notice-title">Notice Board</h3>
+            </div>
+            <CardContent>
+              <div className="notice-list">
+                {dashboardData.notices && dashboardData.notices.length > 0 ? (
+                  dashboardData.notices.map((notice, index) => (
+                    <div 
+                      key={index}
+                      className={`notice-item ${notice.important ? 'important' : ''} animate-pop`}
+                      style={{"--index": index + 1}}
+                    >
+                      <div className="notice-header-content">
+                        <h4 className="notice-item-title">
+                          {notice.important ? 
+                            <BellRing size={18} className="icon" /> : 
+                            <Bell size={18} className="icon" />
+                          }
+                          {notice.title}
+                        </h4>
+                        <span className="notice-date">{notice.date}</span>
                       </div>
-                    ))
-                  ) : (
-                    <div className="no-activities">
-                      <p>No recent activities to display.</p>
-                      <p>Enroll in courses to start seeing your activities here!</p>
+                      <p className="notice-content">{notice.content}</p>
                     </div>
-                  )}
-                </div>
+                  ))
+                ) : (
+                  <div className="no-notices">
+                    <Bell size={24} />
+                    <p>No notices available at this time.</p>
+                  </div>
+                )}
               </div>
-              
-              <div className="achievements-container">
-                <h2 className="section-title">My Achievements</h2>
-                <div className="achievements-grid">
-                  {dashboardData.achievements.map((achievement, index) => (
-                    <div key={index} className={`achievement-card ${achievement.earned ? 'earned' : 'locked'}`}>
-                      <div className="achievement-icon">
-                        {achievement.icon}
-                      </div>
-                      <div className="achievement-details">
-                        <h4>{achievement.title}</h4>
-                        <p>{achievement.description}</p>
-                      </div>
-                      <div className="achievement-status">
-                        {achievement.earned ? (
-                          <span className="earned-badge">Earned</span>
-                        ) : (
-                          <span className="locked-badge">In Progress</span>
-                        )}
+            </CardContent>
+          </Card>
+
+          {/* Courses Section */}
+          <div className="courses-section animate-slide-in">
+            <h3 className="section-title">
+              <BookOpen className="section-icon" size={20} /> Your Courses
+              <span className="view-all" onClick={() => navigateTo("/student/my-courses")}>
+                View all <ChevronRight size={16} />
+              </span>
+            </h3>
+            
+            {dashboardData.upcomingDeadlines.length > 0 && (
+              <div className="upcoming-deadlines">
+                <h4 className="subsection-title">
+                  <Clock size={18} /> Upcoming Deadlines
+                </h4>
+                <div className="deadlines-list">
+                  {dashboardData.upcomingDeadlines.map((deadline, index) => (
+                    <div 
+                      className={`deadline-item ${deadline.urgent ? 'urgent' : ''} animate-pop`}
+                      key={index}
+                      onClick={() => navigateTo(`/course/${deadline.courseId}`)}
+                      style={{"--index": index + 1}}
+                    >
+                      <h4 className="deadline-title">{deadline.title}</h4>
+                      <p className="deadline-course">{deadline.course}</p>
+                      <div className="deadline-meta">
+                        <p className={`deadline-due ${deadline.urgent ? 'urgent' : ''}`}>
+                          <Clock size={16} /> Due in {deadline.due}
+                        </p>
                       </div>
                     </div>
                   ))}
                 </div>
               </div>
-            </div>
+            )}
             
-            <div className="dashboard-column">
-              <div className="deadlines-container">
-                <h2 className="section-title">
-                  Upcoming Deadlines
-                  {dashboardData.upcomingDeadlines.length > 0 && (
-                    <span className="view-all" onClick={() => navigateTo("/student/my-courses")}>
-                      View all <ChevronRight size={16} />
-                    </span>
-                  )}
-                </h2>
-                <div className="deadlines-list">
-                  {dashboardData.upcomingDeadlines.length > 0 ? (
-                    dashboardData.upcomingDeadlines.map((deadline, index) => (
-                      <div 
-                        className={`deadline-item ${deadline.urgent ? 'urgent' : ''}`}
-                        key={index}
-                        onClick={() => navigateTo(`/course/${deadline.courseId}`)}
-                      >
-                        <h4 className="deadline-title">{deadline.title}</h4>
-                        <p className="deadline-course">{deadline.course}</p>
-                        <div className="deadline-meta">
-                          <p className={`deadline-due ${deadline.urgent ? 'urgent' : ''}`}>
-                            <Clock size={16} /> Due in {deadline.due}
-                          </p>
-                          <span className="deadline-view">
-                            <ArrowUpRight size={16} />
-                          </span>
-                        </div>
-                      </div>
-                    ))
-                  ) : (
-                    <div className="no-deadlines-message">
-                      <CheckCircle size={24} />
-                      <p>No upcoming deadlines!</p>
-                    </div>
-                  )}
-                </div>
-              </div>
-              
-              <div className="calendar-preview">
-                <h2 className="section-title">Academic Calendar</h2>
-                <div className="calendar-container">
-                  <div className="month-header">
-                    <h3>{new Date().toLocaleString('default', { month: 'long', year: 'numeric' })}</h3>
-                  </div>
-                  <div className="calendar-events">
-                    <CalendarEvent 
-                      title="Assignment Due" 
-                      date="Today" 
-                      type="urgent" 
-                    />
-                    <CalendarEvent 
-                      title="Course Registration" 
-                      date="Tomorrow" 
-                      type="info" 
-                    />
-                    <CalendarEvent 
-                      title="Midterm Exam" 
-                      date="In 5 days" 
-                      type="warning" 
-                    />
-                  </div>
-                  <button 
-                    className="view-calendar-btn"
-                    onClick={() => navigateTo("/student/my-courses")}
-                  >
-                    View Full Calendar
-                  </button>
-                </div>
-              </div>
+            <div className="action-buttons">
+              <Button 
+                className="action-button" 
+                onClick={() => navigateTo("/student/courses")}
+                style={{"--index": 1}}
+              >
+                <BookOpen size={18} /> Browse All Courses
+              </Button>
+              <Button
+                className="action-button"
+                variant="outline"
+                onClick={() => navigateTo("/student/profile")}
+                style={{"--index": 2}}
+              >
+                <User size={18} /> View Profile
+              </Button>
             </div>
-          </div>
-          
-          <div className="quick-actions">
-            <button className="action-button" onClick={() => navigateTo("/student/courses")}>
-              <BookOpen size={18} /> Browse Available Courses
-            </button>
-            <button className="action-button" onClick={() => navigateTo("/student/my-courses")}>
-              <ClipboardList size={18} /> Manage Assignments
-            </button>
-            <button className="action-button" onClick={() => navigateTo("/student/profile")}>
-              <LineChart size={18} /> View Profile
-            </button>
           </div>
         </main>
       </div>
