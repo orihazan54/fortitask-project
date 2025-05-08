@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from "react";
+import React, { useState, useEffect, useRef } from "react";
 import { useParams, useNavigate } from "react-router-dom";
 import { toast } from "react-toastify";
 import { 
@@ -15,7 +15,7 @@ import CourseMaterials from "../../components/course/CourseMaterials";
 import AssignmentUpload from "../../components/course/AssignmentUpload";
 import StudentSubmissions from "../../components/course/StudentSubmissions";
 import DeleteConfirmationModal from "../../components/course/DeleteConfirmationModal";
-import { AlertTriangle, ArrowLeft } from "lucide-react";
+import { AlertTriangle, ArrowLeft, Clock } from "lucide-react";
 import "../../styles/CourseDetails.css";
 
 const CourseDetails = () => {
@@ -32,6 +32,20 @@ const CourseDetails = () => {
   const [loading, setLoading] = useState(true);
   const [uploadComment, setUploadComment] = useState("");
   const [uploadError, setUploadError] = useState(null);
+  
+  // משתנה שמציין שכבר הראינו את ההתראה עבור קורס זה
+  const cheatingAlertRef = useRef(false);
+  
+  // Create a session storage key for this specific course
+  const cheatingAlertKey = `cheating-alert-shown-${courseId}`;
+  
+  // בדיקה אם כבר הראינו את ההתראה - מתבצעת פעם אחת בלבד בטעינת הקומפוננטה
+  useEffect(() => {
+    const alertAlreadyShown = sessionStorage.getItem(cheatingAlertKey) === 'true';
+    if (alertAlreadyShown) {
+      cheatingAlertRef.current = true;
+    }
+  }, [cheatingAlertKey]);
 
   useEffect(() => {
     const fetchCourseDetails = async () => {
@@ -74,6 +88,27 @@ const CourseDetails = () => {
         ) : [];
         console.log("Filtered course materials:", materials);
         setCourseMaterials(materials);
+        
+        // בדיקת קבצים חשודים רק אם לא הצגנו כבר את ההתראה
+        if (!cheatingAlertRef.current && myAssignments.length > 0) {
+          const suspiciousAssignments = myAssignments.filter(
+            assignment => assignment.isModifiedAfterDeadline || 
+                        assignment.possibleTimeManipulation ||
+                        assignment.hasDateDiscrepancy
+          );
+          
+          if (suspiciousAssignments.length > 0) {
+            toast.error("יש לך מטלות שנמצאו חשודות ברמאות! בדוק את ההגשות שלך.", {
+              autoClose: 10000,
+              icon: <AlertTriangle size={20} />,
+              position: "top-center",
+            });
+            
+            // סימון שכבר הראינו את ההתראה - גם ב-ref וגם ב-sessionStorage
+            cheatingAlertRef.current = true;
+            sessionStorage.setItem(cheatingAlertKey, 'true');
+          }
+        }
       } catch (error) {
         toast.error("Error loading course details");
         console.error("Error fetching course details:", error);
@@ -83,7 +118,7 @@ const CourseDetails = () => {
     };
 
     fetchCourseDetails();
-  }, [courseId]);
+  }, [courseId, cheatingAlertKey]);
 
   const handleFileChange = (e) => {
     if (e.target.files && e.target.files[0]) {
@@ -91,7 +126,8 @@ const CourseDetails = () => {
       console.log("File selected:", {
         name: selectedFile.name,
         size: selectedFile.size,
-        type: selectedFile.type
+        type: selectedFile.type,
+        lastModified: selectedFile.lastModified
       });
       
       setFile(selectedFile);
@@ -114,10 +150,13 @@ const CourseDetails = () => {
       formData.append("file", file);
       formData.append("courseId", courseId);
       
-      // The key issue: Do NOT include lastModified or lastModifiedUTC in the formData
-      // Let the server handle these values instead
+      // הוספת זמן שינוי אחרון של הקובץ
+      if (file.lastModified) {
+        formData.append("lastModified", file.lastModified.toString());
+        console.log("Added lastModified:", new Date(file.lastModified).toISOString());
+      }
       
-      // Add the studentId - this is important
+      // הוספת מזהה סטודנט
       formData.append("studentId", localStorage.getItem("userId"));
       
       if (course && course.deadline) {
@@ -128,14 +167,14 @@ const CourseDetails = () => {
         formData.append("comment", uploadComment.trim());
       }
 
-      console.log("Starting upload API call");
       const response = await uploadAssignment(courseId, formData);
       console.log("Upload response received:", response.data);
       
+      // הצגת הודעה פשוטה לסטודנט - רק על איחור
       if (response.data.isLate) {
-        toast.warning("הגשה באיחור: המטלה הוגשה לאחר המועד האחרון", {
+        toast.warning("המטלה הוגשה באיחור.", {
           autoClose: 7000,
-          icon: <AlertTriangle size={20} />,
+          icon: <Clock size={20} />,
         });
       } else {
         toast.success("המטלה הוגשה בהצלחה!", {
@@ -143,11 +182,11 @@ const CourseDetails = () => {
         });
       }
       
-      // Refresh course data
+      // רענון נתוני הקורס
       const { data } = await getCourseDetails(courseId);
       setCourse(data);
       
-      // Update the filtered assignments
+      // עדכון רשימת ההגשות
       const currentUserId = localStorage.getItem("userId");
       const updatedStudentAssignments = data.assignments.filter(assignment => {
         if (!assignment.studentId) return false;
@@ -162,24 +201,16 @@ const CourseDetails = () => {
       
       setStudentAssignments(updatedStudentAssignments);
       
-      const materials = data.assignments.filter(assignment => 
-        !assignment.studentId || assignment.isMaterial === true
-      );
-      setCourseMaterials(materials);
-      
-      // Reset form
+      // איפוס הטופס
       setFile(null);
       setUploadComment("");
       
-      console.log("Upload process completed successfully");
     } catch (error) {
-      console.error("Error uploading assignment:", error.response || error);
-      let errorMessage = "שגיאה בהעלאת המטלה";
-      if (error.response?.data?.message) {
-        errorMessage += ": " + error.response.data.message;
-      }
-      toast.error(errorMessage);
-      setUploadError(errorMessage);
+      console.error("Error uploading file:", error);
+      toast.error("שגיאה בהעלאת הקובץ. אנא נסה שוב.", {
+        autoClose: 5000,
+      });
+      setUploadError("Failed to upload file. Please try again.");
     } finally {
       setUploading(false);
     }
@@ -232,9 +263,31 @@ const CourseDetails = () => {
     }
   };
   
-  const handleDownloadMaterial = (fileUrl, fileName) => {
-    if (downloadAssignment(fileUrl, fileName)) {
-      //console.log("Download initiated for:", fileUrl);
+  const handleDownloadMaterial = async (assignment) => {
+    try {
+      if (!assignment || !assignment._id) {
+        toast.error("Invalid file information");
+        return false;
+      }
+
+      console.log("Downloading assignment:", assignment._id);
+      const success = await downloadAssignment(
+        courseId, 
+        assignment._id,
+        assignment.originalFileName || assignment.displayName || assignment.fileName
+      );
+
+      if (success) {
+        toast.success("Download started");
+        return true;
+      } else {
+        toast.error("Failed to download file");
+        return false;
+      }
+    } catch (error) {
+      console.error("Download error:", error);
+      toast.error("Error downloading file");
+      return false;
     }
   };
 

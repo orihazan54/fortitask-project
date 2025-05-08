@@ -49,7 +49,8 @@ const CourseMaterials = ({ materials, onDownload }) => {
                 </div>
                 <button 
                   className="download-btn" 
-                  onClick={() => onDownload(material.fileUrl, material.displayName || material.fileName)}
+                  onClick={() => onDownload(material)}
+                  aria-label={`Download ${material.displayName || material.fileName || "file"}`}
                 >
                   <Download size={16} />
                   Download

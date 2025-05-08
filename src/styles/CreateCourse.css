@@ -1,3 +1,4 @@
+
 /* Container for the entire form */
 .create-course-container {
   max-width: 800px;
@@ -78,6 +79,16 @@
 .form-group textarea {
   resize: vertical;
   min-height: 120px;
+}
+
+/* Deadline inputs container - אזור תאריך ושעה */
+.deadline-inputs-container {
+  display: flex;
+  gap: 20px;
+}
+
+.deadline-inputs-container .form-group {
+  flex: 1;
 }
 
 /* File upload section */
@@ -162,5 +173,10 @@
 
   .submit-btn {
     width: 100%;
+  }
+  
+  .deadline-inputs-container {
+    flex-direction: column;
+    gap: 10px;
   }
 }

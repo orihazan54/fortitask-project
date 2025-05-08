@@ -1,3 +1,4 @@
+
 import React, { useState } from "react";
 import { toast } from "react-toastify";
 import { createCourse } from "../../services/api";
@@ -13,6 +14,7 @@ const CreateCourse = () => {
     creditPoints: "",
     instructions: "",
     deadline: "",
+    deadlineTime: "23:59", // שעת ברירת מחדל לדדליין
   });
   const [file, setFile] = useState(null);
   const [uploading, setUploading] = useState(false);
@@ -24,7 +26,13 @@ const CreateCourse = () => {
 
   const handleFileChange = (e) => {
     if (e.target.files && e.target.files[0]) {
-      setFile(e.target.files[0]);
+      const selectedFile = e.target.files[0];
+      console.log("File selected:", {
+        name: selectedFile.name,
+        size: selectedFile.size,
+        type: selectedFile.type
+      });
+      setFile(selectedFile);
     }
   };
 
@@ -35,7 +43,8 @@ const CreateCourse = () => {
       !formData.courseName ||
       !formData.creditPoints ||
       !formData.instructions ||
-      !formData.deadline
+      !formData.deadline ||
+      !formData.deadlineTime
     ) {
       toast.error("Please fill out all fields.");
       return;
@@ -44,16 +53,21 @@ const CreateCourse = () => {
     try {
       setUploading(true);
 
+      // שילוב התאריך והשעה לתאריך מלא
+      const deadlineWithTime = `${formData.deadline}T${formData.deadlineTime}`;
+      
       const courseFormData = new FormData();
       courseFormData.append("courseName", formData.courseName);
       courseFormData.append("creditPoints", formData.creditPoints);
       courseFormData.append("instructions", formData.instructions);
-      courseFormData.append("deadline", formData.deadline);
+      courseFormData.append("deadline", deadlineWithTime);
 
       if (file) {
+        console.log("Adding file to FormData:", file.name);
         courseFormData.append("file", file);
       }
 
+      console.log("Submitting course form data");
       const response = await createCourse(courseFormData);
       console.log("Course Created Successfully:", response);
 
@@ -63,6 +77,7 @@ const CreateCourse = () => {
         creditPoints: "",
         instructions: "",
         deadline: "",
+        deadlineTime: "23:59",
       });
       setFile(null);
     } catch (error) {
@@ -131,16 +146,30 @@ const CreateCourse = () => {
                   ></textarea>
                 </div>
 
-                <div className="form-group">
-                  <label className="text-white/90 font-medium mb-1 block">Deadline</label>
-                  <input
-                    type="date"
-                    name="deadline"
-                    value={formData.deadline}
-                    onChange={handleChange}
-                    required
-                    className="form-input"
-                  />
+                <div className="deadline-inputs-container">
+                  <div className="form-group">
+                    <label className="text-white/90 font-medium mb-1 block">Deadline Date</label>
+                    <input
+                      type="date"
+                      name="deadline"
+                      value={formData.deadline}
+                      onChange={handleChange}
+                      required
+                      className="form-input"
+                    />
+                  </div>
+
+                  <div className="form-group">
+                    <label className="text-white/90 font-medium mb-1 block">Deadline Time</label>
+                    <input
+                      type="time"
+                      name="deadlineTime"
+                      value={formData.deadlineTime}
+                      onChange={handleChange}
+                      required
+                      className="form-input"
+                    />
+                  </div>
                 </div>
 
                 <div className="form-group file-upload-section">

@@ -1,17 +1,24 @@
+
 /* Main layout */
-.profile-container {
+.profile-page {
   min-height: 100vh;
   background: linear-gradient(to bottom right, #0f172a, #1e1b4b);
   display: flex;
-  flex-direction: column;
+  justify-content: center;
+  align-items: center;
   padding: 2rem;
-  font-family: 'Inter', sans-serif;
   color: #fff;
+  font-family: 'Inter', sans-serif;
+}
+
+.profile-container {
+  width: 100%;
+  max-width: 1200px;
+  margin: 0 auto;
 }
 
 .profile-header {
   width: 100%;
-  max-width: 1200px;
   margin: 0 auto 2rem;
   display: flex;
   justify-content: space-between;
@@ -24,10 +31,10 @@
   color: #ffffff;
 }
 
-/* Updated back button - more compact */
+/* Updated back button */
 .back-button {
   font-size: 0.875rem;
-  color: rgba(255, 255, 255, 0.8);
+  color: #90caf9;
   background: rgba(255, 255, 255, 0.1);
   padding: 0.5rem 1rem;
   border-radius: 0.5rem;
@@ -38,9 +45,6 @@
   display: flex;
   align-items: center;
   gap: 0.5rem;
-  width: auto; /* Make width auto instead of expanding */
-  max-width: 100px; /* Limit maximum width */
-  justify-content: center;
 }
 
 .back-button:hover {
@@ -48,17 +52,14 @@
   color: #ffffff;
 }
 
-/* Main content */
+/* Profile content */
 .profile-content {
-  width: 100%;
-  max-width: 1200px;
-  margin: 0 auto;
   display: grid;
   grid-template-columns: 1fr;
-  gap: 2rem;
+  gap: 1.5rem;
+  margin-bottom: 1.5rem;
 }
 
-/* Modified: Changed grid layout to single column by default */
 .profile-content.two-columns {
   grid-template-columns: 1fr;
 }
@@ -76,14 +77,22 @@
   border: 1px solid rgba(255, 255, 255, 0.1);
   border-radius: 1rem;
   box-shadow: 0 20px 50px rgba(0, 0, 0, 0.4);
+  overflow: hidden;
   transition: transform 0.3s ease, box-shadow 0.3s ease;
-  height: fit-content;
-  margin-bottom: 1.5rem; /* Added margin to separate cards on mobile */
 }
 
 .profile-card:hover {
   transform: translateY(-3px);
   box-shadow: 0 25px 60px rgba(0, 0, 0, 0.5);
+}
+
+.profile-card.glass-effect {
+  background-color: rgba(30, 41, 59, 0.7);
+  backdrop-filter: blur(12px);
+}
+
+.card-content {
+  padding: 1.75rem;
 }
 
 .card-title {
@@ -139,7 +148,6 @@
   color: #ffffff;
 }
 
-/* Added: Style for edit input fields */
 .info-edit-input {
   width: 100%;
   padding: 0.5rem 0.75rem;
@@ -158,7 +166,7 @@
 
 /* Security settings */
 .security-settings {
-  margin-top: 1.5rem;
+  margin-top: 1rem;
 }
 
 .security-button {
@@ -196,7 +204,64 @@
   color: #ef4444;
 }
 
-/* Password change form */
+/* Password field & requirements */
+.password-field {
+  position: relative;
+  margin-bottom: 15px;
+}
+
+.password-field input {
+  width: 100%;
+  padding: 12px 14px;
+  padding-right: 40px;
+  background-color: rgba(255, 255, 255, 0.05);
+  border: 1px solid rgba(255, 255, 255, 0.2);
+  border-radius: 8px;
+  color: white;
+  font-size: 16px;
+  transition: border-color 0.3s, box-shadow 0.3s;
+}
+
+.password-field input:focus {
+  outline: none;
+  border-color: #818cf8;
+  box-shadow: 0 0 0 3px rgba(99, 102, 241, 0.3);
+}
+
+.password-toggle {
+  position: absolute;
+  right: 14px;
+  top: 50%;
+  transform: translateY(-50%);
+  cursor: pointer;
+  color: #d1d5db;
+  transition: color 0.3s ease;
+  display: flex;
+  align-items: center;
+}
+
+.password-toggle:hover {
+  color: white;
+}
+
+.password-strength {
+  font-size: 0.9rem;
+  margin-bottom: 15px;
+  text-align: left;
+}
+
+.password-strength.weak {
+  color: #ef4444;
+}
+
+.password-strength.medium {
+  color: #fbbf24;
+}
+
+.password-strength.strong {
+  color: #10b981;
+}
+
 .setting-group {
   margin-bottom: 1.25rem;
 }
@@ -225,59 +290,62 @@
   box-shadow: 0 0 0 3px rgba(99, 102, 241, 0.3);
 }
 
-/* Added: Style for password error */
-.password-input.border-red-500 {
-  border-color: #ef4444;
-}
-
-.password-field {
-  position: relative;
-}
-
-.password-toggle {
-  position: absolute;
-  right: 12px;
-  top: 50%;
-  transform: translateY(-50%);
-  cursor: pointer;
-  color: #d1d5db;
-}
-
-.password-toggle:hover {
-  color: #fff;
-}
-
-.password-strength {
-  font-size: 0.875rem;
-  margin: 0.5rem 0;
-}
-
-.password-strength.strong {
-  color: #10b981;
-}
-.password-strength.medium {
-  color: #fbbf24;
-}
-.password-strength.weak {
-  color: #ef4444;
-}
-
 .password-requirements {
-  margin-top: 1rem;
+  background-color: rgba(30, 41, 59, 0.6);
+  border: 1px solid rgba(255, 255, 255, 0.1);
+  padding: 15px 20px;
+  border-radius: 8px;
+  margin: 15px 0 20px;
+  text-align: left;
+}
+
+.password-requirements h4 {
+  color: #90caf9;
+  margin-top: 0;
+  margin-bottom: 10px;
+  font-size: 16px;
 }
 
 .requirement-list {
-  list-style-type: disc;
-  padding-left: 1.25rem;
-  font-size: 0.875rem;
+  list-style-type: none;
+  padding-left: 0;
+  margin-top: 10px;
+  margin-bottom: 0;
+}
+
+.requirement-list li {
+  font-size: 0.9rem;
   color: #d1d5db;
+  margin-bottom: 8px;
+  position: relative;
+  padding-left: 25px;
+  display: flex;
+  align-items: center;
+}
+
+.requirement-list li:last-child {
+  margin-bottom: 0;
+}
+
+.requirement-list li:before {
+  content: "•";
+  position: absolute;
+  left: 0;
+  color: #d1d5db;
+  font-size: 1.5rem;
+  line-height: 1;
 }
 
 .requirement-list li.met {
   color: #10b981;
 }
 
-/* Button styling */
+.requirement-list li.met:before {
+  content: "✓";
+  color: #10b981;
+}
+
+/* Buttons styling */
 .action-button {
   display: inline-flex;
   align-items: center;
@@ -331,59 +399,26 @@
   opacity: 0.9;
 }
 
-/* Modal */
-.confirmation-modal {
-  position: fixed;
-  top: 0;
-  left: 0;
-  width: 100%;
-  height: 100%;
-  background-color: rgba(0, 0, 0, 0.7);
-  display: flex;
-  justify-content: center;
-  align-items: center;
-  z-index: 1000;
-  backdrop-filter: blur(4px);
+.mt-3 {
+  margin-top: 0.75rem;
 }
 
-.modal-content {
-  width: 100%;
-  max-width: 450px;
-  background-color: rgba(30, 41, 59, 0.95);
-  backdrop-filter: blur(12px);
-  border: 1px solid rgba(255, 255, 255, 0.1);
-  border-radius: 0.75rem;
-  padding: 2rem;
-  box-shadow: 0 25px 50px rgba(0, 0, 0, 0.5);
+.mt-6 {
+  margin-top: 1.5rem;
 }
 
-.modal-title {
-  font-size: 1.5rem;
-  font-weight: 600;
-  color: #ef4444;
-  margin-bottom: 1rem;
-  display: flex;
-  align-items: center;
-  gap: 0.5rem;
-}
-
-.modal-message {
-  font-size: 1rem;
-  color: #d1d5db;
+.mb-6 {
   margin-bottom: 1.5rem;
 }
 
-.modal-buttons {
+/* Loading spinner */
+.loading-spinner {
   display: flex;
-  justify-content: flex-end;
-  gap: 1rem;
-}
-
-/* Focus styles for accessibility */
-button:focus, 
-input:focus {
-  outline: 2px solid #90caf9;
-  outline-offset: 2px;
+  align-items: center;
+  justify-content: center;
+  min-height: 50vh;
+  color: #90caf9;
+  font-size: 1.2rem;
 }
 
 /* Responsive design */
@@ -410,29 +445,11 @@ input:focus {
 }
 
 @media (max-width: 480px) {
-  .profile-container {
+  .profile-page {
     padding: 1.25rem;
   }
   
   .profile-title {
     font-size: 1.75rem;
   }
-  
-  .modal-content {
-    max-width: 90%;
-    padding: 1.5rem;
-  }
-}
-
-/* For screen readers */
-.sr-only {
-  position: absolute;
-  width: 1px;
-  height: 1px;
-  padding: 0;
-  margin: -1px;
-  overflow: hidden;
-  clip: rect(0, 0, 0, 0);
-  white-space: nowrap;
-  border-width: 0;
 }

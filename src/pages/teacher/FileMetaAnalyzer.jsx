@@ -1,4 +1,3 @@
-
 import React, { useEffect, useMemo } from "react";
 import {
   Calendar,
@@ -15,87 +14,118 @@ import {
  * רכיב לבדיקת מטא-דטה של קבצים והצגה מקצועית עבור מרצה בלבד.
  * מציג סטטוס, השוואות, ומפעיל alert כאשר יש חשש לרמאות או שינוי אחרי דדליין.
  */
-function FileMetaAnalyzer({ file, fileMeta, deadline, onCheatingDetected }) {
+function FileMetaAnalyzer({ file, fileMeta, deadline }) {
   // Move all useMemo hooks to the top level - they will return undefined values if dependencies are missing
   const lastModified = useMemo(() => 
-    fileMeta ? new Date(fileMeta.lastModifiedUTC || fileMeta.lastModified) : null, 
+    fileMeta?.lastModifiedUTC ? new Date(fileMeta.lastModifiedUTC) : (fileMeta?.lastModified ? new Date(fileMeta.lastModified) : null),
     [fileMeta]
   );
   
   const clientReportedDate = useMemo(() => 
-    fileMeta && fileMeta.clientReportedDate ? new Date(fileMeta.clientReportedDate) : null, 
+    fileMeta?.clientReportedDate ? new Date(fileMeta.clientReportedDate) : null, 
     [fileMeta]
   );
   
   const deadlineDate = useMemo(() => 
-    deadline ? new Date(new Date(deadline).toISOString()) : null, 
+    deadline ? new Date(deadline) : null, 
     [deadline]
   );
   
-  const nowUTC = useMemo(() => 
-    new Date(new Date().toISOString()), 
-    []
+  const localDisplayTime = useMemo(() => new Date(), []); 
+
+  // This is the server-provided flag and should be the primary source of truth for suspected manipulation
+  const isSuspectedTimeManipulationByServer = useMemo(() => 
+    fileMeta?.suspectedTimeManipulation === true,
+    [fileMeta]
   );
 
-  // בדיקת הפרשי זמנים חשודים
-  const timeDifference = useMemo(() => {
-    if (!lastModified) return 0;
-    return Math.abs(nowUTC - lastModified);
-  }, [lastModified, nowUTC]);
-
-  const isPossibleTimeManipulation = useMemo(() => 
-    timeDifference > 3600000, // הפרש של יותר משעה נחשב חשוד
-    [timeDifference]
-  );
-
-  // Calculate these values only if we have valid dates
-  const isModifiedAfterDeadline = useMemo(() => 
-    lastModified && deadlineDate ? lastModified > deadlineDate : false, 
-    [lastModified, deadlineDate]
-  );
-  
-  const isLateSubmission = useMemo(() => 
-    nowUTC && deadlineDate ? nowUTC > deadlineDate : false,
-    [nowUTC, deadlineDate]
-  );
-
-  // Detecting difference between client reported date and actual date
-  const clientServerTimeDiff = useMemo(() => {
-    if (!clientReportedDate || !lastModified) return 0;
-    return Math.abs(clientReportedDate - lastModified);
-  }, [clientReportedDate, lastModified]);
-
-  const hasDateDiscrepancy = useMemo(() => 
-    clientServerTimeDiff > 60000, // More than 1 minute difference is suspicious
-    [clientServerTimeDiff]
-  );
-
-  // Always call useEffect at the top level
-  useEffect(() => {
-    if ((isModifiedAfterDeadline || isPossibleTimeManipulation || hasDateDiscrepancy) && file && typeof onCheatingDetected === "function") {
-      onCheatingDetected({
-        fileName: file.name,
-        lastModified: lastModified?.toUTCString(),
-        clientReportedDate: clientReportedDate?.toUTCString(),
-        deadline: deadlineDate?.toUTCString(),
-        suspectedTimeManipulation: isPossibleTimeManipulation,
-        hasDateDiscrepancy,
-        timeDifference
-      });
+  // Calculate the specific time difference to display in the alert message
+  // This should be the difference that LED to one of the suspicion flags, or a general one.
+  // For the message "הפרש של X דקות בין זמן המערכת לזמן הקובץ", 
+  // "זמן המערכת" is ambiguous. Let's use clientReportedDate vs uploadedAt (server time of upload).
+  const displayedTimeDifferenceMinutes = useMemo(() => {
+    if (fileMeta?.clientReportedDate && fileMeta?.uploadedAt) {
+      const clientTime = new Date(fileMeta.clientReportedDate);
+      const uploadTime = new Date(fileMeta.uploadedAt);
+      const diffMs = Math.abs(uploadTime.getTime() - clientTime.getTime());
+      return Math.round(diffMs / (60 * 1000)); // Difference in minutes
     }
-  }, [isModifiedAfterDeadline, isPossibleTimeManipulation, hasDateDiscrepancy, file, lastModified, clientReportedDate, deadlineDate, onCheatingDetected, timeDifference, clientServerTimeDiff]);
+    return null; // Or some default like 0 if one of the dates is missing
+  }, [fileMeta?.clientReportedDate, fileMeta?.uploadedAt]);
 
-  // Status color based on conditions
-  const statusColor = isModifiedAfterDeadline || isPossibleTimeManipulation || hasDateDiscrepancy
-    ? "#ea384c" // אדום - רמאות או בעיה
-    : isLateSubmission
-    ? "#f59e0b" // כתום - איחור
-    : "#10b981"; // ירוק - תקין
+  // This client-side check for large discrepancies can remain as a secondary indicator or for UI purposes,
+  // but the server's flag is primary for logic.
+  const hasSignificantClientServerTimeDiff = useMemo(() => {
+    if (!clientReportedDate || !localDisplayTime) return false;
+    const timeDifference = Math.abs(localDisplayTime.getTime() - clientReportedDate.getTime());
+    // This is a very large diff, indicating client's clock might be way off from user viewing the analysis.
+    // The server-side check (clientReported vs serverNOW at upload) is more critical for manipulation detection.
+    return timeDifference > (2 * 60 * 60 * 1000); 
+  }, [clientReportedDate, localDisplayTime]);
+
+  const isLateSubmission = useMemo(() => 
+    fileMeta?.isLateSubmission === true, 
+    [fileMeta]
+  );
+
+  const isModifiedBeforeButSubmittedLate = useMemo(() => {
+    // Rely on server flag if available
+    if (typeof fileMeta?.isModifiedBeforeButSubmittedLate === 'boolean') {
+      return fileMeta.isModifiedBeforeButSubmittedLate;
+    }
+    // Fallback computation based only on client time and flags
+    if (!isLateSubmission || !deadlineDate || !clientReportedDate) return false;
+    // Only consider this valid if NO manipulation is suspected
+    if (isSuspectedTimeManipulationByServer) return false;
+    return clientReportedDate <= deadlineDate;
+  }, [isLateSubmission, clientReportedDate, deadlineDate, isSuspectedTimeManipulationByServer, fileMeta]);
+
+  const statusColor = useMemo(() => {
+    if (isSuspectedTimeManipulationByServer) return "#ea384c"; // Red - Server suspects manipulation
+    if (isModifiedBeforeButSubmittedLate) return "#f59e0b"; 
+    return "#10b981"; 
+  }, [isSuspectedTimeManipulationByServer, isModifiedBeforeButSubmittedLate]);
+
+  // לוגיקה חדשה לזיהוי מניפולציה
+  const serverUploadTime = useMemo(() => fileMeta?.uploadedAt ? new Date(fileMeta.uploadedAt) : null, [fileMeta]);
+  const MAX_ALLOWED_TIME_DIFFERENCE_MIN = 24 * 60; // 24 שעות
+
+  // מניפולציה: זמן עריכה בעתיד
+  const isManipulationFuture = useMemo(() => lastModified && serverUploadTime && lastModified > serverUploadTime, [lastModified, serverUploadTime]);
+  // מניפולציה: הפרש קיצוני (שעון הוזז אחורה)
+  const isManipulationClockBack = useMemo(() => lastModified && serverUploadTime && lastModified < deadlineDate && (serverUploadTime.getTime() - lastModified.getTime()) / (60 * 1000) > MAX_ALLOWED_TIME_DIFFERENCE_MIN, [lastModified, serverUploadTime, deadlineDate]);
+  // האם הקובץ נערך אחרי הדדליין
+  const isModifiedAfterDeadline = useMemo(() => lastModified && deadlineDate && lastModified > deadlineDate, [lastModified, deadlineDate]);
+
+  // סטטוס סופי
+  const statusText = useMemo(() => {
+    if (isManipulationFuture) return "Suspected manipulation: file last modified in the future (clock set forward)";
+    if (isManipulationClockBack) return "Suspected manipulation: file last modified long before submission (clock set back)";
+    if (isModifiedAfterDeadline) return "Late submission: file was modified after the deadline";
+    if (isLateSubmission && !isModifiedAfterDeadline) return "Late submission: file was last modified before the deadline";
+    if (!isLateSubmission) return "On time submission";
+    return "Unknown status";
+  }, [isManipulationFuture, isManipulationClockBack, isModifiedAfterDeadline, isLateSubmission]);
 
   // Early return after all hooks are called
-  if (!file || !fileMeta || !deadline || !lastModified || !deadlineDate) {
+  if (!file || !fileMeta || !deadline || !deadlineDate) {
     return null;
   }
+
+  // פורמט תאריך לתצוגה ידידותית למשתמש
+  const formatDate = (date) => {
+    if (!date) return "N/A";
+    try {
+      // Example: "12/12/2023, 10:30:00 AM" - adjust options as needed
+      return new Date(date).toLocaleString(undefined, { 
+        year: 'numeric', month: 'numeric', day: 'numeric', 
+        hour: '2-digit', minute: '2-digit', second: '2-digit', hour12: false 
+      });
+    } catch (e) {
+      console.error("Error formatting date:", e, "Input date:", date);
+      return "Invalid date";
+    }
+  };
 
   return (
     <div
@@ -140,40 +170,24 @@ function FileMetaAnalyzer({ file, fileMeta, deadline, onCheatingDetected }) {
         </div>
         <div>
           <span style={{ color: "#1A1F2C", fontWeight: 600 }}>
-            {deadlineDate.toUTCString()}
+            {formatDate(deadlineDate)}
           </span>
         </div>
 
         <div style={{ color: "#7E69AB", textAlign: "right" }}>
           <Clock size={16} style={{ verticalAlign: "middle" }} />
-          <span style={{ marginLeft: 5 }}>Client Reported Last Modified</span>
+          <span style={{ marginLeft: 5 }}>Last Modified (Client Reported)</span>
         </div>
         <div>
           <span style={{ 
-            color: hasDateDiscrepancy ? "#ea384c" : "#1A1F2C", 
-            fontWeight: hasDateDiscrepancy ? 700 : 600 
+            color: isSuspectedTimeManipulationByServer ? "#ea384c" : "#1A1F2C", 
+            fontWeight: isSuspectedTimeManipulationByServer ? 700 : 600 
           }}>
-            {clientReportedDate ? clientReportedDate.toUTCString() : "Not available"}
-            {hasDateDiscrepancy && (
+            {formatDate(clientReportedDate)}
+            {isSuspectedTimeManipulationByServer && (
               <span style={{ marginLeft: 10, color: "#ea384c", fontWeight: 700 }}>
                 <AlertTriangle size={18} style={{ verticalAlign: "middle" }} /> 
-                Client date suspicious!
-              </span>
-            )}
-          </span>
-        </div>
-
-        <div style={{ color: "#7E69AB", textAlign: "right" }}>
-          <Shield size={16} style={{ verticalAlign: "middle" }} />
-          <span style={{ marginLeft: 5 }}>Server Verified Last Modified (UTC)</span>
-        </div>
-        <div>
-          <span style={{ color: isModifiedAfterDeadline ? "#ea384c" : "#1A1F2C", fontWeight: 600 }}>
-            {lastModified.toUTCString()}
-            {isModifiedAfterDeadline && (
-              <span style={{ marginLeft: 10, color: "#ea384c", fontWeight: 700 }}>
-                <AlertTriangle size={18} style={{ verticalAlign: "middle" }} /> 
-                Modified after deadline!
+                Suspicious time difference detected
               </span>
             )}
           </span>
@@ -181,35 +195,24 @@ function FileMetaAnalyzer({ file, fileMeta, deadline, onCheatingDetected }) {
 
         <div style={{ color: "#7E69AB", textAlign: "right" }}>
           <ServerCrash size={16} style={{ verticalAlign: "middle" }} />
-          <span style={{ marginLeft: 5 }}>Server Time (UTC)</span>
+          <span style={{ marginLeft: 5 }}>Analysis Time (Local)</span>
         </div>
         <div>
-          <span style={{ color: "#1A1F2C" }}>{nowUTC.toUTCString()}</span>
+          <span style={{ color: "#1A1F2C" }}>{formatDate(localDisplayTime)}</span>
         </div>
 
-        {isPossibleTimeManipulation && (
-          <>
-            <div style={{ color: "#ea384c", textAlign: "right", gridColumn: "1/-1", background: "#FFE8E8", padding: "8px 12px", borderRadius: "6px" }}>
-              <AlertTriangle size={18} style={{ verticalAlign: "middle" }} />
-              <span style={{ marginRight: 5, fontWeight: "bold" }}>
-                חשד למניפולציה של זמנים! הפרש חריג בין זמני המערכת והקובץ
-              </span>
+        {isSuspectedTimeManipulationByServer && (
+          <div style={{ color: "#ea384c", textAlign: "right", gridColumn: "1/-1", background: "#FFE8E8", padding: "8px 12px", borderRadius: "6px", marginTop: "10px" }}>
+            <AlertTriangle size={18} style={{ verticalAlign: "middle" }} />
+            <span style={{ marginRight: 5, fontWeight: "bold" }}>
+              חשד למניפולציית זמן! הפרש חריג בין זמני המערכת והקובץ.
+            </span>
+            {displayedTimeDifferenceMinutes !== null && (
               <div style={{ fontSize: "14px", marginTop: "4px"}}>
-                הפרש של {Math.round(timeDifference / 1000 / 60)} דקות בין זמן המערכת לזמן הקובץ.
+                הפרש של {displayedTimeDifferenceMinutes} דקות בין זמן העריכה המדווח (קובץ) לזמן ההגשה (שרת).
               </div>
-            </div>
-          </>
-        )}
-
-        {hasDateDiscrepancy && (
-          <>
-            <div style={{ color: "#ea384c", textAlign: "right", gridColumn: "1/-1", background: "#FFE8E8", padding: "8px 12px", borderRadius: "6px" }}>
-              <AlertTriangle size={18} style={{ verticalAlign: "middle" }} />
-              <span style={{ marginRight: 5, fontWeight: "bold" }}>
-                זמן שונה מדווח על ידי המשתמש! הפרש של {Math.round(clientServerTimeDiff / 1000 / 60)} דקות בין הזמן המדווח לזמן האמיתי
-              </span>
-            </div>
-          </>
+            )}
+          </div>
         )}
 
         <div style={{ color: "#7E69AB", textAlign: "right" }}>
@@ -217,35 +220,9 @@ function FileMetaAnalyzer({ file, fileMeta, deadline, onCheatingDetected }) {
           <span style={{ marginLeft: 5 }}>Submission Status</span>
         </div>
         <div>
-          {!isLateSubmission && !isModifiedAfterDeadline && !isPossibleTimeManipulation && !hasDateDiscrepancy && (
-            <span style={{ color: "#10b981", fontWeight: 600 }}>
-              <CheckCircle size={18} style={{ verticalAlign: "middle" }} /> On time, not modified after deadline
-            </span>
-          )}
-          {isLateSubmission && !isModifiedAfterDeadline && !isPossibleTimeManipulation && !hasDateDiscrepancy && (
-            <span style={{ color: "#f59e0b", fontWeight: 600 }}>
-              <AlertTriangle size={18} style={{ verticalAlign: "middle" }} /> 
-              Submitted after deadline (but file was not modified after deadline)
-            </span>
-          )}
-          {isModifiedAfterDeadline && (
-            <span style={{ color: "#ea384c", fontWeight: 700 }}>
-              <AlertTriangle size={20} style={{ verticalAlign: "middle" }} /> 
-              File was modified after deadline!
-            </span>
-          )}
-          {isPossibleTimeManipulation && (
-            <span style={{ color: "#ea384c", fontWeight: 700, display: "block", marginTop: "5px" }}>
-              <AlertTriangle size={20} style={{ verticalAlign: "middle" }} /> 
-              Suspected time manipulation detected!
-            </span>
-          )}
-          {hasDateDiscrepancy && !isPossibleTimeManipulation && !isModifiedAfterDeadline && (
-            <span style={{ color: "#ea384c", fontWeight: 700, display: "block", marginTop: "5px" }}>
-              <AlertTriangle size={20} style={{ verticalAlign: "middle" }} /> 
-              Client reported date differs from server verified date!
-            </span>
-          )}
+          <span style={{ color: statusColor, fontWeight: 700 }}>
+            {statusText}
+          </span>
         </div>
       </div>
     </div>

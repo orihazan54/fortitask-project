@@ -1,4 +1,3 @@
-
 import React from 'react';
 import { Upload, AlertTriangle } from 'lucide-react';
 
@@ -19,6 +18,19 @@ const AssignmentUpload = ({
     return `${(sizeInBytes / (1024 * 1024)).toFixed(2)} MB`;
   };
 
+  const handleFileInputChange = (e) => {
+    if (e.target.files && e.target.files[0]) {
+      console.log("AssignmentUpload: File selected", {
+        name: e.target.files[0].name,
+        size: e.target.files[0].size,
+        type: e.target.files[0].type,
+        lastModified: e.target.files[0].lastModified,
+        clientReportedDate: e.target.files[0].clientReportedDate,
+      });
+      onFileChange(e);
+    }
+  };
+
   return (
     <div className="upload-section">
       <h3 className="section-title">
@@ -32,22 +44,19 @@ const AssignmentUpload = ({
             <span>Choose a file to upload</span>
             <input 
               type="file" 
-              onChange={onFileChange} 
+              onChange={handleFileInputChange} 
               style={{ display: "none" }}
             />
           </div>
         </label>
       </div>
-      {uploadError && (
-        <div className="upload-error-message">
-          <AlertTriangle size={16} />
-          {uploadError}
-        </div>
-      )}
       {file && (
         <div className="selected-file">
           <p>
             Selected file: {file.name} ({formatFileSize(file.size)})
+          </p>
+          <p>
+            Last modified (according to your computer): {file.lastModified ? new Date(file.lastModified).toLocaleString() : "Unknown"}
           </p>
           <div className="comment-input">
             <label htmlFor="upload-comment">Comment (optional):</label>
@@ -75,6 +84,12 @@ const AssignmentUpload = ({
               Cancel
             </button>
           </div>
+        </div>
+      )}
+      {uploadError && (
+        <div className="upload-error-message">
+          <AlertTriangle size={16} />
+          {uploadError}
         </div>
       )}
     </div>

@@ -44,51 +44,108 @@ app.get("/api/health", (req, res) => {
   res.status(200).json({ status: "ok", message: "Server is running" });
 });
 
-// טיפול בקבצי מטא-דאטה - מציג גם את הזמן שדווח על ידי הלקוח וגם את הזמן האמיתי
+// טיפול בקבצי מטא-דאטה - גרסה מתוקנת עם הגיון משופר ובדיקות מדויקות יותר
 app.post("/api/analyze-metadata", (req, res) => {
   try {
-    const { fileData } = req.body;
+    const { fileData, deadline } = req.body;
     if (!fileData) {
       return res.status(400).json({ message: "No file data provided" });
     }
     
+    console.log("Analyzing file metadata:", {
+      name: fileData.name,
+      size: fileData.size,
+      lastModified: fileData.lastModified
+    });
+    
     // Extract metadata from file
     const { lastModified, name, size, type } = fileData;
     
-    // Save client reported date
-    const clientReportedDate = new Date(lastModified);
+    // Save client reported date - חובה לשמור את התאריך שמדווח על ידי הלקוח
+    const clientReportedDate = lastModified ? new Date(lastModified) : null;
     
-    // Compare with server time to detect time manipulation
+    // Get current server time for comparison
     const serverTime = new Date();
-    const timeDifference = Math.abs(serverTime - clientReportedDate);
     
-    // If time difference is too large (more than 1 hour), it might indicate manipulation
-    const possibleManipulation = timeDifference > 3600000;
+    // Calculate time difference only if client reported a date
+    let timeDifference = 0;
+    let possibleManipulation = false;
     
-    // We'll verify the actual last modified time on the server side
-    // For now we're simulating this since we don't have direct access to the file
-    // In a real scenario, we'd get this from file system metadata or more reliable sources
-    const serverVerifiedModified = new Date();
+    if (clientReportedDate) {
+      timeDifference = Math.abs(serverTime - clientReportedDate);
+      // אם הפרש הזמנים גדול מדי (יותר משעתיים), זה עשוי להצביע על מניפולציה
+      possibleManipulation = timeDifference > 7200000; // 2 hours in milliseconds
+      console.log(`Time difference: ${timeDifference / 1000 / 60} minutes, Possible manipulation: ${possibleManipulation}`);
+    } else {
+      console.log("No client reported date available");
+    }
     
-    // Calculate discrepancy between client reported time and server verified time
-    const clientServerDiscrepancy = Math.abs(clientReportedDate - serverVerifiedModified);
-    const hasDateDiscrepancy = clientServerDiscrepancy > 60000; // More than a minute difference
+    // בגרסה המשופרת אנחנו מתייחסים לתאריך העריכה האחרון כפי שדווח מהלקוח כאמין
+    // אלא אם כן יש אינדיקציה לרמאות
+    const serverVerifiedModified = clientReportedDate || new Date();
     
+    // בדיקת הפער בין התאריך המדווח ע"י הלקוח לבין התאריך של השרת
+    const clientServerDiscrepancy = clientReportedDate ? Math.abs(clientReportedDate - serverTime) : 0;
+    const hasDateDiscrepancy = clientServerDiscrepancy > 60000 && clientServerDiscrepancy > 7200000; // הפרש של יותר מדקה ויותר משעתיים
+    
+    // Get deadline for comparison (if provided)
+    let deadlineDate = null;
+    let isLateSubmission = false;
+    let isModifiedAfterDeadline = false;
+    let isModifiedBeforeButSubmittedLate = false;
+    
+    if (deadline) {
+      deadlineDate = new Date(deadline);
+      console.log(`Deadline: ${deadlineDate.toISOString()}`);
+      
+      // בדיקה אם ההגשה מאוחרת - האם זמן השרת הנוכחי מאוחר מהדדליין
+      isLateSubmission = serverTime > deadlineDate;
+      
+      // בדיקה אם הקובץ נערך אחרי הדדליין - תלוי בתאריך העריכה המאומת
+      if (clientReportedDate && !possibleManipulation && !hasDateDiscrepancy) {
+        isModifiedAfterDeadline = clientReportedDate > deadlineDate;
+        console.log(`Using client reported date for modification check: ${isModifiedAfterDeadline ? "Modified after deadline" : "Modified before deadline"}`);
+      }
+      
+      // בדיקה משופרת: האם הקובץ נערך לפני הדדליין אך הוגש באיחור
+      if (isLateSubmission) {
+        if (clientReportedDate && !possibleManipulation && !hasDateDiscrepancy) {
+          isModifiedBeforeButSubmittedLate = clientReportedDate <= deadlineDate;
+          console.log(`File submitted late but modified before deadline: ${isModifiedBeforeButSubmittedLate}`);
+        }
+      }
+    }
+    
+    // לוג סופי של המסקנות
+    console.log("Metadata analysis conclusions:", {
+      isLateSubmission,
+      isModifiedAfterDeadline,
+      isModifiedBeforeButSubmittedLate,
+      possibleManipulation,
+      hasDateDiscrepancy
+    });
+    
+    // שיפור הדיוק של התוצאות שנשלחות
     res.status(200).json({
       fileName: name,
       fileSize: size,
       fileType: type,
-      clientReportedDate: clientReportedDate.toISOString(),
-      lastModified: serverVerifiedModified.toISOString(), // Server verified date
+      clientReportedDate: clientReportedDate ? clientReportedDate.toISOString() : null,
+      lastModified: serverVerifiedModified ? serverVerifiedModified.toISOString() : null,
+      lastModifiedUTC: serverVerifiedModified ? serverVerifiedModified.toISOString() : null,
       serverTime: serverTime.toISOString(),
       timeDifference,
       possibleManipulation,
       hasDateDiscrepancy,
-      clientServerDiscrepancy
+      clientServerDiscrepancy,
+      isLateSubmission,
+      isModifiedAfterDeadline,
+      isModifiedBeforeButSubmittedLate,
+      deadline: deadlineDate ? deadlineDate.toISOString() : null
     });
   } catch (error) {
     console.error("Error analyzing metadata:", error);
-    res.status(500).json({ message: "Failed to analyze metadata" });
+    res.status(500).json({ message: "Failed to analyze metadata", error: error.toString() });
   }
 });
 

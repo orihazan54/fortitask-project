@@ -1,3 +1,4 @@
+
 import React, { useState, useEffect } from "react";
 import { useNavigate } from "react-router-dom";
 import { login, checkAuthentication } from "../services/api";
@@ -43,11 +44,11 @@ const Login = () => {
   const handleSubmit = async (e) => {
     e.preventDefault();
     if (!formData.email || !formData.password) {
-      toast.error("Please fill in all fields.");
+      toast.error("Please fill in all required fields");
       return;
     }
     if (requiresTwoFactor && !twoFactorCode) {
-      toast.error("Please enter the two-factor authentication code.");
+      toast.error("Please enter your two-factor authentication code");
       return;
     }
     setLoading(true);
@@ -88,14 +89,15 @@ const Login = () => {
     } catch (error) {
       console.error("Login error:", error);
       
+      // Display all errors as toast messages
       if (error.response?.status === 400 && error.response?.data?.requiresTwoFactor) {
         setRequiresTwoFactor(true);
         setLoginAttemptData(formData);
         toast.info(error.response.data.message || "Two-factor authentication required");
       } else {
-        // Ensure toast message is shown for login errors
-        toast.error(error.response?.data?.message || "Login failed! Check your credentials.");
-        localStorage.clear();
+        // Create error message and display it as toast
+        const errorMessage = error.response?.data?.message || error.message || "Login failed! Please check your credentials";
+        toast.error(errorMessage);
       }
     } finally {
       setLoading(false);
@@ -120,7 +122,7 @@ const Login = () => {
             </CardTitle>
             <CardDescription>
               {requiresTwoFactor
-                ? "Please enter the code from your authenticator app"
+                ? "Enter the code from your authenticator app"
                 : "Login to manage your tasks"}
             </CardDescription>
           </CardHeader>
@@ -199,7 +201,7 @@ const Login = () => {
                       className="back-button"
                       onClick={handleBackToLogin}
                     >
-                      Back to Login
+                      Back to Login Form
                     </Button>
                   </div>
                 </div>
@@ -215,7 +217,7 @@ const Login = () => {
                   </Button>
                 </p>
                 <Button variant="link" className="forgot-link" onClick={() => navigate("/forgot-password")}>
-                  Forgot your password?
+                  Forgot Password?
                 </Button>
               </div>
             )}

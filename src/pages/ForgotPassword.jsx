@@ -1,7 +1,7 @@
 
 import React, { useState } from "react";
 import { useNavigate } from "react-router-dom";
-import { toast } from "react-toastify";
+import { toast } from "sonner";
 import { sendPasswordResetEmail, resetPassword } from "../services/api";
 import NavBar from "../components/NavBar";
 import "../styles/ForgotPassword.css";
@@ -40,7 +40,7 @@ const ForgotPassword = () => {
 
   const handleSendEmail = async () => {
     if (!email || !/\S+@\S+\.\S+/.test(email)) {
-      toast.error("Please enter a valid email address.");
+      toast.error("Please enter a valid email address");
       return;
     }
 
@@ -50,7 +50,7 @@ const ForgotPassword = () => {
       const response = await sendPasswordResetEmail({ email });
       console.log("Response:", response);
       
-      toast.success("Verification code sent to your email.");
+      toast.success("Verification code sent to your email");
       setStep(2); // Move to next step
     } catch (error) {
       console.error("Password reset error:", error);
@@ -62,17 +62,17 @@ const ForgotPassword = () => {
 
   const handleResetPassword = async () => {
     if (!verificationCode || !newPassword || !confirmPassword) {
-      toast.error("Please fill in all fields.");
+      toast.error("Please fill in all fields");
       return;
     }
 
     if (newPassword !== confirmPassword) {
-      toast.error("Passwords do not match.");
+      toast.error("Passwords do not match");
       return;
     }
 
     if (passwordStrength === "Weak") {
-      toast.error("Password is too weak. Please choose a stronger password.");
+      toast.error("Password is too weak. Please choose a stronger password");
       return;
     }
 
@@ -85,11 +85,11 @@ const ForgotPassword = () => {
       });
       
       await resetPassword({ email, verificationCode, newPassword });
-      toast.success("Password reset successfully.");
+      toast.success("Password reset successfully");
       navigate("/login");
     } catch (error) {
       console.error("Password reset error:", error);
-      toast.error(error.response?.data?.message || "Failed to reset password. Please try again.");
+      toast.error(error.response?.data?.message || "Password reset failed. Please try again.");
     } finally {
       setIsLoading(false);
     }
@@ -102,11 +102,11 @@ const ForgotPassword = () => {
         <div className="card">
           {step === 1 && (
             <>
-              <h2>Forgot Your Password?</h2>
-              <p>Enter your email below to reset your password.</p>
+              <h2>Forgot Password?</h2>
+              <p>Enter your email address to reset your password.</p>
               <input
                 type="email"
-                placeholder="Enter your email"
+                placeholder="Enter your email address"
                 value={email}
                 onChange={(e) => setEmail(e.target.value)}
                 disabled={isLoading}
@@ -197,7 +197,7 @@ const ForgotPassword = () => {
                   onClick={() => setStep(1)}
                   disabled={isLoading}
                 >
-                  Back to email
+                  Back to Email
                 </button>
               </p>
             </>

@@ -1,7 +1,7 @@
 
 import React, { useState, useEffect } from "react";
 import { useNavigate } from "react-router-dom";
-import { toast } from "react-toastify";
+import { toast } from "sonner";
 import { 
   User, Mail, BookOpen, Calendar, Lock, ArrowLeft,
   CheckCircle, Edit, Shield, UserCheck, Eye, EyeOff
@@ -48,6 +48,10 @@ const TeacherProfile = () => {
     verificationCode: "",
     enabled: false
   });
+  
+  // מצב עבור בקשות 2FA בתהליך
+  const [processing2FA, setProcessing2FA] = useState(false);
+  const [twoFactorError, setTwoFactorError] = useState("");
   
   // Delete account modal
   const [showDeleteModal, setShowDeleteModal] = useState(false);
@@ -230,10 +234,23 @@ const TeacherProfile = () => {
     }
   };
   
-  // Setup 2FA
+  // Setup 2FA - משופר עם בדיקות
   const handleSetupTwoFactor = async () => {
     try {
+      setTwoFactorError("");
+      setProcessing2FA(true);
+      
+      // אם 2FA כבר מופעל, פתח את מסך הכיבוי ישירות
+      if (twoFactorData.enabled) {
+        setShowTwoFactorSetup(true);
+        return;
+      }
+      
       const { data } = await setupTwoFactorAuth();
+      
+      if (!data || !data.qrCode || !data.secret) {
+        throw new Error("Invalid 2FA setup data received");
+      }
       
       setTwoFactorData({
         qrCode: data.qrCode,
@@ -242,60 +259,98 @@ const TeacherProfile = () => {
         enabled: data.enabled || false
       });
       setShowTwoFactorSetup(true);
+      console.log("2FA setup data received:", { 
+        hasQR: !!data.qrCode,
+        hasSecret: !!data.secret, 
+        enabled: data.enabled 
+      });
     } catch (error) {
       console.error("Error setting up 2FA:", error);
-      toast.error("Failed to set up two-factor authentication. Please try again.");
+      toast.error("שגיאה בהגדרת אימות דו-שלבי. אנא נסה שנית.");
+      setTwoFactorError(error.response?.data?.message || "שגיאה בהגדרת אימות דו-שלבי");
+    } finally {
+      setProcessing2FA(false);
     }
   };
   
-  // Verify 2FA
+  // Verify 2FA - משופר על בסיס קוד שעובד
   const handleVerifyTwoFactor = async () => {
     try {
+      setTwoFactorError("");
+      
       if (!twoFactorData.verificationCode) {
-        toast.error("Please enter verification code");
+        toast.error("אנא הכנס קוד אימות");
+        setTwoFactorError("קוד אימות נדרש");
         return;
       }
       
-      await validateTwoFactorAuth(twoFactorData.verificationCode);
-      toast.success("Two-factor authentication enabled successfully!");
+      // בדיקת תקינות פורמט הקוד
+      const code = twoFactorData.verificationCode.trim().replace(/\s+/g, '');
+      if (!/^\d{6}$/.test(code)) {
+        toast.error("אנא הכנס קוד אימות תקין בן 6 ספרות");
+        setTwoFactorError("קוד אימות חייב להכיל 6 ספרות בדיוק");
+        return;
+      }
+      
+      setProcessing2FA(true);
+      console.log("Sending verification code:", code);
+      
+      // שליחת הקוד לאימות
+      await validateTwoFactorAuth(code);
+      toast.success("אימות דו-שלבי הופעל בהצלחה!");
+      
+      // עדכון סטטוס ה-2FA במקומי
       setTwoFactorData(prev => ({
         ...prev,
-        enabled: true
+        enabled: true,
+        verificationCode: ""
       }));
+      
+      // סגירת מסך ההגדרה
       setShowTwoFactorSetup(false);
       
-      // Update user data
+      // עדכון נתוני המשתמש מהשרת
       const { data } = await getUserDetails();
       setUser(data);
     } catch (error) {
       console.error("Error verifying 2FA:", error);
-      toast.error("Invalid verification code. Please try again.");
+      const errorMessage = error.response?.data?.message || "קוד אימות שגוי. אנא נסה שנית.";
+      toast.error(errorMessage);
+      setTwoFactorError(errorMessage);
+    } finally {
+      setProcessing2FA(false);
     }
   };
   
-  // Disable 2FA
+  // Disable 2FA - משופר על בסיס קוד שעובד
   const handleDisableTwoFactor = async () => {
     try {
+      setTwoFactorError("");
+      
       if (!twoFactorData.verificationCode) {
-        toast.error("Please enter verification code");
+        toast.error("אנא הכנס קוד אימות");
+        setTwoFactorError("קוד אימות נדרש");
         return;
       }
       
-      // Add extra validation for the code format
+      // בדיקת תקינות פורמט הקוד
       const code = twoFactorData.verificationCode.trim().replace(/\s+/g, '');
       if (!/^\d{6}$/.test(code)) {
-        toast.error("Please enter a valid 6-digit verification code");
+        toast.error("אנא הכנס קוד אימות תקין בן 6 ספרות");
+        setTwoFactorError("קוד אימות חייב להכיל 6 ספרות בדיוק");
         return;
       }
       
       // Set loading state while disabling
-      setLoading(true);
+      setProcessing2FA(true);
+      
+      console.log("Attempting to disable 2FA with code:", code);
       
       // Call the API with the validated code
       await disableTwoFactorAuth(code);
       
       // Update UI state on success
-      toast.success("Two-factor authentication disabled successfully!");
+      toast.success("אימות דו-שלבי בוטל בהצלחה!");
       setTwoFactorData({
         qrCode: "",
         secret: "",
@@ -309,10 +364,11 @@ const TeacherProfile = () => {
       setUser(data);
     } catch (error) {
       console.error("Error disabling 2FA:", error);
-      const errorMsg = error.response?.data?.message || "Failed to disable two-factor authentication. Please try again.";
+      const errorMsg = error.response?.data?.message || "שגיאה בביטול אימות דו-שלבי. אנא נסה שנית.";
       toast.error(errorMsg);
+      setTwoFactorError(errorMsg);
     } finally {
-      setLoading(false);
+      setProcessing2FA(false);
     }
   };
   
@@ -517,20 +573,26 @@ const TeacherProfile = () => {
                     <button 
                       className={`security-button ${twoFactorData.enabled ? 'danger-button' : 'primary-button'} mt-3`}
                       onClick={handleSetupTwoFactor}
+                      disabled={processing2FA}
                     >
                       <Shield size={16} className="mr-2" />
-                      {twoFactorData.enabled ? 'Disable Two-Factor Auth' : 'Enable Two-Factor Auth'}
+                      {processing2FA ? 'Processing...' : 
+                        (twoFactorData.enabled ? 'Disable Two-Factor Auth' : 'Enable Two-Factor Auth')}
                     </button>
                   ) : (
                     <div className="mt-4">
                       {!twoFactorData.enabled && (
                         <div className="flex justify-center mb-4">
-                          {twoFactorData.qrCode && (
+                          {twoFactorData.qrCode ? (
                             <img 
                               src={twoFactorData.qrCode} 
                               alt="QR Code for 2FA" 
                               className="w-48 h-48 mb-2"
                             />
+                          ) : (
+                            <div className="w-48 h-48 bg-gray-200 flex items-center justify-center">
+                              <span className="text-gray-500">Loading QR code...</span>
+                            </div>
                           )}
                         </div>
                       )}
@@ -548,34 +610,65 @@ const TeacherProfile = () => {
                         placeholder="Enter verification code"
                         className="password-input text-center tracking-wider"
                         value={twoFactorData.verificationCode}
-                        onChange={(e) => setTwoFactorData(prev => ({
-                          ...prev,
-                          verificationCode: e.target.value
-                        }))}
-                        aria-label="Verification code"
+                        onChange={(e) => {
+                          // מסנן רק ספרות ומגביל לאורך 6
+                          const value = e.target.value.replace(/\D/g, '').substring(0, 6);
+                          setTwoFactorData(prev => ({
+                            ...prev,
+                            verificationCode: value
+                          }));
+                          setTwoFactorError("");
+                        }}
+                        aria-label="Verification Code"
+                        disabled={processing2FA}
+                        dir="ltr"
                       />
+                      
+                      {twoFactorError && (
+                        <div className="mt-2 p-2 bg-red-900/50 border border-red-500 rounded text-red-200 text-sm text-center">
+                          {twoFactorError}
+                        </div>
+                      )}
                       
                       <div className="action-buttons">
                         {!twoFactorData.enabled ? (
                           <button 
                             className="action-button primary-button"
                             onClick={handleVerifyTwoFactor}
+                            disabled={processing2FA}
                           >
-                            <CheckCircle size={16} />
-                            Verify and Enable
+                            {processing2FA ? 'Verifying...' : (
+                              <>
+                                <CheckCircle size={16} />
+                                Verify and Enable
+                              </>
+                            )}
                           </button>
                         ) : (
                           <button 
                             className="action-button danger-button"
                             onClick={handleDisableTwoFactor}
+                            disabled={processing2FA}
                           >
-                            <Shield size={16} />
-                            Disable Two-Factor Auth
+                            {processing2FA ? 'Disabling...' : (
+                              <>
+                                <Shield size={16} />
+                                Disable Two-Factor Auth
+                              </>
+                            )}
                           </button>
                         )}
                         <button 
                           className="action-button secondary-button"
-                          onClick={() => setShowTwoFactorSetup(false)}
+                          onClick={() => {
+                            setShowTwoFactorSetup(false);
+                            setTwoFactorError("");
+                            setTwoFactorData(prev => ({
+                              ...prev,
+                              verificationCode: ""
+                            }));
+                          }}
+                          disabled={processing2FA}
                         >
                           Cancel
                         </button>
@@ -587,6 +680,7 @@ const TeacherProfile = () => {
                 <button 
                   className="security-button danger-button mt-6"
                   onClick={() => setShowDeleteModal(true)}
+                  disabled={processing2FA}
                 >
                   <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className="mr-2">
                     <path d="m21.73 18-8-14a2 2 0 0 0-3.48 0l-8 14A2 2 0 0 0 4 21h16a2 2 0 0 0 1.73-3Z"></path>
@@ -600,7 +694,7 @@ const TeacherProfile = () => {
           </div>
         </div>
         
-        {/* Password Change Card - MOVED TO BOTTOM */}
+        {/* Password Change Card */}
         <div className="profile-card mt-6">
           <div className="card-content">
             <h2 className="card-title">
@@ -655,7 +749,7 @@ const TeacherProfile = () => {
                 </div>
                 {passwordStrength && (
                   <span className={`password-strength ${passwordStrength}`}>
-                    Password Strength: {passwordStrength === 'weak' ? 'Weak' : passwordStrength === 'medium' ? 'Medium' : 'Strong'}
+                    Password Strength: {passwordStrength === 'weak' ? 'Week' : passwordStrength === 'medium' ? 'Medium' : 'Strong'}
                   </span>
                 )}
               </div>

@@ -59,6 +59,47 @@ userSchema.statics.isStrongPassword = function(password) {
   return result;
 };
 
+// פונקציה מותאמת משופרת לבדיקת קוד 2FA
+userSchema.statics.verifyTwoFactorCode = function(userSecret, code) {
+  const speakeasy = require('speakeasy');
+  
+  // נקיון הקוד מרווחים ואחידות פורמט
+  const cleanCode = String(code).trim().replace(/\s+/g, '');
+  console.log("2FA code verification:", {
+    codeLength: cleanCode.length,
+    hasValidFormat: /^\d{6}$/.test(cleanCode)
+  });
+  
+  // בדיקה מקדימה שהקוד בפורמט תקין
+  if (!/^\d{6}$/.test(cleanCode)) {
+    console.error("Invalid 2FA code format");
+    return false;
+  }
+  
+  // וידוא שיש סוד לבדוק מולו
+  if (!userSecret) {
+    console.error("No secret provided for 2FA verification");
+    return false;
+  }
+  
+  // פיקס: לגיטי אם אין קוד תקין או סוד
+  try {
+    // בדיקה עם טווח זמן רחב (20 תקופות = ~10 דקות)
+    const verified = speakeasy.totp.verify({
+      secret: userSecret,
+      encoding: 'base32',
+      token: cleanCode,
+      window: 20
+    });
+    
+    console.log("2FA verification result:", verified);
+    return verified;
+  } catch (error) {
+    console.error("2FA verification error:", error);
+    return false;
+  }
+};
+
 // מתודה להוספת התראה למשתמש
 userSchema.methods.addNotification = async function(message) {
   this.notifications.push({ message });

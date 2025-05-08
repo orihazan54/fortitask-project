@@ -1,42 +1,54 @@
 const express = require("express");
 const router = express.Router();
 const { authenticateToken } = require("../middleware/auth");
-const cloudinary = require("cloudinary").v2;
-const multer = require("multer");
-const { CloudinaryStorage } = require("multer-storage-cloudinary");
+const { cloudinary, upload } = require("../config/cloudinary");
 const Course = require("../models/Course");
 const User = require("../models/User");
 const mongoose = require("mongoose");
+const fs = require('fs').promises;
+const { execFile } = require('child_process');
+const util = require('util');
+const execFilePromise = util.promisify(execFile);
 
-// 📌 הגדרת Cloudinary
-cloudinary.config({
-  cloud_name: process.env.CLOUDINARY_CLOUD_NAME,
-  api_key: process.env.CLOUDINARY_API_KEY,
-  api_secret: process.env.CLOUDINARY_API_SECRET,
-});
+// פונקציה לקבלת מטא-דאטא מורחב של הקובץ
+async function getExtendedFileMetadata(filePath) {
+    try {
+        const stats = await fs.stat(filePath);
+        let metadata = {
+            birthtime: stats.birthtime,
+            mtime: stats.mtime,
+            ctime: stats.ctime,
+            atime: stats.atime
+        };
 
-console.log("✅ Cloudinary Config:");
-console.log("CLOUD_NAME:", process.env.CLOUDINARY_CLOUD_NAME);
-console.log("API_KEY:", process.env.CLOUDINARY_API_KEY ? "Loaded" : "Missing");
-console.log("API_SECRET:", process.env.CLOUDINARY_API_SECRET ? "Loaded" : "Missing");
+        // בדיקת מטא-דאטא נוספת בהתאם למערכת ההפעלה
+        if (process.platform === 'win32') {
+            try {
+                // שימוש ב-PowerShell לקבלת מידע נוסף בחלונות
+                const { stdout } = await execFilePromise('powershell.exe', [
+                    '-Command',
+                    `(Get-Item '${filePath}').LastWriteTimeUtc.ToString('o')`
+                ]);
+                metadata.windowsLastWriteTime = new Date(stdout.trim());
+            } catch (err) {
+                console.error('Error getting Windows metadata:', err);
+            }
+        } else {
+            try {
+                // שימוש ב-stat בלינוקס/מאק לקבלת מידע נוסף
+                const { stdout } = await execFilePromise('stat', ['-f', '%Sm', filePath]);
+                metadata.unixLastModified = new Date(stdout.trim());
+            } catch (err) {
+                console.error('Error getting Unix metadata:', err);
+            }
+        }
 
-// 📌 בדיקת חיבור ל-Cloudinary
-cloudinary.api.ping()
-  .then(res => console.log("✅ Cloudinary Connection Successful!", res))
-  .catch(err => console.error("❌ Cloudinary Connection Failed!", err));
-
-// 📌 הגדרת Multer לאחסון הקבצים ב-Cloudinary
-const storage = new CloudinaryStorage({
-  cloudinary: cloudinary,
-  params: {
-    folder: "assignments",
-    resource_type: "auto", // מאפשר העלאת כל סוגי הקבצים
-    use_filename: true,     // שימוש בשם המקורי של הקובץ
-    unique_filename: true,  // הוספת מזהה ייחודי
-    encoding: "utf8",       // תמיכה בעברית ושפות אחרות
-  },
-});
-const upload = multer({ storage });
+        return metadata;
+    } catch (err) {
+        console.error('Error getting file metadata:', err);
+        return null;
+    }
+}
 
 // -------------------- 📚 Routes -------------------- //
 
@@ -84,185 +96,167 @@ router.post("/create", authenticateToken, upload.single("file"), async (req, res
   }
 });
 
-// 📂 העלאת מטלה ל-Cloudinary עם בדיקת מטא-דאטה ושמירת פרטי הסטודנט
-router.post("/:id/upload-assignment", authenticateToken, upload.single("file"), async (req, res) => {
+// Direct file download endpoint
+router.get("/:id/assignments/:assignmentId/download", authenticateToken, async (req, res) => {
   try {
-    console.log("📥 File upload request received for Course ID:", req.params.id);
-    console.log("User ID from auth:", req.user.id);
+    const { id, assignmentId } = req.params;
     
+    // Find the course and assignment
+    const course = await Course.findById(id);
+    if (!course) {
+      return res.status(404).json({ message: "Course not found" });
+    }
+    
+    const assignment = course.assignments.id(assignmentId);
+    if (!assignment) {
+      return res.status(404).json({ message: "Assignment not found" });
+    }
+    
+    // Check permissions
+    if (!assignment.isMaterial) {
+      // Only allow teachers and the student who uploaded the file to access
+      if (req.user.role !== "Teacher" && 
+         (!assignment.studentId || assignment.studentId.toString() !== req.user.id)) {
+        return res.status(403).json({ message: "Access denied for this file" });
+      }
+    }
+    
+    if (!assignment.fileUrl) {
+      return res.status(404).json({ message: "No file URL found for this assignment" });
+    }
+    
+    // Return the direct Cloudinary URL
+    return res.status(200).json({ 
+      fileUrl: assignment.fileUrl,
+      fileName: assignment.displayName || assignment.fileName || "downloaded-file"
+    });
+  } catch (error) {
+    console.error("Error generating download URL:", error);
+    return res.status(500).json({ message: "Failed to generate download URL", error: error.message });
+  }
+});
+
+// 📂 העלאת מטלה לענן והכנסה לקורס
+router.post("/:id/upload-assignment", authenticateToken, upload.single("file"), async (req, res) => {
+  let localFilePath = req.file?.path; // Store the initial path in case we need it for cleanup
+  try {
     if (!req.file) {
       console.error("❌ No file received!");
       return res.status(400).json({ message: "No file uploaded!" });
     }
+    // Path from multer-storage-cloudinary is the URL, not local path for fs.stat
+    console.log("File info from multer/cloudinary:", { path: req.file.path, originalname: req.file.originalname });
 
     const course = await Course.findById(req.params.id);
     if (!course) {
       console.error("❌ Course not found!");
+      // Note: Cannot easily delete from Cloudinary here without more info/SDK call
       return res.status(404).json({ message: "Course not found!" });
     }
 
-    // קבלת פרטי המשתמש השלמים
     const user = await User.findById(req.user.id);
     if (!user) {
       console.error("❌ User not found!");
       return res.status(404).json({ message: "User not found!" });
     }
 
-    // ========== זמן שרת אמיתי - אין דרך לזייף ========== //
-    const serverNowUTC = new Date();
+    const serverNowAtUploadUTC = new Date(); 
     const deadlineUTC = new Date(course.deadline);
-    const isLate = serverNowUTC > deadlineUTC;
+    const isLate = serverNowAtUploadUTC > deadlineUTC;
     
-    // בדיקת מטא-דאטה של הקובץ - ניתוח מעמיק
-    let isModifiedAfterDeadline = false;
-    let lastModifiedDate = null;
     let clientReportedDate = null;
-    let dateDiscrepancy = false;
     let suspectedTimeManipulation = false;
-    
-    // שלב 1: שמירת התאריך שדווח על ידי הלקוח (עלול להיות מזויף)
+    let isModifiedAfterDeadline = false; 
+    let timeDifferenceMinutes = null;
+
     if (req.body.lastModified) {
-      try {
-        if (!isNaN(req.body.lastModified)) {
-          clientReportedDate = new Date(Number(req.body.lastModified));
-        } else {
-          clientReportedDate = new Date(req.body.lastModified);
+        clientReportedDate = new Date(parseInt(req.body.lastModified));
+        timeDifferenceMinutes = Math.abs((serverNowAtUploadUTC.getTime() - clientReportedDate.getTime()) / (60 * 1000));
+        const MAX_ALLOWED_TIME_DIFFERENCE_MIN = 24 * 60; // 24 שעות
+
+        // חשד למניפולציה: זמן עריכה בעתיד או הפרש קיצוני
+        if (clientReportedDate.getTime() > serverNowAtUploadUTC.getTime() || timeDifferenceMinutes > MAX_ALLOWED_TIME_DIFFERENCE_MIN) {
+            suspectedTimeManipulation = true;
         }
-        console.log("Client reported lastModified:", req.body.lastModified, "->", clientReportedDate.toISOString());
-      } catch (e) {
-        console.error("Error parsing client reported lastModified:", e);
-        clientReportedDate = serverNowUTC; // Fallback to server time
-      }
-    }
-    
-    // שלב 2: קביעת תאריך אחרון שונה מאומת על ידי השרת
-    // בהיעדר גישה ישירה לקובץ המקורי, נשתמש בזמן שרת או במידע מהמערכת
-    // במערכת אמיתית, היינו משתמשים ב-file system metadata או מקור אמין אחר
-    lastModifiedDate = serverNowUTC;
-    
-    // שלב 3: בדיקת הפרשים חשודים בין זמני לקוח ושרת
-    if (clientReportedDate) {
-      const timeDifferenceMs = Math.abs(serverNowUTC - clientReportedDate);
-      if (timeDifferenceMs > 3600000) { // הפרש של יותר משעה נחשב חשוד
-        console.warn("⚠️ Suspicious time difference detected:", timeDifferenceMs / 1000 / 60, "minutes");
-        suspectedTimeManipulation = true;
-      }
-      
-      // בדיקת הפרש בין התאריך שדווח על ידי הלקוח לבין התאריך האמיתי
-      const clientServerDiffMs = Math.abs(clientReportedDate - lastModifiedDate);
-      if (clientServerDiffMs > 60000) { // הפרש של יותר מדקה נחשב חשוד
-        console.warn("⚠️ Client-server date discrepancy detected:", clientServerDiffMs / 1000 / 60, "minutes");
-        dateDiscrepancy = true;
-      }
-    }
-
-    // בדיקה אם הקובץ שונה לאחר הדדליין
-    if (lastModifiedDate > deadlineUTC) {
-      isModifiedAfterDeadline = true;
-      console.log("❗ File was modified after deadline! Deadline:", deadlineUTC.toISOString(), "Modified:", lastModifiedDate.toISOString());
-      
-      // רישום בפרופיל המשתמש שהעלה קובץ שנערך לאחר המועד (לצרכי סטטיסטיקה)
-      if (req.user.role === "Student") {
-        try {
-          await user.recordModifiedAfterDeadline();
-          console.log("Recorded modified-after-deadline submission for user:", user._id);
-        } catch (err) {
-          console.error("Failed to record modified-after-deadline:", err);
+        // האם הקובץ נערך אחרי הדדליין
+        isModifiedAfterDeadline = clientReportedDate > deadlineUTC;
+    } else {
+        isModifiedAfterDeadline = false;
+        if (isLate) {
+            suspectedTimeManipulation = true;
         }
-      }
-    }
-    
-    // רישום בפרופיל המשתמש שהגיש באיחור (לצרכי סטטיסטיקה)
-    if (isLate && req.user.role === "Student") {
-      try {
-        await user.recordLateSubmission();
-        console.log("Recorded late submission for user:", user._id);
-      } catch (err) {
-        console.error("Failed to record late submission:", err);
-      }
     }
 
-    // נקבע את שם הקובץ לתצוגה 
-    const originalFileName = req.file.originalname;
-    const displayName = Buffer.from(originalFileName, 'latin1').toString('utf8');
-    console.log(`📄 Original file name: ${originalFileName}, Display name: ${displayName}`);
+    // האם הקובץ נערך לפני הדדליין אך הוגש באיחור (רק אם אין חשד למניפולציה)
+    const isModifiedBeforeButSubmittedLate = isLate && clientReportedDate && !isModifiedAfterDeadline && !suspectedTimeManipulation;
 
-    // שמירת הערה להגשה (אם קיימת)
-    const submissionComment = req.body.comment || "";
+    // הודעה לסטודנט בלבד (פשוטה)
+    let notificationMessage;
+    if (isLate) {
+        notificationMessage = `Your assignment was submitted late.`;
+    } else {
+        notificationMessage = `Your assignment was submitted successfully.`;
+    }
 
     const newAssignment = {
-      fileUrl: req.file.path,
+      fileUrl: req.file.path, // This is the Cloudinary URL
       fileName: req.file.originalname,
-      displayName: displayName,
-      uploadedAt: serverNowUTC,
-      lastModified: lastModifiedDate, // תאריך מוכח/מאומת על ידי השרת
-      lastModifiedUTC: lastModifiedDate, // שמירה נוספת ב-UTC לדיוק מרבי
-      clientReportedDate: clientReportedDate, // תאריך כפי שדווח על ידי הלקוח - עלול להיות מזויף
-      dateDiscrepancy: dateDiscrepancy, // דגל המציין האם יש פער בין התאריך המדווח לתאריך האמיתי
-      serverReceivedTime: serverNowUTC,  // זמן קבלת הקובץ בשרת - לא ניתן למניפולציה
+      displayName: Buffer.from(req.file.originalname, 'latin1').toString('utf8'),
+      uploadedAt: serverNowAtUploadUTC,
+      clientReportedDate: clientReportedDate ? clientReportedDate.toISOString() : null,
+      // Remove serverFsMtime and related fields
+      lastModified: clientReportedDate, // Store client reported date as the primary lastModified 
+      lastModifiedUTC: clientReportedDate ? clientReportedDate.toISOString() : null,
+      serverReceivedTime: serverNowAtUploadUTC, 
       originalSize: req.file.size,
       fileType: req.file.mimetype,
       isLateSubmission: isLate,
-      isModifiedAfterDeadline: isModifiedAfterDeadline,
-      suspectedTimeManipulation: suspectedTimeManipulation, // דגל חדש למניפולציית זמן
-      isMaterial: req.user.role === "Teacher" ? true : false,
-      submissionComment: submissionComment,
-      // זה החלק החשוב - שמירת מזהה הסטודנט באופן נכון
+      isModifiedAfterDeadline: isModifiedAfterDeadline, // Based only on client time
+      isModifiedBeforeButSubmittedLate: isModifiedBeforeButSubmittedLate,
+      suspectedTimeManipulation: suspectedTimeManipulation,
+      timeDifferenceMinutes: timeDifferenceMinutes,
+      submissionComment: req.body.comment || "",
       studentId: req.user.role === "Student" ? req.user.id : undefined,
       studentName: req.user.role === "Student" ? user.username : undefined,
       studentEmail: req.user.role === "Student" ? user.email : undefined,
-      // נעילת המטלה אם הוגשה לאחר הדדליין
-      isLocked: isLate && req.user.role === "Student"
+      isLocked: isLate && req.user.role === "Student",
+      isMaterial: req.user.role === "Teacher" ? true : false,
     };
     
-    // לוג לבדיקה
-    console.log("Adding new assignment with studentId:", newAssignment.studentId);
-    console.log("Student role:", req.user.role);
-    console.log("User ID:", req.user.id);
+    console.log("Final assignment data for DB (Simplified):", {
+        clientReportedDate: newAssignment.clientReportedDate,
+        lastModifiedUTC: newAssignment.lastModifiedUTC,
+        isLateSubmission: newAssignment.isLateSubmission,
+        isModifiedAfterDeadline: newAssignment.isModifiedAfterDeadline,
+        isModifiedBeforeButSubmittedLate: newAssignment.isModifiedBeforeButSubmittedLate,
+        suspectedTimeManipulation: newAssignment.suspectedTimeManipulation
+    });
 
     course.assignments.push(newAssignment);
     await course.save();
-    console.log("Assignment saved to database with ID:", newAssignment._id);
 
-    // הוספת התראה חדשה למשתמש
-    let notificationMessage = "";
-    if (isLate) {
-      if (isModifiedAfterDeadline) {
-        notificationMessage = `Your assignment for ${course.name} was submitted late and the file was modified after the deadline.`;
-      } else {
-        notificationMessage = `Your assignment for ${course.name} was submitted after the deadline, but the file was last modified before the deadline.`;
-      }
-    } else {
-      notificationMessage = `Your assignment for ${course.name} was submitted successfully before the deadline.`;
-    }
-    
-    // הוספנו בדיקה נוספת למניפולציית זמן
-    if (suspectedTimeManipulation || dateDiscrepancy) {
-      notificationMessage += " Note: Unusual time differences detected between file and server times.";
-    }
-    
-    try {
-      if (req.user.role === "Student") {
+    // Add notification for student
+    if (req.user.role === "Student") {
+      try {
         await user.addNotification(notificationMessage);
+      } catch (err) {
+        console.error("Failed to add notification:", err);
       }
-    } catch (err) {
-      console.error("Failed to add notification:", err);
     }
 
-    console.log("✅ Assignment successfully saved in database!");
     return res.status(201).json({ 
       message: "Assignment uploaded successfully!", 
       assignment: newAssignment,
-      isLate: isLate,
-      isModifiedAfterDeadline: isModifiedAfterDeadline,
-      suspectedTimeManipulation: suspectedTimeManipulation,
-      dateDiscrepancy: dateDiscrepancy,
-      isLocked: newAssignment.isLocked
+      isLate: newAssignment.isLateSubmission,
+      isModifiedAfterDeadline: newAssignment.isModifiedAfterDeadline,
+      isModifiedBeforeButSubmittedLate: newAssignment.isModifiedBeforeButSubmittedLate,
+      suspectedTimeManipulation: newAssignment.suspectedTimeManipulation,
+      timeDifferenceMinutes: newAssignment.timeDifferenceMinutes,
     });
 
   } catch (error) {
     console.error("❌ Server Error while uploading assignment:", error);
-    console.error("Error details:", JSON.stringify(error, null, 2));
+    // Removed local file cleanup as we might not have one with Cloudinary direct upload
     return res.status(500).json({ message: "Failed to upload assignment.", error: error.message || error });
   }
 });
@@ -296,7 +290,7 @@ router.put("/:id", authenticateToken, upload.single("file"), async (req, res) =>
     if (req.file) {
       console.log("📄 File uploaded with course update:", req.file);
       
-      course.assignments.push({
+      newCourse.assignments.push({
         fileUrl: req.file.path,
         fileName: req.file.originalname,
         lastModified: req.file.lastModified ? new Date(req.file.lastModified) : new Date(),
@@ -569,12 +563,10 @@ router.delete("/:id/assignments/:assignmentId", authenticateToken, async (req, r
   try {
     const { id, assignmentId } = req.params;
     
-    // וד�� שה-ID של הקורס תקין
     if (!mongoose.Types.ObjectId.isValid(id)) {
       return res.status(400).json({ message: "Invalid course ID format." });
     }
     
-    // ודא שה-ID של המטלה תקין
     if (!mongoose.Types.ObjectId.isValid(assignmentId)) {
       return res.status(400).json({ message: "Invalid assignment ID format." });
     }
@@ -585,14 +577,12 @@ router.delete("/:id/assignments/:assignmentId", authenticateToken, async (req, r
       return res.status(404).json({ message: "Course not found." });
     }
     
-    // בדיקה שרק המורה או הסטודנט שהגיש יכולים למחוק
     const assignment = course.assignments.id(assignmentId);
     
     if (!assignment) {
       return res.status(404).json({ message: "Assignment not found." });
     }
 
-    // אם זה סטודנט, בדוק אם זה המטלה שלו ואם היא לא ננעלה
     if (req.user.role === "Student") {
       if (assignment.studentId && assignment.studentId.toString() !== req.user.id) {
         return res.status(403).json({ message: "You can only delete your own assignments." });
@@ -606,24 +596,25 @@ router.delete("/:id/assignments/:assignmentId", authenticateToken, async (req, r
         return res.status(403).json({ message: "You cannot delete assignments submitted after the deadline." });
       }
     } 
-    // אם זה מרצה, בדוק אם זה הקורס שלו
     else if (req.user.role === "Teacher" && course.teacherId.toString() !== req.user.id) {
       return res.status(403).json({ message: "You can only delete assignments in courses you teach." });
     }
 
-    // נסה למחוק את הקובץ מ-Cloudinary אם קיים
+    // Try to delete the file from Cloudinary if it exists
     if (assignment.fileUrl) {
       try {
-        // חלץ את מזהה הקובץ מה-URL (פתרון ספציפי ל-Cloudinary)
-        const publicId = assignment.fileUrl.split('/').pop().split('.')[0];
+        // Extract the public ID from the Cloudinary URL
+        const splitUrl = assignment.fileUrl.split('/');
+        const filename = splitUrl[splitUrl.length - 1];
+        const publicId = `fortitask/${filename.split('.')[0]}`;
         
-        if (publicId) {
-          await cloudinary.uploader.destroy(publicId, { resource_type: 'raw' });
-          console.log(`✅ File ${publicId} deleted from Cloudinary`);
-        }
+        console.log("Attempting to delete Cloudinary file with public ID:", publicId);
+        
+        await cloudinary.uploader.destroy(publicId);
+        console.log(`✅ File ${publicId} deleted from Cloudinary`);
       } catch (cloudinaryError) {
         console.error("❌ Error deleting file from Cloudinary:", cloudinaryError);
-        // ממשיך למרות שגיאה במחיקת הקובץ מ-Cloudinary
+        // Continue despite error deleting the file
       }
     }
 
@@ -658,16 +649,22 @@ router.delete("/:id", authenticateToken, async (req, res) => {
       return res.status(403).json({ message: "You can only delete courses you created." });
     }
 
-    // מחיקת כל הקבצים מ-Cloudinary
+    // Delete all files from Cloudinary
     for (const assignment of course.assignments) {
       if (assignment.fileUrl) {
         try {
-          const publicId = assignment.fileUrl.split('/').pop().split('.')[0];
-          if (publicId) {
-            await cloudinary.uploader.destroy(publicId, { resource_type: 'raw' });
-          }
+          // Extract the public ID from the Cloudinary URL
+          const splitUrl = assignment.fileUrl.split('/');
+          const filename = splitUrl[splitUrl.length - 1];
+          const publicId = `fortitask/${filename.split('.')[0]}`;
+          
+          console.log("Attempting to delete Cloudinary file with public ID:", publicId);
+          
+          await cloudinary.uploader.destroy(publicId);
+          console.log(`✅ File ${publicId} deleted from Cloudinary`);
         } catch (cloudinaryError) {
           console.error("❌ Error deleting file from Cloudinary:", cloudinaryError);
+          // Continue despite error deleting the file
         }
       }
     }

@@ -1,4 +1,4 @@
-import React, { useState, useEffect, useCallback } from "react";
+import React, { useState, useEffect, useCallback, useRef } from "react";
 import { toast } from "react-toastify";
 import { 
   getCourses, 
@@ -49,6 +49,21 @@ const ManageCourses = () => {
     instructions: "",
     deadline: "",
   });
+  const [hasShownSuspicionAlert, setHasShownSuspicionAlert] = useState(false);
+  const currentCourseIdRef = useRef(null);
+
+  const formatDate = (date) => {
+    if (!date) return "N/A";
+    try {
+      return new Date(date).toLocaleString(undefined, { 
+        year: 'numeric', month: 'numeric', day: 'numeric', 
+        hour: '2-digit', minute: '2-digit', second: '2-digit', hour12: false 
+      });
+    } catch (e) {
+      console.error("Error formatting date:", e, "Input date:", date);
+      return "Invalid date";
+    }
+  };
 
   useEffect(() => {
     const fetchCourses = async () => {
@@ -64,7 +79,37 @@ const ManageCourses = () => {
     fetchCourses();
   }, []);
 
+  useEffect(() => {
+    if (selectedCourse && assignments.studentSubmissions && assignments.studentSubmissions.length > 0) {
+      if (!hasShownSuspicionAlert) {
+        const firstSuspicious = assignments.studentSubmissions.find(sub => sub.suspectedTimeManipulation === true);
+        
+        if (firstSuspicious) {
+          console.log("useEffect detected suspicious submission, showing alert:", firstSuspicious);
+          
+          const fileName = firstSuspicious.displayName || firstSuspicious.fileName || "Unknown File";
+          const modifiedDate = firstSuspicious.clientReportedDate ? formatDate(firstSuspicious.clientReportedDate) : "N/A";
+          const deadlineFormatted = selectedCourse.deadline ? formatDate(selectedCourse.deadline) : "N/A";
+
+          const alertMessage = `❗️ חשד לרמאות! הקובץ "${fileName}" מעורר חשד.
+ייתכן שנערך אחרי הדדליין (${deadlineFormatted}).
+זמן עריכה מדווח: ${modifiedDate}.`;
+
+          window.alert(alertMessage);
+          
+          setHasShownSuspicionAlert(true);
+        }
+      }
+    }
+  }, [selectedCourse, assignments.studentSubmissions, hasShownSuspicionAlert, formatDate]);
+
   const handleSelectCourse = async (courseId) => {
+    if (currentCourseIdRef.current !== courseId) {
+      console.log("Changing course, resetting alert flag.");
+      setHasShownSuspicionAlert(false);
+      currentCourseIdRef.current = courseId;
+    }
+    
     if (!courseId) {
       setSelectedCourse(null);
       setAssignments({ materials: [], studentSubmissions: [] });
@@ -78,8 +123,6 @@ const ManageCourses = () => {
       setIsEditing(false);
       
       const response = await getAssignments(courseId);
-      console.log("Assignments response:", response.data);
-      
       if (response.data.materials && response.data.studentSubmissions) {
         setAssignments({
           materials: response.data.materials,
@@ -90,6 +133,7 @@ const ManageCourses = () => {
         const studentSubmissions = (response.data || []).filter(a => !a.isMaterial);
         setAssignments({ materials, studentSubmissions });
       }
+
     } catch (error) {
       toast.error("Failed to fetch course details and assignments.");
     } finally {
@@ -263,13 +307,6 @@ const ManageCourses = () => {
     return types[mimeType] || mimeType;
   };
 
-  const formatDate = (date) => {
-    if (!date) return "N/A";
-    
-    const d = new Date(date);
-    return `${d.toLocaleDateString()} ${d.toLocaleTimeString()}`;
-  };
-
   const exportMetaReport = (submission) => {
     const data = [
       {
@@ -277,31 +314,33 @@ const ManageCourses = () => {
         "Student Email": submission.studentEmail || "",
         "File Name": submission.displayName || submission.fileName || "",
         "File Type": getFileTypeDescription(submission.fileType),
-        "Submission Time (UTC)": new Date(submission.uploadedAt).toUTCString(),
-        "Last Modified (UTC)": submission.lastModifiedUTC
-          ? new Date(submission.lastModifiedUTC).toUTCString()
+        "Submission Time (Local)": submission.uploadedAt ? formatDate(submission.uploadedAt) : "N/A",
+        "Last Modified (Reported by Client, Local)": submission.clientReportedDate 
+          ? formatDate(submission.clientReportedDate) 
           : "N/A",
-        "Deadline (UTC)": selectedCourse?.deadline
-          ? new Date(selectedCourse.deadline).toUTCString()
+        "Deadline (Local)": selectedCourse?.deadline
+          ? formatDate(selectedCourse.deadline)
           : "N/A",
-        "Is Modified After Deadline": submission.isModifiedAfterDeadline
+        "Is Late Submission": submission.isLateSubmission ? "Yes" : "No",
+        "Is Modified After Deadline (Based on Client Time)": submission.isModifiedAfterDeadline
           ? "Yes"
           : "No",
-        "Is Late Submission": submission.isLateSubmission ? "Yes" : "No",
+        "Suspected Time Manipulation": submission.suspectedTimeManipulation ? "Yes" : "No",
         "Comment": submission.submissionComment || "",
       },
     ];
-    const ws = XLSX.utils.json_to_sheet(data);
+    const columnOrder = [
+      "Student Name", "Student Email", "File Name", "File Type", 
+      "Submission Time (Local)", "Last Modified (Reported by Client, Local)", 
+      "Deadline (Local)", "Is Late Submission", 
+      "Is Modified After Deadline (Based on Client Time)", "Suspected Time Manipulation", 
+      "Comment"
+    ];
+    const ws = XLSX.utils.json_to_sheet(data, { header: columnOrder });
     const wb = XLSX.utils.book_new();
     XLSX.utils.book_append_sheet(wb, ws, "Meta Report");
     XLSX.writeFile(wb, `${submission.displayName || submission.fileName}-Meta-Report.xlsx`);
   };
-
-  const handleCheatingAlert = React.useCallback((cheatInfo) => {
-    window.alert(
-      `❗️חשד לרמאות! הקובץ "${cheatInfo.fileName}" נערך אחרי הדדליין (${cheatInfo.deadline}) בתאריך: ${cheatInfo.lastModified}.`
-    );
-  }, []);
 
   return (
     <div className="bg-gradient">
@@ -471,114 +510,122 @@ const ManageCourses = () => {
                     
                     {assignments.studentSubmissions && assignments.studentSubmissions.length > 0 ? (
                       <ul className="student-submissions-list">
-                        {assignments.studentSubmissions.map((submission) => (
-                          <li key={submission._id} className="submission-item">
-                            <div className="submission-header">
-                              <div className="student-info">
-                                <User size={16} />
-                                <span className="student-name">
-                                  {submission.studentName || "Loading student info..."}
-                                </span>
-                                {submission.studentEmail && (
-                                  <span className="student-email">
-                                    <Mail size={14} />
-                                    {submission.studentEmail}
+                        {assignments.studentSubmissions.map((submission) => {
+                          console.log("ManageCourses - Rendering submission:", submission);
+                          console.log("ManageCourses - Selected course deadline:", selectedCourse?.deadline);
+
+                          return (
+                            <li key={submission._id} className="submission-item">
+                              <div className="submission-header">
+                                <div className="student-info">
+                                  <User size={16} />
+                                  <span className="student-name">
+                                    {submission.studentName || "Loading student info..."}
                                   </span>
-                                )}
-                              </div>
-                              
-                              <div className="submission-status">
-                                {submission.isLateSubmission ? (
-                                  <span className="late-status">
-                                    <AlertTriangle size={16} />
-                                    Late Submission
-                                  </span>
-                                ) : (
-                                  <span className="on-time-status">
-                                    <CheckCircle size={16} />
-                                    On Time
-                                  </span>
-                                )}
-                              </div>
-                            </div>
-                            
-                            <div className="submission-details">
-                              <div className="file-info">
-                                <FileText size={16} />
-                                <span className="file-name">{submission.displayName || submission.fileName}</span>
-                                <span className="file-meta">
-                                  <FileType size={14} />
-                                  {getFileTypeDescription(submission.fileType)}
-                                  &nbsp;({formatFileSize(submission.originalSize)})
-                                </span>
-                              </div>
-                              
-                              <div className="submission-dates">
-                                <span className="upload-date">
-                                  <Clock size={14} />
-                                  Submitted: {formatDate(submission.uploadedAt)}
-                                </span>
-                                
-                                {submission.isModifiedAfterDeadline && (
-                                  <span className="warning-text">
-                                    <AlertTriangle size={14} />
-                                    Modified after deadline: {formatDate(submission.lastModified)}
-                                  </span>
-                                )}
-                              </div>
-                              
-                              {submission.submissionComment && (
-                                <div className="submission-comment">
-                                  <Info size={14} />
-                                  Comment: {submission.submissionComment}
+                                  {submission.studentEmail && (
+                                    <span className="student-email">
+                                      <Mail size={14} />
+                                      {submission.studentEmail}
+                                    </span>
+                                  )}
                                 </div>
-                              )}
-                            </div>
-                            
-                            <div style={{ margin: "12px 0" }}>
-                              {submission.lastModifiedUTC && selectedCourse?.deadline && (
+                                
+                                <div className="submission-status">
+                                  {submission.isLateSubmission ? (
+                                    <span className="late-status">
+                                      <AlertTriangle size={16} />
+                                      Late Submission
+                                    </span>
+                                  ) : (
+                                    <span className="on-time-status">
+                                      <CheckCircle size={16} />
+                                      On Time
+                                    </span>
+                                  )}
+                                </div>
+                              </div>
+                              
+                              <div className="submission-details">
+                                <div className="file-info">
+                                  <FileText size={16} />
+                                  <span className="file-name">{submission.displayName || submission.fileName}</span>
+                                  <span className="file-meta">
+                                    <FileType size={14} />
+                                    {getFileTypeDescription(submission.fileType)}
+                                    &nbsp;({formatFileSize(submission.originalSize)})
+                                  </span>
+                                </div>
+                                
+                                <div className="submission-dates">
+                                  <span className="upload-date">
+                                    <Clock size={14} />
+                                    Submitted: {formatDate(submission.uploadedAt)}
+                                  </span>
+                                  
+                                  {submission.isModifiedAfterDeadline && (
+                                    <span className="warning-text">
+                                      <AlertTriangle size={14} />
+                                      Modified after deadline: {formatDate(submission.lastModified)}
+                                    </span>
+                                  )}
+                                </div>
+                                
+                                {submission.submissionComment && (
+                                  <div className="submission-comment">
+                                    <Info size={14} />
+                                    Comment: {submission.submissionComment}
+                                  </div>
+                                )}
+                              </div>
+                              
+                              <div style={{ margin: "12px 0" }}>
                                 <FileMetaAnalyzer
                                   file={{
                                     name: submission.displayName || submission.fileName,
                                   }}
                                   fileMeta={{
                                     lastModifiedUTC: submission.lastModifiedUTC || submission.lastModified,
+                                    clientReportedDate: submission.clientReportedDate,
+                                    isLateSubmission: submission.isLateSubmission,
+                                    isModifiedAfterDeadline: submission.isModifiedAfterDeadline,
+                                    isModifiedBeforeButSubmittedLate: submission.isModifiedBeforeButSubmittedLate,
+                                    suspectedTimeManipulation: submission.suspectedTimeManipulation,
+                                    uploadedAt: submission.uploadedAt
                                   }}
                                   deadline={selectedCourse.deadline}
-                                  onCheatingDetected={handleCheatingAlert}
                                 />
-                              )}
-                            </div>
-                            
-                            <div className="submission-actions">
-                              <button 
-                                className="action-btn download-btn"
-                                onClick={() =>
-                                  downloadAssignment(submission.fileUrl, submission.displayName || submission.fileName)
-                                }
-                                title="Download File"
-                              >
-                                <Download size={16} />
-                              </button>
-                              <button 
-                                className="action-btn delete-btn"
-                                onClick={() => handleDeleteAssignment(submission._id)}
-                                disabled={deleting}
-                                title="Delete Submission"
-                              >
-                                <Trash2 size={16} />
-                              </button>
-                              <button
-                                className="action-btn"
-                                style={{ color: "#4ade80" }}
-                                onClick={() => exportMetaReport(submission)}
-                                title="Download Metadata Report"
-                              >
-                                <Download size={16} /> <span style={{fontSize:12, marginLeft:3}}>Meta Report</span>
-                              </button>
-                            </div>
-                          </li>
-                        ))}
+                              </div>
+                              
+                              <div className="submission-actions">
+                                <button 
+                                  className="action-btn download-btn"
+                                  onClick={() =>
+                                    downloadAssignment(submission.fileUrl, submission.displayName || submission.fileName)
+                                  }
+                                  title="Download File"
+                                >
+                                  <Download size={16} />
+                                </button>
+                                <button 
+                                  className="action-btn delete-btn"
+                                  onClick={() => handleDeleteAssignment(submission._id)}
+                                  disabled={deleting}
+                                  title="Delete Submission"
+                                >
+                                  <Trash2 size={16} />
+                                </button>
+                                <button
+                                  className="action-btn"
+                                  style={{ color: "#4ade80" }}
+                                  onClick={() => exportMetaReport(submission)}
+                                  title="Download Metadata Report"
+                                >
+                                  <Download size={16} /> <span style={{fontSize:12, marginLeft:3}}>Meta Report</span>
+                                </button>
+                              </div>
+                            </li>
+                          );
+                        })}
                       </ul>
                     ) : (
                       <p className="no-assignments">No student submissions yet.</p>

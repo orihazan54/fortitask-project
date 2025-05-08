@@ -1,4 +1,3 @@
-
 import React from 'react';
 import { FileText, Download, Trash2, Clock, AlertTriangle, Check, Info, Shield } from 'lucide-react';
 
@@ -12,16 +11,18 @@ const StudentSubmissions = ({ assignments, onDownload, onDelete }) => {
   };
 
   const getStatusIcon = (assignment) => {
-    if (assignment.dateDiscrepancy || assignment.suspectedTimeManipulation) {
-      return <AlertTriangle size={18} className="status-icon suspicious" title="Suspicious date detected" />;
-    }
     if (assignment.isLateSubmission) {
-      return <AlertTriangle size={18} className="status-icon late" title="Submitted late" />;
+      return <Clock size={18} className="status-icon late" title="Submitted late" style={{color: '#f59e0b'}} />;
     }
-    if (assignment.isModifiedAfterDeadline) {
-      return <AlertTriangle size={18} className="status-icon modified" title="Modified after deadline" />;
+    return <Check size={18} className="status-icon on-time" title="Submitted on time" style={{color: '#10b981'}} />;
+  };
+
+  // פונקציית עזר לקבלת טקסט סטטוס
+  const getStatusText = (assignment) => {
+    if (assignment.isLateSubmission) {
+      return "Submitted late";
     }
-    return <Check size={18} className="status-icon on-time" title="Submitted on time" />;
+    return "Submitted on time";
   };
 
   return (
@@ -50,29 +51,19 @@ const StudentSubmissions = ({ assignments, onDownload, onDelete }) => {
                   <div className="assignment-meta">
                     <span className="upload-date">
                       <Clock size={14} />
-                      Submitted: {new Date(assignment.uploadedAt).toLocaleDateString()}
+                      Submitted: {new Date(assignment.uploadedAt).toLocaleDateString()} {new Date(assignment.uploadedAt).toLocaleTimeString()}
                     </span>
-                    
-                    {assignment.clientReportedDate && (
-                      <span className="reported-date">
-                        <Clock size={14} />
-                        Client reported: {new Date(assignment.clientReportedDate).toLocaleDateString()}
-                      </span>
-                    )}
                     
                     {assignment.lastModified && (
                       <span className="modified-date">
                         <Shield size={14} />
-                        Server verified: {new Date(assignment.lastModified).toLocaleDateString()}
+                        Last Modified: {new Date(assignment.lastModified).toLocaleDateString()} {new Date(assignment.lastModified).toLocaleTimeString()}
                       </span>
                     )}
                     
-                    {assignment.dateDiscrepancy && (
-                      <span className="date-discrepancy">
-                        <AlertTriangle size={14} style={{color: '#ea384c'}} />
-                        Date discrepancy detected
-                      </span>
-                    )}
+                    <span className={`submission-status ${assignment.isLateSubmission ? 'status-late' : 'status-ok'}`}>
+                      {getStatusText(assignment)}
+                    </span>
                     
                     {assignment.submissionComment && (
                       <span className="submission-comment">
@@ -89,7 +80,7 @@ const StudentSubmissions = ({ assignments, onDownload, onDelete }) => {
                   >
                     <Download size={18} />
                   </button>
-                  {!assignment.isLateSubmission && (
+                  {!assignment.isLocked && (
                     <button 
                       className="btn delete-btn" 
                       onClick={() => onDelete(assignment)}

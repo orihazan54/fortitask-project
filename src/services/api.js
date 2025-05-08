@@ -1,3 +1,4 @@
+
 import axios from "axios";
 import { toast } from "sonner";
 import CryptoJS from "crypto-js";
@@ -13,13 +14,10 @@ const API = axios.create({
 
 // Track active error toasts to prevent duplicates
 let activeErrorToasts = new Set();
-// Track toast display activity
-let isToastSuppressed = true;
-// Enable toasts after app is loaded and running for a few seconds
-setTimeout(() => {
-  isToastSuppressed = false;
-  console.log("Toasts enabled");
-}, 5000);
+// Track toast display activity - always enable toasts
+let isToastSuppressed = false;
+// Enable toasts immediately
+console.log("Toasts enabled from startup");
 
 // Add token to every request
 API.interceptors.request.use((req) => {
@@ -72,18 +70,18 @@ API.interceptors.response.use(
       // Network errors
       if (!error.response) {
         console.error("Network Error:", error.message);
-        toast.error(`Network error: Please check your connection.`, {
+        toast.error(`שגיאת רשת: אנא בדוק את החיבור שלך`, {
           onClose: () => activeErrorToasts.delete(errorId)
         });
       } 
       // Server errors
       else {
         const status = error.response.status;
-        const message = error.response?.data?.message || "An error occurred. Please try again.";
+        const message = error.response?.data?.message || "אירעה שגיאה. אנא נסה שוב.";
         
         if (status === 401) {
           // Session expired or unauthorized
-          toast.error("Session expired. Please log in again.", {
+          toast.error("זמן ההתחברות פג. אנא התחבר מחדש.", {
             onClose: () => activeErrorToasts.delete(errorId)
           });
           localStorage.removeItem("token");
@@ -92,7 +90,7 @@ API.interceptors.response.use(
           localStorage.removeItem("username");
           window.location.href = "/login";
         } else if (status >= 500) {
-          toast.error(`Server error: ${message}`, {
+          toast.error(`שגיאת שרת: ${message}`, {
             onClose: () => activeErrorToasts.delete(errorId)
           });
         } else {
@@ -209,7 +207,6 @@ export const getUserDetails = (userId) => {
 export const updateUserDetails = (data) => {
   // תיקון חשוב: אל תצפין את הסיסמה פעמיים!
   // השרת כבר מצפין את הסיסמה בעת שמירתה במסד הנתונים
-  // אם נצפין כאן, השרת יצפין שוב וזה יגרום לבעיות אימות
 
   console.log("Updating user details:", {
     hasPassword: !!data.password,
@@ -217,7 +214,7 @@ export const updateUserDetails = (data) => {
     otherFields: Object.keys(data).filter(k => k !== 'password' && k !== 'currentPassword')
   });
   
-  // שלח את הנתונים ללא הצפנה נוספת
+  // שלח את הנתונים לא הצפנה נוספת
   return API.put("/users/profile", data);
 };
 
@@ -227,9 +224,11 @@ export const sendPasswordResetEmail = async (data) => {
   try {
     const response = await API.post("/users/forgot-password", data);
     console.log("Password reset email sent successfully:", response.data);
+    toast.success("הודעת איפוס סיסמה נשלחה בהצלחה");
     return response;
   } catch (error) {
     console.error("Error sending password reset email:", error);
+    toast.error(error.response?.data?.message || "לא ניתן לשלוח את האימייל לאיפוס סיסמה");
     throw error;
   }
 };
@@ -254,6 +253,7 @@ export const resetPassword = async (data) => {
     });
     
     if (!passwordRegex.test(data.newPassword)) {
+      toast.error("הסיסמה אינה עומדת בדרישות");
       throw new Error("Password does not meet requirements");
     }
     
@@ -261,9 +261,72 @@ export const resetPassword = async (data) => {
     console.log("Sending reset password request with verification code and valid password");
     const response = await API.post("/users/reset-password", resetData);
     console.log("Password reset successful:", response.data);
+    toast.success("סיסמתך אופסה בהצלחה");
     return response;
   } catch (error) {
     console.error("Error resetting password:", error);
+    toast.error(error.response?.data?.message || "לא ניתן לאפס את הסיסמה");
+    throw error;
+  }
+};
+
+// ========== 2FA FUNCTIONS - משופר ==========
+export const validateTwoFactorAuth = async (code) => {
+  console.log("Sending 2FA validation code:", code);
+  
+  // נקיון וסטנדרטיזציה של הקוד לפני שליחה
+  const cleanedCode = String(code).trim().replace(/\s+/g, '');
+  
+  // וידוא שהקוד הוא 6 ספרות בדיוק
+  if (!/^\d{6}$/.test(cleanedCode)) {
+    console.error("Invalid 2FA code format:", cleanedCode);
+    throw new Error("Invalid verification code. Must be 6 digits.");
+  }
+  
+  console.log("Cleaned 2FA validation code:", cleanedCode, "Length:", cleanedCode.length);
+  
+  try {
+    const response = await API.post("/users/validate-2fa", { code: cleanedCode });
+    console.log("2FA validation successful:", response.data);
+    return response;
+  } catch (error) {
+    console.error("2FA validation error:", error.response?.data || error.message);
+    throw error;
+  }
+};
+
+export const setupTwoFactorAuth = async () => {
+  console.log("Setting up 2FA");
+  try {
+    const response = await API.get("/users/setup-2fa");
+    console.log("2FA setup response:", response.data);
+    return response;
+  } catch (error) {
+    console.error("2FA setup error:", error.response?.data || error.message);
+    throw error;
+  }
+};
+
+export const disableTwoFactorAuth = async (code) => {
+  console.log("Disabling 2FA with code:", code);
+  
+  // וידוא שהקוד הוא מחרוזת ומנוקה מרווחים
+  const cleanedCode = String(code || "").trim().replace(/\s+/g, '');
+  console.log("Cleaned 2FA disable code:", cleanedCode, "Length:", cleanedCode.length);
+  
+  // בדיקת תקינות פורמט הקוד
+  if (!/^\d{6}$/.test(cleanedCode)) {
+    console.error("Invalid 2FA code format:", cleanedCode);
+    throw new Error("Invalid verification code format. Must be 6 digits.");
+  }
+  
+  // הוספת לוגים מפורטים יותר על הבקשה
+  try {
+    const response = await API.post("/users/disable-2fa", { code: cleanedCode });
+    console.log("2FA disable successful response:", response.data);
+    return response;
+  } catch (error) {
+    console.error("2FA disable error:", error.response?.data || error.message);
     throw error;
   }
 };
@@ -391,18 +454,42 @@ export const updateCourse = (courseId, formData) =>
 export const uploadAssignment = (courseId, formData) => {
   console.log("Starting upload for course ID:", courseId);
   
-  // DO NOT add problematic metadata fields like lastModified or lastModifiedUTC
-  // Let the server handle these values instead
+  // בדיקות לוודא שה-FormData מוגדר נכון
+  if (!formData.has('file')) {
+    console.error("No file found in FormData");
+    throw new Error("No file in upload data");
+  } else {
+    console.log("File is present in FormData");
+    
+    // בדיקת פרטים נוספים בטופס
+    const fileEntry = formData.get('file');
+    console.log("File entry type:", typeof fileEntry);
+    console.log("File entry is File object:", fileEntry instanceof File);
+    if (fileEntry instanceof File) {
+      console.log("File details:", {
+        name: fileEntry.name,
+        size: fileEntry.size,
+        type: fileEntry.type
+      });
+    }
+  }
   
-  // Add any comment if provided
+  // הוספת הערה אם קיימת
   if (formData.get('comment')) {
     console.log("Uploading with comment:", formData.get('comment'));
   }
   
+  // הוספת lastModified אם קיים
+  if (formData.get('lastModified')) {
+    console.log("Uploading with lastModified:", formData.get('lastModified'));
+  }
+  
   // העלאה בפועל עם timeout מוגדל
   return API.post(`/courses/${courseId}/upload-assignment`, formData, {
-    headers: { "Content-Type": "multipart/form-data" },
-    timeout: 30000 // Increased timeout for file uploads
+    headers: { 
+      "Content-Type": "multipart/form-data" 
+    },
+    timeout: 60000 // הגדלת timeout לעד דקה להעלאת קבצים
   });
 };
 
@@ -440,25 +527,39 @@ export const getAssignments = async (courseId) => {
   return response;
 };
 
-export const downloadAssignment = (fileUrl, fileName) => {
-  console.log("Downloading file from URL:", fileUrl);
-  
-  if (!fileUrl) {
-    console.error("Invalid file URL provided");
-    toast.error("Download link not available");
-    return false;
-  }
-  
+export const downloadAssignment = async (courseId, assignmentId, fileName) => {
   try {
-    // Open file in new tab
-    window.open(fileUrl, "_blank");
+    console.log(`Downloading assignment ${assignmentId} from course ${courseId}`);
+
+    // Get the file URL directly using the Cloudinary approach
+    const response = await API.get(`/courses/${courseId}/assignments/${assignmentId}/download`);
     
-    // Show a toast with proper file name
-    toast.success(`Downloading: ${fileName || 'File'}`);
+    if (!response.data || !response.data.fileUrl) {
+      console.error("No download URL received");
+      return false;
+    }
+    
+    // Use the direct download URL from Cloudinary
+    const downloadUrl = response.data.fileUrl;
+    
+    // Use the original file name when provided, or fall back to a default
+    const originalFileName = response.data.originalFileName || fileName || "downloaded-file";
+    
+    console.log(`Starting download with URL: ${downloadUrl}`);
+    console.log(`Using original filename: ${originalFileName}`);
+    
+    // Create a temporary link element to download the file
+    const link = document.createElement('a');
+    link.href = downloadUrl;
+    link.target = '_blank';
+    link.download = originalFileName;
+    document.body.appendChild(link);
+    link.click();
+    document.body.removeChild(link);
+    
     return true;
   } catch (error) {
-    console.error("Error downloading file:", error);
-    toast.error("Failed to download file");
+    console.error("Download error:", error);
     return false;
   }
 };
@@ -467,38 +568,6 @@ export const deleteAssignment = (courseId, assignmentId) => {
   console.log("Deleting assignment:", assignmentId, "from course:", courseId);
   return API.delete(`/courses/${courseId}/assignments/${assignmentId}`);
 };
-
-// ========== SECURITY FUNCTIONS ==========
-export const validateTwoFactorAuth = (code) => {
-  console.log("Sending 2FA validation code:", code);
-  return API.post("/users/validate-2fa", { code });
-};
-
-export const setupTwoFactorAuth = () => {
-  console.log("Setting up 2FA");
-  return API.get("/users/setup-2fa");
-};
-
-export const disableTwoFactorAuth = (code) => {
-  console.log("Disabling 2FA with code:", code);
-  
-  // Make sure the code is a string, properly formatted
-  const cleanedCode = String(code).trim().replace(/\s+/g, '');
-  console.log("Cleaned 2FA disable code:", cleanedCode, "Length:", cleanedCode.length);
-  
-  // Add more detailed logging about the request
-  return API.post("/users/disable-2fa", { code: cleanedCode })
-    .then(response => {
-      console.log("2FA disable successful response:", response.data);
-      return response;
-    })
-    .catch(error => {
-      console.error("2FA disable error:", error.response?.data || error.message);
-      throw error;
-    });
-};
-
-export const deleteAccount = () => API.delete("/users/account");
 
 // Function to check if user is authenticated
 export const checkAuthentication = () => {

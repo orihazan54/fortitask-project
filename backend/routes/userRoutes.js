@@ -1,3 +1,4 @@
+
 const express = require("express");
 const bcrypt = require("bcryptjs");
 const jwt = require("jsonwebtoken");
@@ -10,14 +11,53 @@ const nodemailer = require("nodemailer");
 
 const router = express.Router();
 
-// Setup email transporter using Brevo
+// Setup email transporter using Brevo - UPDATED CONFIGURATION
 let transporter;
 
-// Check if we have Brevo API key configured
-if (process.env.BREVO_API_KEY && process.env.BREVO_EMAIL) {
-  console.log("✅ Brevo email configuration detected - using Brevo for emails");
+// Check if we have Brevo SMTP configuration with new setup
+if (process.env.BREVO_HOST && process.env.BREVO_USER && process.env.BREVO_PASS) {
+  console.log("✅ Brevo email configuration detected - using updated Brevo for emails");
+  console.log(`Using email/user: ${process.env.BREVO_USER}`);
+  console.log(`SMTP host: ${process.env.BREVO_HOST}`);
+  console.log(`SMTP port: ${process.env.BREVO_PORT || 587}`);
+  console.log(`From address: ${process.env.BREVO_FROM || process.env.BREVO_USER}`);
+  console.log(`SMTP pass format check: ${process.env.BREVO_PASS ? "Provided (length: " + process.env.BREVO_PASS.length + ")" : "Missing"}`);
+  
+  // Configure nodemailer with updated Brevo SMTP details
+  transporter = nodemailer.createTransport({
+    host: process.env.BREVO_HOST,
+    port: parseInt(process.env.BREVO_PORT || "587"),
+    secure: false, // true for 465, false for other ports
+    auth: {
+      user: process.env.BREVO_USER,
+      pass: process.env.BREVO_PASS,
+    },
+    debug: true, // Enable debug output
+  });
+  
+  // Verify connection with more detailed logging
+  transporter.verify(function(error, success) {
+    if (error) {
+      console.error("❌ Email configuration error:", error);
+      console.error("SMTP connection details used:");
+      console.error(`- Host: ${process.env.BREVO_HOST}`);
+      console.error(`- Port: ${process.env.BREVO_PORT || 587}`);
+      console.error(`- User: ${process.env.BREVO_USER}`);
+      console.error(`- Pass: ${process.env.BREVO_PASS ? "[PROVIDED]" : "[MISSING]"}`);
+      console.error(`- From: ${process.env.BREVO_FROM || process.env.BREVO_USER}`);
+      console.error("Full error:", JSON.stringify(error, null, 2));
+      
+      // Fall back to console logging
+      console.log("⚠️ Falling back to console output for emails");
+      transporter = createFallbackTransporter();
+    } else {
+      console.log("✅ Email server connection verified! Ready to send messages");
+    }
+  });
+} else if (process.env.BREVO_SMTP_KEY && process.env.BREVO_EMAIL) {
+  // Fallback to old configuration if new one is not available
+  console.log("✅ Using legacy Brevo email configuration");
   console.log(`Using email: ${process.env.BREVO_EMAIL}`);
-  console.log(`API key format check: ${process.env.BREVO_API_KEY.substring(0, 8)}...${process.env.BREVO_API_KEY.length} chars`);
   
   // Configure nodemailer with Brevo SMTP
   transporter = nodemailer.createTransport({
@@ -26,7 +66,7 @@ if (process.env.BREVO_API_KEY && process.env.BREVO_EMAIL) {
     secure: false, // true for 465, false for other ports
     auth: {
       user: process.env.BREVO_EMAIL,
-      pass: process.env.BREVO_API_KEY,
+      pass: process.env.BREVO_SMTP_KEY,
     },
     debug: true, // Enable debug output
   });
@@ -34,15 +74,14 @@ if (process.env.BREVO_API_KEY && process.env.BREVO_EMAIL) {
   // Verify connection
   transporter.verify(function(error, success) {
     if (error) {
-      console.error("❌ Email configuration error:", error);
-      console.error("Please check your BREVO_API_KEY and BREVO_EMAIL in .env file");
-      console.error("Make sure your Brevo API key starts with 'xkeysib-'");
+      console.error("❌ Legacy email configuration error:", error);
+      console.error("Full error:", JSON.stringify(error, null, 2));
       
       // Fall back to console logging
       console.log("⚠️ Falling back to console output for emails");
       transporter = createFallbackTransporter();
     } else {
-      console.log("✅ Email server is ready to send messages");
+      console.log("✅ Legacy email server is ready to send messages");
     }
   });
 } else {
@@ -57,6 +96,7 @@ function createFallbackTransporter() {
     sendMail: (mailOptions) => {
       console.log("\n===== EMAIL WOULD BE SENT =====");
       console.log(`To: ${mailOptions.to}`);
+      console.log(`From: ${mailOptions.from}`);
       console.log(`Subject: ${mailOptions.subject}`);
       console.log(`Content: ${mailOptions.text || mailOptions.html}`);
       if (mailOptions.text) {
@@ -68,13 +108,25 @@ function createFallbackTransporter() {
   };
 }
 
-// Real email sending function
+// Real email sending function with improved debugging
 const sendVerificationEmail = async (email, code) => {
-  console.log(`🔑 Verification code for ${email}: ${code}`);
+  console.log(`🔑 Attempting to send verification code to ${email}: ${code}`);
   
   try {
-    const senderEmail = process.env.BREVO_EMAIL || "fortitask@example.com";
-    const senderName = "FortiTask System";
+    // Use updated sender info with BREVO_FROM if available
+    const fromEmail = process.env.BREVO_FROM || process.env.BREVO_USER || process.env.BREVO_EMAIL || "fortitask@example.com";
+    let senderName = "FortiTask System";
+    let senderEmail = fromEmail;
+    
+    // Parse BREVO_FROM if it's in "Name <email>" format
+    if (process.env.BREVO_FROM && process.env.BREVO_FROM.includes('<')) {
+      const matches = process.env.BREVO_FROM.match(/(.*)<(.*)>/);
+      if (matches && matches.length >= 3) {
+        senderName = matches[1].trim() || senderName;
+        senderEmail = matches[2].trim() || senderEmail;
+        console.log(`Parsed sender from BREVO_FROM: Name="${senderName}", Email="${senderEmail}"`);
+      }
+    }
     
     // Create email content
     const mailOptions = {
@@ -99,12 +151,40 @@ const sendVerificationEmail = async (email, code) => {
       `
     };
     
-    // Send the email
-    const info = await transporter.sendMail(mailOptions);
+    // Extra logging before sending the email
+    console.log(`Email sending attempt details:
+      From: "${senderName}" <${senderEmail}>
+      To: ${email}
+      Subject: ${mailOptions.subject}
+      Using transporter type: ${transporter.sendMail ? 'Real Transporter' : 'Unknown'}
+      Transport config: ${JSON.stringify(transporter?.options || {}, null, 2)}
+    `);
+    
+    // Send the email with extended timeout
+    const info = await new Promise((resolve, reject) => {
+      transporter.sendMail(mailOptions, (err, info) => {
+        if (err) {
+          console.error("Mailer error:", err);
+          reject(err);
+        } else {
+          resolve(info);
+        }
+      });
+    });
+    
     console.log(`✅ Email sent successfully: ${info.messageId}`);
+    
+    // Additional log to see what was actually returned
+    console.log("Email sending response:", info);
+    
     return true;
   } catch (error) {
     console.error("❌ Email sending error:", error);
+    console.error("Error details:", {
+      message: error.message,
+      stack: error.stack,
+      code: error.code
+    });
     return false;
   }
 };
@@ -224,36 +304,9 @@ router.post("/login", async (req, res) => {
       const cleanCode = String(twoFactorCode).trim().replace(/\s+/g, '');
       console.log("Cleaned 2FA code for verification:", cleanCode);
       
-      // MASSIVELY IMPROVED: Use extremely flexible verification with large window and better debugging
-      const currentTime = Math.floor(Date.now() / 1000);
-      console.log("Current time:", currentTime);
-      console.log("User 2FA secret:", user.twoFactorSecret);
-      
-      // Try with both base32 and ascii encodings to be safe
-      let verified = speakeasy.totp.verify({
-        secret: user.twoFactorSecret,
-        encoding: 'base32',
-        token: cleanCode,
-        window: 20  // EXTREMELY increased window to allow more time variance (±20 periods = ~10 minutes)
-      });
-      
-      if (!verified) {
-        // Try with ASCII encoding as a fallback
-        verified = speakeasy.totp.verify({
-          secret: user.twoFactorSecret,
-          encoding: 'ascii',
-          token: cleanCode,
-          window: 20
-        });
-      }
-      
+      // שימוש בפונקציה המשופרת מהמודל
+      const verified = User.verifyTwoFactorCode(user.twoFactorSecret, cleanCode);
       console.log("2FA verification result:", verified);
-      
-      // TEMPORARY FIX FOR DEVELOPMENT: Allow any valid 6-digit code
-      if (!verified && /^\d{6}$/.test(cleanCode)) {
-        console.log("⚠️ DEVELOPMENT MODE: Bypassing 2FA verification with valid 6-digit code");
-        verified = true;
-      }
       
       if (!verified) {
         // Additional debug info
@@ -409,7 +462,7 @@ router.get("/setup-2fa", authenticateToken, async (req, res) => {
   }
 });
 
-// אימות והפעלת אבטחה דו-שלבית
+// אימות והפעלת אבטחה דו-שלבית - שיפור לשימוש בפונקציה המשופרת
 router.post("/validate-2fa", authenticateToken, async (req, res) => {
   const { code } = req.body;
   
@@ -425,19 +478,14 @@ router.post("/validate-2fa", authenticateToken, async (req, res) => {
     
     console.log("Validating 2FA code:", {
       providedCode: code,
-      secret: user.twoFactorSecret,
-      userId: req.user.id
+      hasSecret: !!user.twoFactorSecret,
+      userId: req.user.id,
+      codeLength: String(code).length
     });
     
-    // בדיקת הקוד מול המפתח עם טווח חלון זמן רחב יותר
-    const verified = speakeasy.totp.verify({
-      secret: user.twoFactorSecret,
-      encoding: 'base32',
-      token: code,
-      window: 2  // מאפשר טווח זמן רחב יותר לתוקף (1 לפני, הנוכחי, ו-1 אחרי)
-    });
-    
-    console.log("2FA verification result:", verified);
+    // בדיקת הקוד מול המפתח באמצעות הפונקציה המשופרת במודל המשתמש
+    const verified = User.verifyTwoFactorCode(user.twoFactorSecret, code);
+    console.log("2FA verification result for validation:", verified);
     
     if (!verified) {
       return res.status(400).json({ message: "Invalid verification code." });
@@ -454,7 +502,7 @@ router.post("/validate-2fa", authenticateToken, async (req, res) => {
   }
 });
 
-// ביטול אבטחה דו-שלבית
+// ביטול אבטחה דו-שלבית - שיפור לשימוש בפונקציה המשופרת
 router.post("/disable-2fa", authenticateToken, async (req, res) => {
   const { code } = req.body;
   
@@ -475,12 +523,12 @@ router.post("/disable-2fa", authenticateToken, async (req, res) => {
       return res.status(200).json({ message: "Two-factor authentication is already disabled." });
     }
     
-    // Clean and normalize the code
-    const cleanCode = String(code).trim().replace(/\s+/g, '');
+    // בדיקת הקוד באמצעות הפונקציה המשופרת במודל המשתמש
     console.log("Disabling 2FA, verifying code:", {
-      providedCode: cleanCode,
-      codeLength: cleanCode.length,
-      userHasSecret: !!user.twoFactorSecret
+      providedCode: code,
+      codeLength: String(code).length,
+      userHasSecret: !!user.twoFactorSecret,
+      secretLength: user.twoFactorSecret?.length
     });
     
     // Make sure user has a secret
@@ -489,21 +537,9 @@ router.post("/disable-2fa", authenticateToken, async (req, res) => {
       return res.status(400).json({ message: "Two-factor authentication is not properly set up." });
     }
     
-    // וידוא הקוד לפני ביטול - with more flexible verification
-    let verified = speakeasy.totp.verify({
-      secret: user.twoFactorSecret,
-      encoding: 'base32',
-      token: cleanCode,
-      window: 20 // VERY large window to allow more time flexibility (±20 intervals = ~10 minutes)
-    });
-    
-    console.log("2FA disable verification result:", verified);
-    
-    // TEMPORARY FIX FOR DEVELOPMENT: Allow any valid 6-digit code
-    if (!verified && /^\d{6}$/.test(cleanCode)) {
-      console.log("⚠️ DEVELOPMENT MODE: Bypassing 2FA verification with valid 6-digit code");
-      verified = true;
-    }
+    // וידוא הקוד לפני ביטול באמצעות הפונקציה המשופרת במודל המשתמש
+    const verified = User.verifyTwoFactorCode(user.twoFactorSecret, code);
+    console.log("2FA verification result for disabling:", verified);
     
     if (!verified) {
       // Additional debug info
@@ -550,7 +586,8 @@ router.post("/forgot-password", async (req, res) => {
     user.resetPasswordExpiry = codeExpiry;
     await user.save();
 
-    // שליחת הקוד באימייל - IMPROVED TO LOG MORE DETAILS
+    // שליחת הקוד באימייל - IMPROVED WITH BETTER LOGS
+    console.log("Attempting to send email with verification code");
     const emailSent = await sendVerificationEmail(email, verificationCode);
 
     console.log("Password reset code generated:", {
