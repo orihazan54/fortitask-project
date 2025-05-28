@@ -10,6 +10,13 @@ const { execFile } = require('child_process');
 const util = require('util');
 const execFilePromise = util.promisify(execFile);
 
+// --- Import for TSA --- 
+const { getVerifiedTimestamp } = require('../tsaHelper');
+const axios = require('axios');
+const os = require('os');
+const path = require('path'); // path is likely already used/available via __dirname but explicit import is good practice
+// --- End Import for TSA ---
+
 // פונקציה לקבלת מטא-דאטא מורחב של הקובץ
 async function getExtendedFileMetadata(filePath) {
     try {
@@ -138,19 +145,17 @@ router.get("/:id/assignments/:assignmentId/download", authenticateToken, async (
 
 // 📂 העלאת מטלה לענן והכנסה לקורס
 router.post("/:id/upload-assignment", authenticateToken, upload.single("file"), async (req, res) => {
-  let localFilePath = req.file?.path; // Store the initial path in case we need it for cleanup
+  let localFilePath = null; // Initialize localFilePath to null
   try {
-    if (!req.file) {
-      console.error("❌ No file received!");
-      return res.status(400).json({ message: "No file uploaded!" });
+    if (!req.file || !req.file.path) { // req.file.path is the Cloudinary URL
+      console.error("❌ No file received or file path missing!");
+      return res.status(400).json({ message: "No file uploaded or file path missing!" });
     }
-    // Path from multer-storage-cloudinary is the URL, not local path for fs.stat
     console.log("File info from multer/cloudinary:", { path: req.file.path, originalname: req.file.originalname });
 
     const course = await Course.findById(req.params.id);
     if (!course) {
       console.error("❌ Course not found!");
-      // Note: Cannot easily delete from Cloudinary here without more info/SDK call
       return res.status(404).json({ message: "Course not found!" });
     }
 
@@ -162,70 +167,110 @@ router.post("/:id/upload-assignment", authenticateToken, upload.single("file"), 
 
     const serverNowAtUploadUTC = new Date(); 
     const deadlineUTC = new Date(course.deadline);
-    const isLate = serverNowAtUploadUTC > deadlineUTC;
+    const isLateUpload = serverNowAtUploadUTC > deadlineUTC; // Renamed from isLate to avoid conflict
     
-    let clientReportedDate = null;
-    let suspectedTimeManipulation = false;
-    let isModifiedAfterDeadline = false; 
-    let timeDifferenceMinutes = null;
+    // --- TSA Integration --- 
+    const cloudinaryUrl = req.file.path;
+    const originalFileNameForTsa = req.file.originalname;
+    const tempDir = os.tmpdir();
+    localFilePath = path.join(tempDir, `upload_${Date.now()}_${originalFileNameForTsa.replace(/[^a-zA-Z0-9.]/g, '_')}`); // Sanitize filename for path
 
+    console.log(`Attempting to download from Cloudinary: ${cloudinaryUrl} to ${localFilePath}`);
+    const responseStream = await axios({
+        method: 'GET',
+        url: cloudinaryUrl,
+        responseType: 'stream'
+    });
+
+    const writer = require('fs').createWriteStream(localFilePath); // Using fs for stream writer
+    responseStream.data.pipe(writer);
+
+    await new Promise((resolve, reject) => {
+        writer.on('finish', resolve);
+        writer.on('error', (err) => {
+            console.error("Stream writer error during download:", err);
+            reject(new Error(`Failed to write downloaded file: ${err.message}`));
+        });
+    });
+    console.log(`File downloaded successfully to ${localFilePath} for TSA processing.`);
+
+    const verifiedTimestamp = await getVerifiedTimestamp(localFilePath);
+    let actualLastModified;
+    let tsaVerified = false;
+
+    if (verifiedTimestamp) {
+        console.log(`Using verified TSA timestamp: ${verifiedTimestamp.toISOString()}`);
+        actualLastModified = verifiedTimestamp;
+        tsaVerified = true;
+    } else {
+        console.warn(`Could not get verified TSA timestamp for ${originalFileNameForTsa}. Falling back to client reported date or server time.`);
+        if (req.body.lastModified) {
+            actualLastModified = new Date(parseInt(req.body.lastModified));
+        } else {
+            actualLastModified = serverNowAtUploadUTC; // Fallback to server time if no client time
+        }
+    }
+    // --- End TSA Integration ---
+
+    let clientReportedDate = null;
     if (req.body.lastModified) {
         clientReportedDate = new Date(parseInt(req.body.lastModified));
+    }
+
+    let suspectedTimeManipulation = false;
+    let timeDifferenceMinutes = null;
+
+    if (clientReportedDate) {
         timeDifferenceMinutes = Math.abs((serverNowAtUploadUTC.getTime() - clientReportedDate.getTime()) / (60 * 1000));
         const MAX_ALLOWED_TIME_DIFFERENCE_MIN = 24 * 60; // 24 שעות
 
-        // חשד למניפולציה: זמן עריכה בעתיד או הפרש קיצוני
-        if (clientReportedDate.getTime() > serverNowAtUploadUTC.getTime() || timeDifferenceMinutes > MAX_ALLOWED_TIME_DIFFERENCE_MIN) {
-            suspectedTimeManipulation = true;
-        }
-        // האם הקובץ נערך אחרי הדדליין
-        isModifiedAfterDeadline = clientReportedDate > deadlineUTC;
-    } else {
-        isModifiedAfterDeadline = false;
-        if (isLate) {
+        if (clientReportedDate.getTime() > serverNowAtUploadUTC.getTime() || 
+            (timeDifferenceMinutes > MAX_ALLOWED_TIME_DIFFERENCE_MIN && !tsaVerified)) { // Only suspect if TSA didn't verify
             suspectedTimeManipulation = true;
         }
     }
+    
+    // Use actualLastModified (preferring TSA) for deadline checks
+    const isModifiedAfterDeadline = actualLastModified > deadlineUTC;
+    const isModifiedBeforeButSubmittedLate = isLateUpload && actualLastModified && actualLastModified <= deadlineUTC && !suspectedTimeManipulation;
 
-    // האם הקובץ נערך לפני הדדליין אך הוגש באיחור (רק אם אין חשד למניפולציה)
-    const isModifiedBeforeButSubmittedLate = isLate && clientReportedDate && !isModifiedAfterDeadline && !suspectedTimeManipulation;
-
-    // הודעה לסטודנט בלבד (פשוטה)
     let notificationMessage;
-    if (isLate) {
+    if (isLateUpload) {
         notificationMessage = `Your assignment was submitted late.`;
     } else {
         notificationMessage = `Your assignment was submitted successfully.`;
     }
 
     const newAssignment = {
-      fileUrl: req.file.path, // This is the Cloudinary URL
+      fileUrl: req.file.path, 
       fileName: req.file.originalname,
       displayName: Buffer.from(req.file.originalname, 'latin1').toString('utf8'),
       uploadedAt: serverNowAtUploadUTC,
       clientReportedDate: clientReportedDate ? clientReportedDate.toISOString() : null,
-      // Remove serverFsMtime and related fields
-      lastModified: clientReportedDate, // Store client reported date as the primary lastModified 
-      lastModifiedUTC: clientReportedDate ? clientReportedDate.toISOString() : null,
+      lastModified: actualLastModified, // Use the determined actualLastModified
+      lastModifiedUTC: actualLastModified ? actualLastModified.toISOString() : null,
+      tsaVerifiedTimestamp: tsaVerified ? actualLastModified.toISOString() : null,
+      tsaVerificationFailed: !tsaVerified && !!verifiedTimestamp, // True if TSA process ran but failed
       serverReceivedTime: serverNowAtUploadUTC, 
       originalSize: req.file.size,
       fileType: req.file.mimetype,
-      isLateSubmission: isLate,
-      isModifiedAfterDeadline: isModifiedAfterDeadline, // Based only on client time
-      isModifiedBeforeButSubmittedLate: isModifiedBeforeButSubmittedLate,
+      isLateSubmission: isLateUpload, // Use the renamed variable
+      isModifiedAfterDeadline: isModifiedAfterDeadline, // Now based on actualLastModified
+      isModifiedBeforeButSubmittedLate: isModifiedBeforeButSubmittedLate, // Now based on actualLastModified
       suspectedTimeManipulation: suspectedTimeManipulation,
-      timeDifferenceMinutes: timeDifferenceMinutes,
+      timeDifferenceMinutes: clientReportedDate ? timeDifferenceMinutes : null, // Keep original diff for info if client date existed
       submissionComment: req.body.comment || "",
       studentId: req.user.role === "Student" ? req.user.id : undefined,
       studentName: req.user.role === "Student" ? user.username : undefined,
       studentEmail: req.user.role === "Student" ? user.email : undefined,
-      isLocked: isLate && req.user.role === "Student",
+      isLocked: isLateUpload && req.user.role === "Student",
       isMaterial: req.user.role === "Teacher" ? true : false,
     };
     
-    console.log("Final assignment data for DB (Simplified):", {
+    console.log("Final assignment data for DB (with TSA info):", {
         clientReportedDate: newAssignment.clientReportedDate,
         lastModifiedUTC: newAssignment.lastModifiedUTC,
+        tsaVerifiedTimestamp: newAssignment.tsaVerifiedTimestamp,
         isLateSubmission: newAssignment.isLateSubmission,
         isModifiedAfterDeadline: newAssignment.isModifiedAfterDeadline,
         isModifiedBeforeButSubmittedLate: newAssignment.isModifiedBeforeButSubmittedLate,
@@ -235,7 +280,6 @@ router.post("/:id/upload-assignment", authenticateToken, upload.single("file"), 
     course.assignments.push(newAssignment);
     await course.save();
 
-    // Add notification for student
     if (req.user.role === "Student") {
       try {
         await user.addNotification(notificationMessage);
@@ -247,17 +291,26 @@ router.post("/:id/upload-assignment", authenticateToken, upload.single("file"), 
     return res.status(201).json({ 
       message: "Assignment uploaded successfully!", 
       assignment: newAssignment,
+      // Return relevant flags to the client
       isLate: newAssignment.isLateSubmission,
       isModifiedAfterDeadline: newAssignment.isModifiedAfterDeadline,
       isModifiedBeforeButSubmittedLate: newAssignment.isModifiedBeforeButSubmittedLate,
       suspectedTimeManipulation: newAssignment.suspectedTimeManipulation,
-      timeDifferenceMinutes: newAssignment.timeDifferenceMinutes,
+      tsaVerified: tsaVerified
     });
 
   } catch (error) {
     console.error("❌ Server Error while uploading assignment:", error);
-    // Removed local file cleanup as we might not have one with Cloudinary direct upload
     return res.status(500).json({ message: "Failed to upload assignment.", error: error.message || error });
+  } finally {
+    if (localFilePath) {
+        try {
+            await fs.unlink(localFilePath);
+            console.log(`Temporary file ${localFilePath} deleted successfully after TSA processing.`);
+        } catch (cleanupError) {
+            console.error(`Error deleting temporary file ${localFilePath}:`, cleanupError);
+        }
+    }
   }
 });
 
