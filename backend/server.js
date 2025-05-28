@@ -1,10 +1,10 @@
-
 require("dotenv").config();
 const { cloudinary } = require("./config/cloudinary");
 const express = require("express");
 const mongoose = require("mongoose");
 const cors = require("cors");
 const path = require("path");
+const { exec } = require('child_process');
 
 // ייבוא מסלולים
 const userRoutes = require("./routes/userRoutes");
@@ -38,6 +38,11 @@ mongoose
 // מסלולים
 app.use("/api/users", userRoutes); // מסלולים עבור משתמשים
 app.use("/api/courses", coursesRoutes); // מסלולים עבור קורסים ומשימות
+
+// הוספת הגשת קבצים סטטיים עבור ה-frontend
+// ודא שתיקיית ה-build של ה-frontend נמצאת בנתיב הנכון יחסית לשרת
+const frontendBuildPath = path.join(__dirname, '../build');
+app.use(express.static(frontendBuildPath));
 
 // מסלול בדיקה
 app.get("/api/health", (req, res) => {
@@ -147,6 +152,47 @@ app.post("/api/analyze-metadata", (req, res) => {
     console.error("Error analyzing metadata:", error);
     res.status(500).json({ message: "Failed to analyze metadata", error: error.toString() });
   }
+});
+
+// נקודת קצה לבדיקת openssl
+app.get("/api/check-openssl", (req, res) => {
+  exec('openssl version', (error, stdout, stderr) => {
+    if (error) {
+      console.error(`Error executing openssl: ${error.message}`);
+      return res.status(500).json({ 
+        message: "openssl command failed to execute", 
+        error: error.message,
+        stderr: stderr 
+      });
+    }
+    if (stderr) {
+      console.warn(`openssl command produced stderr: ${stderr}`);
+      // אם יש stderr אבל אין שגיאה ראשית, ייתכן שהפקודה הצליחה אך יש אזהרות
+      // נחזיר את stdout אם קיים, אחרת את stderr
+      if (stdout) {
+        return res.status(200).json({ 
+          message: "openssl command executed (with stderr)", 
+          version: stdout.trim(),
+          stderr: stderr.trim()
+        });
+      } else {
+        return res.status(200).json({ 
+          message: "openssl command executed (only stderr output)", 
+          stderr: stderr.trim()
+        });
+      }
+    }
+    res.status(200).json({ 
+      message: "openssl command executed successfully", 
+      version: stdout.trim() 
+    });
+  });
+});
+
+// לכל בקשה אחרת (שאינה API ולא קובץ סטטי), החזר את index.html של ה-frontend
+// זה מאפשר ל-React Router לטפל בניווט בצד הלקוח
+app.get('*', (req, res) => {
+  res.sendFile(path.join(frontendBuildPath, 'index.html'));
 });
 
 // האזנה לשרת
