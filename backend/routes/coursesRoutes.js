@@ -145,6 +145,13 @@ router.get("/:id/assignments/:assignmentId/download", authenticateToken, async (
 
 // 📂 העלאת מטלה לענן והכנסה לקורס
 router.post("/:id/upload-assignment", authenticateToken, upload.single("file"), async (req, res) => {
+  console.log("!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!");
+  console.log("UPLOAD ASSIGNMENT ROUTE HIT! Course ID:", req.params.id);
+  console.log("User:", req.user ? { id: req.user.id, role: req.user.role } : "No user");
+  console.log("File received by multer:", req.file ? { originalname: req.file.originalname, path: req.file.path, size: req.file.size } : "No file object");
+  console.log("Request body:", req.body);
+  console.log("!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!");
+
   let localFilePath = null; // Initialize localFilePath to null
   try {
     if (!req.file || !req.file.path) { // req.file.path is the Cloudinary URL
@@ -217,15 +224,22 @@ router.post("/:id/upload-assignment", authenticateToken, upload.single("file"), 
         clientReportedDate = new Date(parseInt(req.body.lastModified));
     }
 
+    // -------- מנגנון זיהוי מניפולציה מחודש -------- //
     let suspectedTimeManipulation = false;
-    let timeDifferenceMinutes = null;
+    let clientTsaDiffMinutes = null; // פער בין זמן הלקוח לחותמת TSA
 
-    if (clientReportedDate) {
-        timeDifferenceMinutes = Math.abs((serverNowAtUploadUTC.getTime() - clientReportedDate.getTime()) / (60 * 1000));
-        const MAX_ALLOWED_TIME_DIFFERENCE_MIN = 24 * 60; // 24 שעות
-
-        if (clientReportedDate.getTime() > serverNowAtUploadUTC.getTime() || 
-            (timeDifferenceMinutes > MAX_ALLOWED_TIME_DIFFERENCE_MIN && !tsaVerified)) { // Only suspect if TSA didn't verify
+    if (tsaVerified && clientReportedDate) {
+        // אם יש חותמת אמינה וגם זמן מדווח ע"י הדפדפן – משווים ביניהם
+        clientTsaDiffMinutes = Math.abs((actualLastModified.getTime() - clientReportedDate.getTime()) / (60 * 1000));
+        const MAX_DELTA_MIN = 2; // טולרנס של 2 דקות
+        if (clientTsaDiffMinutes > MAX_DELTA_MIN) {
+            suspectedTimeManipulation = true;
+        }
+    } else if (clientReportedDate) {
+        // fallback: אין TSA מאומת – בודקים מול זמן השרת כפי שהיה קודם
+        const diffToServerMin = Math.abs((serverNowAtUploadUTC.getTime() - clientReportedDate.getTime()) / (60 * 1000));
+        const MAX_ALLOWED_SERVER_DIFF_MIN = 24 * 60; // 24 שעות
+        if (clientReportedDate > serverNowAtUploadUTC || diffToServerMin > MAX_ALLOWED_SERVER_DIFF_MIN) {
             suspectedTimeManipulation = true;
         }
     }
@@ -258,7 +272,9 @@ router.post("/:id/upload-assignment", authenticateToken, upload.single("file"), 
       isModifiedAfterDeadline: isModifiedAfterDeadline, // Now based on actualLastModified
       isModifiedBeforeButSubmittedLate: isModifiedBeforeButSubmittedLate, // Now based on actualLastModified
       suspectedTimeManipulation: suspectedTimeManipulation,
-      timeDifferenceMinutes: clientReportedDate ? timeDifferenceMinutes : null, // Keep original diff for info if client date existed
+      clientTsaDiffMinutes: clientTsaDiffMinutes,
+      // שמור גם את פער לקוח-שרת לצרכי מידע (לא קובע חשד אם קיימת חותמת TSA)
+      timeDifferenceMinutes: clientReportedDate ? Math.abs((serverNowAtUploadUTC.getTime() - clientReportedDate.getTime()) / (60 * 1000)) : null,
       submissionComment: req.body.comment || "",
       studentId: req.user.role === "Student" ? req.user.id : undefined,
       studentName: req.user.role === "Student" ? user.username : undefined,

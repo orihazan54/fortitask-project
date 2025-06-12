@@ -62,7 +62,8 @@ const testCloudinaryConnection = async () => {
   }
 };
 
-// הפעלת בדיקת חיבור באתחול
-testCloudinaryConnection();
+if (process.env.NODE_ENV !== 'test') {
+  testCloudinaryConnection();
+}
 
 module.exports = { cloudinary, upload, testCloudinaryConnection };

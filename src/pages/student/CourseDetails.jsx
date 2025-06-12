@@ -1,4 +1,4 @@
-import React, { useState, useEffect, useRef } from "react";
+import React, { useState, useEffect } from "react";
 import { useParams, useNavigate } from "react-router-dom";
 import { toast } from "react-toastify";
 import { 
@@ -15,7 +15,7 @@ import CourseMaterials from "../../components/course/CourseMaterials";
 import AssignmentUpload from "../../components/course/AssignmentUpload";
 import StudentSubmissions from "../../components/course/StudentSubmissions";
 import DeleteConfirmationModal from "../../components/course/DeleteConfirmationModal";
-import { AlertTriangle, ArrowLeft, Clock } from "lucide-react";
+import { ArrowLeft, Clock } from "lucide-react";
 import "../../styles/CourseDetails.css";
 
 const CourseDetails = () => {
@@ -33,19 +33,7 @@ const CourseDetails = () => {
   const [uploadComment, setUploadComment] = useState("");
   const [uploadError, setUploadError] = useState(null);
   
-  // משתנה שמציין שכבר הראינו את ההתראה עבור קורס זה
-  const cheatingAlertRef = useRef(false);
-  
-  // Create a session storage key for this specific course
-  const cheatingAlertKey = `cheating-alert-shown-${courseId}`;
-  
-  // בדיקה אם כבר הראינו את ההתראה - מתבצעת פעם אחת בלבד בטעינת הקומפוננטה
-  useEffect(() => {
-    const alertAlreadyShown = sessionStorage.getItem(cheatingAlertKey) === 'true';
-    if (alertAlreadyShown) {
-      cheatingAlertRef.current = true;
-    }
-  }, [cheatingAlertKey]);
+  // (הוסר מנגנון התראה לסטודנט על חשד לרמאות)
 
   useEffect(() => {
     const fetchCourseDetails = async () => {
@@ -88,27 +76,6 @@ const CourseDetails = () => {
         ) : [];
         console.log("Filtered course materials:", materials);
         setCourseMaterials(materials);
-        
-        // בדיקת קבצים חשודים רק אם לא הצגנו כבר את ההתראה
-        if (!cheatingAlertRef.current && myAssignments.length > 0) {
-          const suspiciousAssignments = myAssignments.filter(
-            assignment => assignment.isModifiedAfterDeadline || 
-                        assignment.possibleTimeManipulation ||
-                        assignment.hasDateDiscrepancy
-          );
-          
-          if (suspiciousAssignments.length > 0) {
-            toast.error("יש לך מטלות שנמצאו חשודות ברמאות! בדוק את ההגשות שלך.", {
-              autoClose: 10000,
-              icon: <AlertTriangle size={20} />,
-              position: "top-center",
-            });
-            
-            // סימון שכבר הראינו את ההתראה - גם ב-ref וגם ב-sessionStorage
-            cheatingAlertRef.current = true;
-            sessionStorage.setItem(cheatingAlertKey, 'true');
-          }
-        }
       } catch (error) {
         toast.error("Error loading course details");
         console.error("Error fetching course details:", error);
@@ -118,7 +85,7 @@ const CourseDetails = () => {
     };
 
     fetchCourseDetails();
-  }, [courseId, cheatingAlertKey]);
+  }, [courseId]);
 
   const handleFileChange = (e) => {
     if (e.target.files && e.target.files[0]) {
@@ -219,7 +186,7 @@ const CourseDetails = () => {
   const confirmDeleteAssignment = (assignment) => {
     if (assignment.isLateSubmission) {
       toast.error("Late submissions cannot be deleted", {
-        icon: <AlertTriangle size={24} />,
+        icon: <Clock size={24} />,
       });
       return;
     }
@@ -313,7 +280,7 @@ const CourseDetails = () => {
         <div className="courses-container">
           <Sidebar role="Student" />
           <div className="error-container">
-            <AlertTriangle size={48} className="error-icon" />
+            <Clock size={48} className="error-icon" />
             <h3>Course Not Found</h3>
             <p>The requested course could not be loaded.</p>
             <button className="back-btn" onClick={() => navigate("/student/my-courses")}>
@@ -361,6 +328,7 @@ const CourseDetails = () => {
             assignments={studentAssignments}
             onDownload={handleDownloadMaterial}
             onDelete={(assignment) => confirmDeleteAssignment(assignment)}
+            deadline={course?.deadline}
           />
           
           <DeleteConfirmationModal 

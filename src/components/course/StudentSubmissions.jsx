@@ -1,7 +1,7 @@
 import React from 'react';
-import { FileText, Download, Trash2, Clock, AlertTriangle, Check, Info, Shield } from 'lucide-react';
+import { FileText, Download, Trash2, Clock, Check, Info } from 'lucide-react';
 
-const StudentSubmissions = ({ assignments, onDownload, onDelete }) => {
+const StudentSubmissions = ({ assignments, onDownload, onDelete, deadline }) => {
   const getFileIcon = (fileType) => {
     if (!fileType) return <FileText size={20} className="file-icon" />;
     if (fileType.includes("pdf")) return <FileText size={20} className="file-icon" />;
@@ -17,10 +17,28 @@ const StudentSubmissions = ({ assignments, onDownload, onDelete }) => {
     return <Check size={18} className="status-icon on-time" title="Submitted on time" style={{color: '#10b981'}} />;
   };
 
-  // פונקציית עזר לקבלת טקסט סטטוס
-  const getStatusText = (assignment) => {
+  // מופיע לטובת חישוב משך האיחור – ימים ודקות – לפי דדליין הקורס
+  const formatLateDuration = (uploadDate, courseDeadline) => {
+    if (!courseDeadline || !uploadDate) return "";
+    const diffMs = new Date(uploadDate) - new Date(courseDeadline);
+    if (diffMs <= 0) return "";
+    const totalMinutes = Math.floor(diffMs / 60000);
+    const days = Math.floor(totalMinutes / 1440);
+    const hours = Math.floor((totalMinutes % 1440) / 60);
+    const minutes = totalMinutes % 60;
+
+    const parts = [];
+    if (days > 0) parts.push(`${days}d`);
+    if (hours > 0) parts.push(`${hours}h`);
+    if (minutes > 0) parts.push(`${minutes}m`);
+
+    return parts.join(" ");
+  };
+
+  const getStatusText = (assignment, courseDeadline) => {
     if (assignment.isLateSubmission) {
-      return "Submitted late";
+      const lateStr = formatLateDuration(assignment.uploadedAt, courseDeadline);
+      return lateStr ? `Submitted late (${lateStr})` : "Submitted late";
     }
     return "Submitted on time";
   };
@@ -54,15 +72,10 @@ const StudentSubmissions = ({ assignments, onDownload, onDelete }) => {
                       Submitted: {new Date(assignment.uploadedAt).toLocaleDateString()} {new Date(assignment.uploadedAt).toLocaleTimeString()}
                     </span>
                     
-                    {assignment.lastModified && (
-                      <span className="modified-date">
-                        <Shield size={14} />
-                        Last Modified: {new Date(assignment.lastModified).toLocaleDateString()} {new Date(assignment.lastModified).toLocaleTimeString()}
-                      </span>
-                    )}
+                    {/* הסתרת זמן עריכה אחרון לסטודנט */}
                     
                     <span className={`submission-status ${assignment.isLateSubmission ? 'status-late' : 'status-ok'}`}>
-                      {getStatusText(assignment)}
+                      {getStatusText(assignment, deadline)}
                     </span>
                     
                     {assignment.submissionComment && (

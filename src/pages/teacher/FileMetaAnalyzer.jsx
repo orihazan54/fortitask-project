@@ -102,10 +102,42 @@ function FileMetaAnalyzer({ file, fileMeta, deadline }) {
     if (isManipulationFuture) return "Suspected manipulation: file last modified in the future (clock set forward)";
     if (isManipulationClockBack) return "Suspected manipulation: file last modified long before submission (clock set back)";
     if (isModifiedAfterDeadline) return "Late submission: file was modified after the deadline";
-    if (isLateSubmission && !isModifiedAfterDeadline) return "Late submission: file was last modified before the deadline";
-    if (!isLateSubmission) return "On time submission";
-    return "Unknown status";
+    if (isLateSubmission && isModifiedAfterDeadline) return "Late submission AND modified after deadline";
+    if (isLateSubmission) return "Late submission: file was last modified before the deadline";
+    return "On time submission";
   }, [isManipulationFuture, isManipulationClockBack, isModifiedAfterDeadline, isLateSubmission]);
+
+  // 🕒 חישוב משך האיחור בהגשה (upload מול deadline)
+  const submissionLateDurationText = useMemo(() => {
+    if (!isLateSubmission || !serverUploadTime || !deadlineDate) return null;
+    const diffMs = serverUploadTime.getTime() - deadlineDate.getTime();
+    if (diffMs <= 0) return null;
+    const totalMinutes = Math.floor(diffMs / 60000);
+    const days = Math.floor(totalMinutes / 1440);
+    const hours = Math.floor((totalMinutes % 1440) / 60);
+    const minutes = totalMinutes % 60;
+    const parts = [];
+    if (days > 0) parts.push(`${days}d`);
+    if (hours > 0) parts.push(`${hours}h`);
+    if (minutes > 0) parts.push(`${minutes}m`);
+    return parts.join(" ");
+  }, [isLateSubmission, serverUploadTime, deadlineDate]);
+
+  // 🕒 חישוב משך האיחור (ימים + דקות) כאשר הקובץ נערך אחרי הדדליין
+  const lateDurationText = useMemo(() => {
+    if (!isModifiedAfterDeadline || !lastModified || !deadlineDate) return null;
+    const diffMs = lastModified.getTime() - deadlineDate.getTime();
+    if (diffMs <= 0) return null;
+    const totalMinutes = Math.floor(diffMs / 60000);
+    const days = Math.floor(totalMinutes / 1440);
+    const hours = Math.floor((totalMinutes % 1440) / 60);
+    const minutes = totalMinutes % 60;
+    const parts = [];
+    if (days > 0) parts.push(`${days}d`);
+    if (hours > 0) parts.push(`${hours}h`);
+    if (minutes > 0) parts.push(`${minutes}m`);
+    return parts.join(" ");
+  }, [isModifiedAfterDeadline, lastModified, deadlineDate]);
 
   // Early return after all hooks are called
   if (!file || !fileMeta || !deadline || !deadlineDate) {
@@ -214,6 +246,24 @@ function FileMetaAnalyzer({ file, fileMeta, deadline }) {
             )}
           </div>
         )}
+
+        {submissionLateDurationText && (
+          <div style={{ color: "#b45309", textAlign: "left", gridColumn: "1/-1", background: "#FFF8E6", padding: "8px 12px", borderRadius: "6px", marginTop: "10px", fontWeight: 600 }}>
+            <Clock size={18} style={{ verticalAlign: "middle" }} />
+            <span style={{ marginLeft: 6 }}>
+              Submission delay: {submissionLateDurationText}
+            </span>
+          </div>
+        )}
+
+        {/* File last modified row */}
+        <div style={{ color: "#7E69AB", textAlign: "right", marginTop: 10 }}>
+          <Clock size={16} style={{ verticalAlign: "middle" }} />
+          <span style={{ marginLeft: 5 }}>File Last Modified</span>
+        </div>
+        <div>
+          <span style={{ color: "#1A1F2C", fontWeight: 600 }}>{formatDate(lastModified)}</span>
+        </div>
 
         <div style={{ color: "#7E69AB", textAlign: "right" }}>
           <Info size={16} style={{ verticalAlign: "middle" }} />

@@ -264,3 +264,14 @@
     margin: 0 1rem;
   }
 }
+
+/* error state */
+.input-error {
+  border-color: #ef4444 !important;
+}
+.field-error-text {
+  color: #ef4444;
+  font-size: 0.75rem;
+  margin-top: 4px;
+  display: block;
+}

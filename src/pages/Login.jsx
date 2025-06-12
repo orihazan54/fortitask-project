@@ -1,10 +1,9 @@
-
 import React, { useState, useEffect } from "react";
 import { useNavigate } from "react-router-dom";
 import { login, checkAuthentication } from "../services/api";
 import NavBar from "../components/NavBar";
 import { Eye, EyeOff, Mail, Lock, ShieldCheck } from "lucide-react";
-import { toast } from "sonner";
+import { toast } from "react-toastify";
 import {
   Card,
   CardContent,
@@ -23,6 +22,7 @@ const Login = () => {
   const [requiresTwoFactor, setRequiresTwoFactor] = useState(false);
   const [loginInProgress, setLoginInProgress] = useState(false);
   const [loginAttemptData, setLoginAttemptData] = useState(null);
+  const [fieldErrors, setFieldErrors] = useState({ email: "", password: "" });
   const navigate = useNavigate();
 
   useEffect(() => {
@@ -34,6 +34,7 @@ const Login = () => {
 
   const handleChange = (e) => {
     setFormData({ ...formData, [e.target.name]: e.target.value });
+    setFieldErrors(prev => ({ ...prev, [e.target.name]: "" }));
   };
 
   const handle2FACodeChange = (e) => {
@@ -97,7 +98,15 @@ const Login = () => {
       } else {
         // Create error message and display it as toast
         const errorMessage = error.response?.data?.message || error.message || "Login failed! Please check your credentials";
-        toast.error(errorMessage);
+        toast.error(errorMessage, { autoClose: 8000 });
+
+        // Mark field errors
+        if (errorMessage.toLowerCase().includes("email")) {
+          setFieldErrors(prev => ({ ...prev, email: "Invalid email" }));
+        }
+        if (errorMessage.toLowerCase().includes("password")) {
+          setFieldErrors(prev => ({ ...prev, password: "Incorrect password" }));
+        }
       }
     } finally {
       setLoading(false);
@@ -141,11 +150,12 @@ const Login = () => {
                         placeholder="Enter your email"
                         value={formData.email}
                         onChange={handleChange}
-                        className="input-field"
+                        className={`input-field ${fieldErrors.email ? 'input-error' : ''}`}
                         required
                       />
                     </div>
                   </div>
+                  {fieldErrors.email && <span className="field-error-text">{fieldErrors.email}</span>}
                   <div className="input-group">
                     <label className="input-label" htmlFor="password">Password</label>
                     <div className="input-container">
@@ -157,7 +167,7 @@ const Login = () => {
                         placeholder="Enter your password"
                         value={formData.password}
                         onChange={handleChange}
-                        className="input-field"
+                        className={`input-field ${fieldErrors.password ? 'input-error' : ''}`}
                         required
                       />
                       <button
@@ -169,6 +179,7 @@ const Login = () => {
                       </button>
                     </div>
                   </div>
+                  {fieldErrors.password && <span className="field-error-text">{fieldErrors.password}</span>}
                   <Button 
                     type="submit" 
                     className="login-button" 

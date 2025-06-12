@@ -1,4 +1,3 @@
-
 const express = require("express");
 const bcrypt = require("bcryptjs");
 const jwt = require("jsonwebtoken");
@@ -14,8 +13,13 @@ const router = express.Router();
 // Setup email transporter using Brevo - UPDATED CONFIGURATION
 let transporter;
 
-// Check if we have Brevo SMTP configuration with new setup
-if (process.env.BREVO_HOST && process.env.BREVO_USER && process.env.BREVO_PASS) {
+// In test environment use fallback immediately
+if (process.env.NODE_ENV === 'test') {
+  transporter = createFallbackTransporter();
+}
+
+// Check if we have Brevo SMTP configuration with new setup (skip in test)
+if (process.env.NODE_ENV !== 'test' && process.env.BREVO_HOST && process.env.BREVO_USER && process.env.BREVO_PASS) {
   console.log("✅ Brevo email configuration detected - using updated Brevo for emails");
   console.log(`Using email/user: ${process.env.BREVO_USER}`);
   console.log(`SMTP host: ${process.env.BREVO_HOST}`);
@@ -54,7 +58,7 @@ if (process.env.BREVO_HOST && process.env.BREVO_USER && process.env.BREVO_PASS) 
       console.log("✅ Email server connection verified! Ready to send messages");
     }
   });
-} else if (process.env.BREVO_SMTP_KEY && process.env.BREVO_EMAIL) {
+} else if (process.env.NODE_ENV !== 'test' && process.env.BREVO_SMTP_KEY && process.env.BREVO_EMAIL) {
   // Fallback to old configuration if new one is not available
   console.log("✅ Using legacy Brevo email configuration");
   console.log(`Using email: ${process.env.BREVO_EMAIL}`);

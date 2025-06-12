@@ -27,13 +27,15 @@ console.log("API_KEY:", process.env.CLOUDINARY_API_KEY ? "Loaded" : "Missing");
 console.log("API_SECRET:", process.env.CLOUDINARY_API_SECRET ? "Loaded" : "Missing");
 
 // חיבור ל-MongoDB
-mongoose
-  .connect(process.env.MONGO_URI, {
-    useNewUrlParser: true,
-    useUnifiedTopology: true,
-  })
-  .then(() => console.log("✅ Connected to MongoDB"))
-  .catch((err) => console.error("❌ Error connecting to MongoDB:", err));
+if (process.env.NODE_ENV !== 'test') {
+  mongoose
+    .connect(process.env.MONGO_URI, {
+      useNewUrlParser: true,
+      useUnifiedTopology: true,
+    })
+    .then(() => console.log("✅ Connected to MongoDB"))
+    .catch((err) => console.error("❌ Error connecting to MongoDB:", err));
+}
 
 // מסלולים
 app.use("/api/users", userRoutes); // מסלולים עבור משתמשים
@@ -195,14 +197,17 @@ app.get('*', (req, res) => {
   res.sendFile(path.join(frontendBuildPath, 'index.html'));
 });
 
-// האזנה לשרת
-const PORT = process.env.PORT || 5000;
-app.listen(PORT, () => {
-  console.log(`🚀 Server running on port ${PORT}`);
-});
-
 // טיפול בשגיאות לא מטופלות
 process.on('unhandledRejection', (err) => {
   console.error('Unhandled Promise Rejection:', err);
   // לא מפילים את השרת, רק מתעדים את השגיאה
 });
+
+if (process.env.NODE_ENV !== 'test') {
+  const PORT = process.env.PORT || 5000;
+  app.listen(PORT, () => {
+    console.log(`🚀 Server running on port ${PORT}`);
+  });
+}
+
+module.exports = app;

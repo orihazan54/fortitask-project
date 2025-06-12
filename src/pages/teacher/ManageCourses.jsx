@@ -315,9 +315,23 @@ const ManageCourses = () => {
         "File Name": submission.displayName || submission.fileName || "",
         "File Type": getFileTypeDescription(submission.fileType),
         "Submission Time (Local)": submission.uploadedAt ? formatDate(submission.uploadedAt) : "N/A",
-        "Last Modified (Reported by Client, Local)": submission.clientReportedDate 
-          ? formatDate(submission.clientReportedDate) 
-          : "N/A",
+        "Last Modified (Server Verified, Local)": submission.lastModifiedUTC
+          ? formatDate(submission.lastModifiedUTC)
+          : (submission.lastModified ? formatDate(submission.lastModified) : "N/A"),
+        "Late By (Submission vs Deadline)": (() => {
+          if (!submission.uploadedAt || !selectedCourse?.deadline) return "";
+          const diffMs = new Date(submission.uploadedAt) - new Date(selectedCourse.deadline);
+          if (diffMs <= 0) return "On time";
+          const totalMinutes = Math.floor(diffMs / 60000);
+          const days = Math.floor(totalMinutes / 1440);
+          const hours = Math.floor((totalMinutes % 1440) / 60);
+          const minutes = totalMinutes % 60;
+          const parts = [];
+          if (days > 0) parts.push(`${days}d`);
+          if (hours > 0) parts.push(`${hours}h`);
+          if (minutes > 0) parts.push(`${minutes}m`);
+          return parts.join(" ");
+        })(),
         "Deadline (Local)": selectedCourse?.deadline
           ? formatDate(selectedCourse.deadline)
           : "N/A",
@@ -331,7 +345,7 @@ const ManageCourses = () => {
     ];
     const columnOrder = [
       "Student Name", "Student Email", "File Name", "File Type", 
-      "Submission Time (Local)", "Last Modified (Reported by Client, Local)", 
+      "Submission Time (Local)", "Last Modified (Server Verified, Local)", "Late By (Submission vs Deadline)",
       "Deadline (Local)", "Is Late Submission", 
       "Is Modified After Deadline (Based on Client Time)", "Suspected Time Manipulation", 
       "Comment"
