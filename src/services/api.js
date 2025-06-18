@@ -3,6 +3,7 @@ import axios from "axios";
 import { toast } from "sonner";
 import CryptoJS from "crypto-js";
 
+axios.defaults.withCredentials = true;
 // Create the API instance with better timeout settings
 const API = axios.create({
   baseURL: process.env.REACT_APP_API_BASE_URL || "http://localhost:5000/api",
