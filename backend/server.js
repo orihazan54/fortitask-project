@@ -13,7 +13,24 @@ const coursesRoutes = require("./routes/coursesRoutes"); // מיזוג משימ�
 const app = express();
 
 // Middleware
-app.use(cors());
+const allowedOrigins = [
+  "http://localhost:3000",
+  "https://www.fortitask.org",
+  "https://fortitask.org"
+];
+
+app.use(cors({
+  origin: function (origin, callback) {
+    // לא נשלח origin בבקשות לוקליות או בדיקות
+    if (!origin || allowedOrigins.includes(origin)) {
+      callback(null, true);
+    } else {
+      callback(new Error("Not allowed by CORS: " + origin));
+    }
+  },
+  credentials: true
+}));
+
 app.use(express.json({ limit: '50mb' })); // מאפשר עבודה עם JSON בבקשות עם גודל מוגדל
 app.use(express.urlencoded({ extended: true, limit: '50mb' }));
 
