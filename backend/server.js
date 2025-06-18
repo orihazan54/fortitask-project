@@ -16,8 +16,11 @@ const app = express();
 const allowedOrigins = [
   "http://localhost:3000",
   "https://www.fortitask.org",
-  "https://fortitask.org"
+  "https://fortitask.org",
+  "https://fortitask-frontend.onrender.com",
+  "https://fortitask-project.onrender.com"
 ];
+
 
 app.use((req, res, next) => {
   res.header("Access-Control-Allow-Credentials", "true");
