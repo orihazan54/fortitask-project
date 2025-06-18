@@ -5,12 +5,13 @@ import CryptoJS from "crypto-js";
 
 // Create the API instance with better timeout settings
 const API = axios.create({
-  baseURL: process.env.REACT_APP_API_URL || "https://fortitask-backend.onrender.com/api",
+  baseURL: process.env.REACT_APP_API_BASE_URL || "http://localhost:5000/api",
   timeout: 15000,
   headers: {
     "Content-Type": "application/json"
   }
 });
+
 
 // Track active error toasts to prevent duplicates
 let activeErrorToasts = new Set();
