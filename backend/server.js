@@ -21,7 +21,7 @@ const allowedOrigins = [
 
 app.use(cors({
   origin: function (origin, callback) {
-    // לא נשלח origin בבקשות לוקליות או בדיקות
+   
     if (!origin || allowedOrigins.includes(origin)) {
       callback(null, true);
     } else {

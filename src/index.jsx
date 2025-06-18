@@ -5,6 +5,10 @@ import App from "./App";
 import { ToastContainer } from "react-toastify";
 import "react-toastify/dist/ReactToastify.css";
 import "./styles/index.css";
+import axios from "axios";
+
+// ✅ מגדיר ל־Axios לשלוח cookies גם בדומיינים שונים
+axios.defaults.withCredentials = true;
 
 const root = ReactDOM.createRoot(document.getElementById("root"));
 
