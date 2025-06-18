@@ -1,0 +1,182 @@
+
+/* Container for the entire form */
+.create-course-container {
+  max-width: 800px;
+  margin: 40px auto;
+  padding: 20px;
+  background: rgba(30, 33, 58, 0.7);
+  border-radius: 10px;
+  box-shadow: 0 4px 10px rgba(0, 0, 0, 0.15);
+}
+
+/* Header and back button section */
+.header-buttons {
+  display: flex;
+  justify-content: flex-start;
+  margin-bottom: 20px;
+}
+
+.back-btn {
+  background-color: #007bff;
+  color: white;
+  border: none;
+  padding: 8px 16px;
+  border-radius: 5px;
+  font-size: 0.9rem;
+  cursor: pointer;
+  transition: all 0.3s ease;
+  width: auto;
+}
+
+.back-btn:hover {
+  background-color: #0056b3;
+  transform: translateY(-2px);
+}
+
+/* Form styling */
+.create-course-form {
+  display: flex;
+  flex-direction: column;
+}
+
+.create-course-form h2 {
+  text-align: center;
+  margin-bottom: 20px;
+  color: #e2e8f0;
+}
+
+/* Form group styling */
+.form-group {
+  margin-bottom: 15px;
+}
+
+.form-group label {
+  font-weight: 500;
+  margin-bottom: 8px;
+  display: block;
+  color: #e2e8f0;
+}
+
+.form-group input,
+.form-group textarea {
+  width: 100%;
+  padding: 12px;
+  border-radius: 8px;
+  background: rgba(30, 33, 58, 0.7);
+  border: 1px solid rgba(255, 255, 255, 0.1);
+  color: #e2e8f0;
+  font-size: 1rem;
+  transition: all 0.3s ease;
+}
+
+.form-group input:focus,
+.form-group textarea:focus {
+  outline: none;
+  border-color: #818cf8;
+  box-shadow: 0 0 0 2px rgba(129, 140, 248, 0.2);
+}
+
+.form-group textarea {
+  resize: vertical;
+  min-height: 120px;
+}
+
+/* Deadline inputs container - אזור תאריך ושעה */
+.deadline-inputs-container {
+  display: flex;
+  gap: 20px;
+}
+
+.deadline-inputs-container .form-group {
+  flex: 1;
+}
+
+/* File upload section */
+.file-upload-section {
+  margin: 20px 0;
+}
+
+.file-upload-box {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 20px;
+  border: 2px dashed rgba(255, 255, 255, 0.2);
+  border-radius: 8px;
+  cursor: pointer;
+  transition: all 0.3s ease;
+  background: rgba(30, 33, 58, 0.4);
+}
+
+.file-upload-box:hover {
+  border-color: #818cf8;
+  background: rgba(46, 49, 77, 0.6);
+}
+
+.file-upload-box span {
+  margin-left: 10px;
+  color: #e2e8f0;
+}
+
+.selected-file {
+  background: rgba(46, 49, 77, 0.6);
+  padding: 12px;
+  border-radius: 8px;
+  margin-top: 12px;
+  border: 1px solid rgba(255, 255, 255, 0.1);
+}
+
+.selected-file p {
+  margin: 0;
+  font-size: 0.9rem;
+  color: #e2e8f0;
+}
+
+/* Form actions */
+.form-actions {
+  display: flex;
+  justify-content: center;
+  margin-top: 30px;
+}
+
+.submit-btn {
+  background: linear-gradient(to right, #818cf8, #6366f1);
+  color: white;
+  font-weight: 600;
+  border: none;
+  border-radius: 8px;
+  padding: 14px 30px;
+  cursor: pointer;
+  transition: all 0.3s ease;
+  box-shadow: 0 4px 10px rgba(0, 0, 0, 0.3);
+  width: 100%;
+  max-width: 300px;
+}
+
+.submit-btn:hover {
+  transform: translateY(-2px);
+  box-shadow: 0 6px 15px rgba(0, 0, 0, 0.4);
+}
+
+.submit-btn:disabled {
+  background: #64748b;
+  cursor: not-allowed;
+  transform: none;
+  box-shadow: none;
+}
+
+/* Responsive adjustments */
+@media (max-width: 768px) {
+  .create-course-container {
+    padding: 15px;
+  }
+
+  .submit-btn {
+    width: 100%;
+  }
+  
+  .deadline-inputs-container {
+    flex-direction: column;
+    gap: 10px;
+  }
+}

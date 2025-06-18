@@ -1,0 +1,212 @@
+
+@import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap');
+
+/* רקע */
+.bg-gradient {
+  background: linear-gradient(135deg, #0f172a 0%, #1e1b4b 100%);
+  color: #fff;
+}
+
+.bg-gradient-text {
+  background: linear-gradient(to right, #818cf8, #6366f1);
+  -webkit-background-clip: text;
+  background-clip: text;
+  color: transparent;
+}
+
+/* עמוד הרשמה */
+.signup-page {
+  display: flex;
+  flex-direction: column;
+  min-height: 100vh;
+}
+
+.flex-center {
+  flex: 1;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.signup-card {
+  width: 100%;
+  max-width: 450px;
+  background: rgba(30, 41, 59, 0.7);
+  border: 1px solid rgba(255, 255, 255, 0.1);
+  backdrop-filter: blur(10px);
+  padding: 2rem;
+  border-radius: 1rem;
+  box-shadow: 0 25px 50px -12px rgba(0, 0, 0, 0.25);
+  animation: fadeIn 0.5s ease-out forwards;
+}
+
+.signup-title {
+  text-align: center;
+  font-size: 2rem;
+  font-weight: 700;
+  margin-bottom: 1rem;
+}
+
+.signup-description {
+  text-align: center;
+  font-size: 1rem;
+  margin-bottom: 2rem;
+  color: rgba(255, 255, 255, 0.7);
+}
+
+/* שדות קלט */
+.input-group {
+  width: 100%;
+}
+
+.input-field {
+  width: 100%;
+  padding: 1rem 3rem 1rem 1rem;
+  border-radius: 0.75rem;
+  border: 1px solid rgba(255, 255, 255, 0.2);
+  background-color: rgba(255, 255, 255, 0.05);
+  color: #fff;
+  font-size: 1rem;
+  transition: border-color 0.3s ease, box-shadow 0.3s ease;
+}
+
+.input-field::placeholder {
+  color: rgba(255, 255, 255, 0.5);
+}
+
+.input-field:focus {
+  outline: none;
+  border-color: rgba(129, 140, 248, 0.8);
+  box-shadow: 0 0 0 3px rgba(99, 102, 241, 0.25);
+}
+
+/* עין צפייה בסיסמא */
+.password-group {
+  position: relative;
+}
+
+.eye-button {
+  position: absolute;
+  right: 1rem;
+  top: 50%;
+  transform: translateY(-50%);
+  background: transparent;
+  border: none;
+  font-size: 1.2rem;
+  color: rgba(255, 255, 255, 0.7);
+  cursor: pointer;
+  transition: color 0.3s;
+}
+
+.eye-button:hover {
+  color: rgba(255, 255, 255, 1);
+}
+
+/* לחצן הרשמה */
+.signup-button {
+  width: 100%;
+  padding: 0.85rem;
+  margin-top: 1rem;
+  background: linear-gradient(to right, #818cf8, #6366f1);
+  color: white;
+  font-weight: 600;
+  border: none;
+  border-radius: 0.75rem;
+  font-size: 1rem;
+  transition: all 0.2s;
+}
+
+.signup-button:hover {
+  opacity: 0.9;
+  transform: translateY(-2px);
+}
+
+/* עוצמת סיסמא */
+.password-strength {
+  font-size: 0.9rem;
+  margin-bottom: 0.5rem;
+  padding-left: 0.5rem;
+  text-align: left;
+}
+
+.password-strength.weak {
+  color: #ef4444;
+}
+
+.password-strength.medium {
+  color: #f59e0b;
+}
+
+.password-strength.strong {
+  color: #10b981;
+}
+
+/* תחתית הדף */
+.signup-footer {
+  text-align: center;
+  margin-top: 1.5rem;
+  font-size: 0.9rem;
+}
+
+.signup-link {
+  color: #818cf8;
+  cursor: pointer;
+  font-weight: 600;
+}
+
+.signup-link:hover {
+  text-decoration: underline;
+  color: #6366f1;
+}
+
+/* סטיילינג חדש לדרופדאון */
+select.input-field {
+  appearance: none;
+  background-image: url("data:image/svg+xml;charset=US-ASCII,%3Csvg xmlns='http://www.w3.org/2000/svg' width='14' height='14' viewBox='0 0 24 24' fill='none' stroke='rgba(255, 255, 255, 0.5)' stroke-width='2' stroke-linecap='round' stroke-linejoin='round'%3E%3Cpolyline points='6 9 12 15 18 9'%3E%3C/polyline%3E%3C/svg%3E");
+  background-repeat: no-repeat;
+  background-position: right 1rem center;
+  background-size: 1em;
+  cursor: pointer;
+}
+
+select.input-field option {
+  background-color: rgba(30, 41, 59, 0.95);
+  color: white;
+  padding: 0.75rem;
+  border: none;
+}
+
+select.input-field:focus {
+  border-color: rgba(129, 140, 248, 0.8);
+  box-shadow: 0 0 0 3px rgba(99, 102, 241, 0.25);
+}
+
+/* אנימציה */
+@keyframes fadeIn {
+  from {
+    opacity: 0;
+    transform: translateY(10px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+/* רספונסיביות */
+@media (max-width: 640px) {
+  .signup-card {
+    max-width: 100%;
+    margin: 0 1rem;
+  }
+}
+
+/* תיקון צבע למילוי אוטומטי */
+input:-webkit-autofill,
+input:-webkit-autofill:hover,
+input:-webkit-autofill:focus,
+input:-webkit-autofill:active {
+  -webkit-box-shadow: 0 0 0 30px rgba(255, 255, 255, 0.05) inset !important;
+  -webkit-text-fill-color: #ffffff !important;
+  transition: background-color 5000s ease-in-out 0s;
+}

@@ -1,0 +1,60 @@
+/* עיצוב בסיסי לכל הכפתורים */
+button {
+  font-family: 'Roboto', Arial, sans-serif;
+  font-size: 16px;
+  padding: 10px 20px;
+  border: none;
+  border-radius: 8px;
+  cursor: pointer;
+  transition: background-color 0.3s ease, box-shadow 0.3s ease;
+  outline: none;
+}
+
+/* אפקט לחיצה */
+button:active {
+  transform: scale(0.97);
+}
+
+/* אפקט ריחוף */
+button:hover {
+  background-color: #0056b3; /* גוון כחול כהה יותר */
+  box-shadow: 0 4px 8px rgba(0, 0, 0, 0.2); /* צל */
+}
+
+/* מצב לא פעיל */
+button:disabled {
+  cursor: not-allowed;
+  opacity: 0.6;
+}
+
+/* כפתור מצב טעינה */
+button.loading {
+  cursor: not-allowed;
+  opacity: 0.7;
+  position: relative;
+}
+
+/* ספינר בכפתור טעינה */
+button.loading::after {
+  content: "";
+  margin-left: 10px;
+  border: 2px solid #fff;
+  border-top: 2px solid transparent;
+  border-radius: 50%;
+  width: 16px;
+  height: 16px;
+  display: inline-block;
+  position: absolute;
+  right: 20px;
+  animation: spin 0.8s linear infinite;
+}
+
+/* אנימציית סיבוב */
+@keyframes spin {
+  from {
+    transform: rotate(0deg);
+  }
+  to {
+    transform: rotate(360deg);
+  }
+}

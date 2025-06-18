@@ -1,0 +1,115 @@
+
+.navBar {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  padding: 0.75rem 2rem;
+  background: #1e1e40; /* Dark indigo/navy */
+  color: white;
+  box-shadow: 0 2px 10px rgba(0, 0, 0, 0.2);
+  position: sticky;
+  top: 0;
+  z-index: 50;
+  width: 100%;
+  box-sizing: border-box;
+  user-select: none;
+}
+
+.logo {
+  display: flex;
+  align-items: center;
+  gap: 0.75rem;
+}
+
+.navLogo {
+  width: 40px;
+  height: 40px;
+  object-fit: contain;
+}
+
+.logo a {
+  font-size: 1.4rem;
+  color: white;
+  text-decoration: none;
+  font-weight: 700;
+  letter-spacing: 0.5px;
+  transition: all 0.3s ease;
+}
+
+.navLinks {
+  display: flex;
+  gap: 1rem;
+  list-style: none;
+  margin: 0;
+  padding: 0;
+  align-items: center;
+}
+
+.navLinks li {
+  display: flex;
+  align-items: center;
+}
+
+.navLinks li a,
+.navLinks li button {
+  color: white;
+  font-size: 0.95rem;
+  text-decoration: none;
+  background: none;
+  border: none;
+  padding: 0.625rem 1rem;
+  border-radius: 0.5rem;
+  cursor: pointer;
+  transition: all 0.3s ease;
+  font-weight: 500;
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+}
+
+.homeBtn {
+  color: white;
+  background-color: rgba(255, 255, 255, 0.1);
+  border: none;
+  padding: 0.625rem 1rem;
+  border-radius: 0.5rem;
+  cursor: pointer;
+  transition: all 0.3s ease;
+}
+
+.navLink {
+  color: white;
+  text-decoration: none;
+}
+
+.logoutBtn {
+  color: white;
+  background-color: rgba(255, 255, 255, 0.1);
+  border: none;
+  padding: 0.625rem 1rem;
+  border-radius: 0.5rem;
+  cursor: pointer;
+  transition: all 0.3s ease;
+}
+
+.active {
+  background-color: rgba(255, 255, 255, 0.15);
+  font-weight: 600;
+}
+
+@media (max-width: 768px) {
+  .navBar {
+    padding: 0.75rem 1rem;
+  }
+  
+  .navLinks {
+    width: 100%;
+    justify-content: flex-end;
+  }
+  
+  .navLinks li a,
+  .navLinks li button {
+    padding: 0.5rem 0.75rem;
+    font-size: 0.875rem;
+  }
+}
