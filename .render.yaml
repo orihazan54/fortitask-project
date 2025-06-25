@@ -2,7 +2,7 @@ services:
   - type: web
     name: fortitask-frontend
     env: static
-    staticPublishPath: src
+    staticPublishPath: build
     buildCommand: npm run build
     
     # הפניה לכל הכתובות ל-index.html כדי ש-React Router יעבוד
@@ -13,7 +13,7 @@ services:
             value: "no-cache"
     routes:
       - type: rewrite
-        source: "/**"
+        source: "/*"
         destination: "/index.html"
 
   - type: web
