@@ -1,6 +1,6 @@
 import React, { useState, useEffect } from "react";
 import { useParams, useNavigate } from "react-router-dom";
-import { toast } from "react-toastify";
+import { toast } from "sonner";
 import { 
   getCourseDetails, 
   uploadAssignment, 
@@ -142,15 +142,10 @@ const CourseDetails = () => {
       
       if (isLate) {
         // הודעה פשוטה על איחור בלבד
-        toast.warning("המטלה הוגשה באיחור.", {
-          autoClose: 7000,
-          icon: <Clock size={20} />,
-        });
+        toast.warning("Assignment submitted late.");
       } else {
         // הגשה בזמן - הכל תקין
-        toast.success("המטלה הוגשה בהצלחה!", {
-          autoClose: 3000,
-        });
+        toast.success("Assignment submitted successfully!");
       }
       
       // רענון נתוני הקורס
@@ -178,9 +173,7 @@ const CourseDetails = () => {
       
     } catch (error) {
       console.error("Error uploading file:", error);
-      toast.error("שגיאה בהעלאת הקובץ. אנא נסה שוב.", {
-        autoClose: 5000,
-      });
+              toast.error("Error uploading file. Please try again.");
       setUploadError("Failed to upload file. Please try again.");
     } finally {
       setUploading(false);
@@ -189,9 +182,7 @@ const CourseDetails = () => {
 
   const confirmDeleteAssignment = (assignment) => {
     if (assignment.isLateSubmission) {
-      toast.error("Late submissions cannot be deleted", {
-        icon: <Clock size={24} />,
-      });
+      toast.error("Late submissions cannot be deleted");
       return;
     }
     setAssignmentToDelete(assignment);

@@ -1,7 +1,6 @@
-
 import React, { useState, useEffect } from "react";
 import { useNavigate } from "react-router-dom";
-import { toast } from "react-toastify";
+import { toast } from "sonner";
 import { getCourses, registerToCourse } from "../../services/api";
 import NavBar from "../../components/NavBar";
 import Sidebar from "../../components/Sidebar";
@@ -61,7 +60,7 @@ const StudentCourses = () => {
 
   const handleRegister = async () => {
     if (!selectedCourse) {
-      toast.error("Please select a course first.");
+              toast.error("Please select a course first.");
       return;
     }
 
@@ -69,7 +68,7 @@ const StudentCourses = () => {
       setRegistering(true);
       console.log("Registering for course:", selectedCourse._id);
       await registerToCourse(selectedCourse._id);
-      toast.success("Successfully registered for the course!");
+              toast.success("Successfully registered for the course!");
       
       // Wait a second to make sure the registration is processed before redirecting
       setTimeout(() => {

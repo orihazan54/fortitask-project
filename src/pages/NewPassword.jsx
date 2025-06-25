@@ -1,8 +1,7 @@
-
 import React, { useState, useEffect } from "react";
 import { useLocation, useNavigate } from "react-router-dom";
 import { resetPassword } from "../services/api";
-import { toast } from "react-toastify";
+import { toast } from "sonner";
 import "../styles/NewPassword.css";
 import { Eye, EyeOff, CheckCircle, AlertCircle } from "lucide-react";
 
@@ -30,7 +29,7 @@ const NewPassword = () => {
   useEffect(() => {
     // Redirect if missing required data
     if (!email || !verificationCode) {
-      toast.error("Missing required information. Please restart the password reset process.");
+              toast.error("Missing required information. Please restart the password reset process.");
       navigate("/forgot-password");
     }
   }, [email, verificationCode, navigate]);
@@ -102,12 +101,12 @@ const NewPassword = () => {
       const response = await resetPassword({ email, verificationCode, newPassword });
       console.log("Password reset response:", response);
       
-      toast.success("Password reset successfully!");
+              toast.success("Password reset successfully!");
       navigate("/login");
     } catch (error) {
       console.error("Reset password error:", error);
       setError(error.response?.data?.message || "Failed to reset password. Please try again.");
-      toast.error(error.response?.data?.message || "Failed to reset password.");
+              toast.error(error.response?.data?.message || "Failed to reset password.");
     } finally {
       setIsLoading(false);
     }

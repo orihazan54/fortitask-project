@@ -1,11 +1,15 @@
-
-import React, { useState, useEffect } from "react";
+import React, { useState, useEffect, useCallback } from "react";
+import { useNavigate } from "react-router-dom";
+import { getUserDetails, getCourses } from "../../services/api";
 import NavBar from "../../components/NavBar";
+import { toast } from "sonner";
+import { 
+  BookOpen, Users, Calendar, Clock, 
+  GraduationCap, PlusCircle, Settings, 
+  ChevronRight, BarChart3, Eye, FileText
+} from "lucide-react";
 import Sidebar from "../../components/Sidebar";
-import { getCourses, getCourseDetails } from "../../services/api";
-import { toast } from "react-toastify";
 import "../../styles/TeacherDashboard.css";
-import { BookOpen, Users, Calendar, FileText } from "lucide-react";
 
 const TeacherDashboard = () => {
   const [courseId, setCourseId] = useState("");
@@ -35,7 +39,7 @@ const TeacherDashboard = () => {
         setStats(prev => ({...prev, totalAssignments}));
         
       } catch (error) {
-        toast.error("❌ Failed to load courses.");
+        toast.error("Failed to load courses.");
         console.error("Error fetching courses:", error);
       }
     };

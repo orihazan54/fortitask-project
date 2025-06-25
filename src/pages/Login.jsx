@@ -3,7 +3,7 @@ import { useNavigate } from "react-router-dom";
 import { login, checkAuthentication } from "../services/api";
 import NavBar from "../components/NavBar";
 import { Eye, EyeOff, Mail, Lock, ShieldCheck } from "lucide-react";
-import { toast } from "react-toastify";
+import { toast } from "sonner";
 import {
   Card,
   CardContent,
@@ -45,11 +45,11 @@ const Login = () => {
   const handleSubmit = async (e) => {
     e.preventDefault();
     if (!formData.email || !formData.password) {
-      toast.error("Please fill in all required fields");
+              toast.error("Please fill in all required fields");
       return;
     }
     if (requiresTwoFactor && !twoFactorCode) {
-      toast.error("Please enter your two-factor authentication code");
+              toast.error("Please enter your two-factor authentication code");
       return;
     }
     setLoading(true);
@@ -74,7 +74,7 @@ const Login = () => {
         return;
       }
 
-      toast.success("Login successful!");
+              toast.success("Login successful!");
 
       // Clear localStorage and set new values
       localStorage.clear();
@@ -98,7 +98,7 @@ const Login = () => {
       } else {
         // Create error message and display it as toast
         const errorMessage = error.response?.data?.message || error.message || "Login failed! Please check your credentials";
-        toast.error(errorMessage, { autoClose: 8000 });
+        toast.error(errorMessage);
 
         // Mark field errors
         if (errorMessage.toLowerCase().includes("email")) {

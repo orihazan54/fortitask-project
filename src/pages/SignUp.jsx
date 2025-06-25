@@ -1,8 +1,7 @@
-
 import React, { useState } from "react";
-import { useNavigate } from "react-router-dom";
+import { Link, useNavigate } from "react-router-dom";
 import { signup } from "../services/api";
-import { toast } from "react-toastify";
+import { toast } from "sonner";
 import NavBar from "../components/NavBar";
 import { Button } from "../components/ui/button";
 import "../styles/SignUp.css";
@@ -47,17 +46,17 @@ const SignUp = () => {
     if (isSubmitting) return;
 
     if (!formData.username || !formData.email || !formData.password || !formData.confirmPassword) {
-      toast.error("Please fill in all fields.");
+              toast.error("Please fill in all fields.");
       return;
     }
 
     if (formData.password !== formData.confirmPassword) {
-      toast.error("Passwords do not match.");
+              toast.error("Passwords do not match.");
       return;
     }
 
     if (passwordStrength === "Weak") {
-      toast.error("Password is too weak. Please choose a stronger password.");
+              toast.error("Password is too weak. Please choose a stronger password.");
       return;
     }
 
@@ -70,7 +69,7 @@ const SignUp = () => {
         role: formData.role,
       });
 
-      toast.success("Account created successfully!");
+              toast.success("Account created successfully!");
       navigate("/login");
     } catch (error) {
       console.error("Signup error:", error);

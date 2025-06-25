@@ -383,6 +383,23 @@
   background-color: rgba(155, 135, 245, 0.05);
 }
 
+.file-upload-box.dragging {
+  border-color: #10b981;
+  background-color: rgba(16, 185, 129, 0.1);
+  transform: scale(1.02);
+  box-shadow: 0 8px 25px rgba(16, 185, 129, 0.15);
+}
+
+.file-upload-box.dragging .upload-inner {
+  color: #10b981;
+}
+
+.upload-text {
+  font-size: 0.95rem;
+  color: rgba(255, 255, 255, 0.8);
+  transition: color 0.3s ease;
+}
+
 .file-upload-box.deadline-passed {
   border-color: rgba(239, 68, 68, 0.3);
   background-color: rgba(239, 68, 68, 0.05);

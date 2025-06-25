@@ -1,4 +1,3 @@
-
 import React, { useState, useEffect } from "react";
 import { useNavigate } from "react-router-dom";
 import { toast } from "sonner";
@@ -102,11 +101,11 @@ const StudentProfile = () => {
       const { data } = await getUserDetails();
       setUser(data);
       
-      toast.success("Profile updated successfully");
+              toast.success("Profile updated successfully");
       setIsEditingProfile(false);
     } catch (err) {
       console.error("Error updating profile:", err);
-      toast.error(err.response?.data?.message || "Failed to update profile");
+              toast.error(err.response?.data?.message || "Failed to update profile");
     } finally {
       setLoading(false);
     }
@@ -160,12 +159,12 @@ const StudentProfile = () => {
     
     // Validation checks
     if (passwordData.newPassword !== passwordData.confirmPassword) {
-      toast.error("New passwords do not match");
+              toast.error("New passwords do not match");
       return;
     }
     
     if (passwordStrength !== "strong") {
-      toast.error("Please use a stronger password");
+              toast.error("Please use a stronger password");
       return;
     }
     
@@ -176,7 +175,7 @@ const StudentProfile = () => {
         password: passwordData.newPassword
       });
       
-      toast.success("Password updated successfully");
+              toast.success("Password updated successfully");
       setIsChangingPassword(false);
       setPasswordData({
         currentPassword: "",
@@ -186,7 +185,7 @@ const StudentProfile = () => {
       setPasswordStrength("");
     } catch (err) {
       console.error("Error updating password:", err);
-      toast.error(err.response?.data?.message || "Failed to update password");
+              toast.error(err.response?.data?.message || "Failed to update password");
     } finally {
       setLoading(false);
     }
@@ -224,7 +223,7 @@ const StudentProfile = () => {
       });
     } catch (error) {
       console.error("Error setting up 2FA:", error);
-      toast.error("Error setting up two-factor authentication");
+              toast.error("Error setting up two-factor authentication");
       setTwoFactorError(error.response?.data?.message || "Error setting up two-factor authentication");
     } finally {
       setProcessing2FA(false);

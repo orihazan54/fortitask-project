@@ -1,5 +1,5 @@
 import React, { useState, useEffect, useCallback, useRef } from "react";
-import { toast } from "react-toastify";
+import { toast } from "sonner";
 import { 
   getCourses, 
   deleteCourse, 
@@ -41,6 +41,7 @@ const ManageCourses = () => {
   const [file, setFile] = useState(null);
   const [uploading, setUploading] = useState(false);
   const [deleting, setDeleting] = useState(false);
+  const [isDragging, setIsDragging] = useState(false);
   const [assignments, setAssignments] = useState({ materials: [], studentSubmissions: [] });
   const [loading, setLoading] = useState(false);
   const [formData, setFormData] = useState({
@@ -71,7 +72,7 @@ const ManageCourses = () => {
         const { data } = await getCourses();
         setCourses(data || []);
       } catch (error) {
-        toast.error("Failed to fetch courses.");
+                  toast.error("Failed to fetch courses.");
         setCourses([]);
       }
     };
@@ -135,7 +136,7 @@ const ManageCourses = () => {
       }
 
     } catch (error) {
-      toast.error("Failed to fetch course details and assignments.");
+              toast.error("Failed to fetch course details and assignments.");
     } finally {
       setLoading(false);
     }
@@ -164,21 +165,52 @@ const ManageCourses = () => {
       setCourses((prev) => prev.filter((course) => course._id !== selectedCourse._id));
       setSelectedCourse(null);
       setIsEditing(false);
-      toast.success("Course deleted successfully!");
+              toast.success("Course deleted successfully!");
     } catch (error) {
-      toast.error(error.response?.data?.message || "Error deleting course.");
+              toast.error(error.response?.data?.message || "Error deleting course.");
     }
   };
 
   const handleFileChange = (e) => {
-    if (e.target.files && e.target.files[0]) {
+    if (e.target.files && e.target.files.length > 0) {
       setFile(e.target.files[0]);
+    }
+  };
+
+  // Drag and drop handlers
+  const handleDragEnter = (e) => {
+    e.preventDefault();
+    e.stopPropagation();
+    setIsDragging(true);
+  };
+
+  const handleDragLeave = (e) => {
+    e.preventDefault();
+    e.stopPropagation();
+    if (!e.currentTarget.contains(e.relatedTarget)) {
+      setIsDragging(false);
+    }
+  };
+
+  const handleDragOver = (e) => {
+    e.preventDefault();
+    e.stopPropagation();
+  };
+
+  const handleDrop = (e) => {
+    e.preventDefault();
+    e.stopPropagation();
+    setIsDragging(false);
+
+    const files = e.dataTransfer.files;
+    if (files && files.length > 0) {
+      setFile(files[0]);
     }
   };
 
   const handleSave = async () => {
     if (!formData.name || !formData.creditPoints || !formData.instructions || !formData.deadline) {
-      toast.error("Please fill in all required fields.");
+              toast.error("Please fill in all required fields.");
       return;
     }
 
@@ -202,14 +234,14 @@ const ManageCourses = () => {
           course._id === selectedCourse._id ? data : course
         )
       );
-      toast.success("Course updated successfully!");
+              toast.success("Course updated successfully!");
       
       await handleSelectCourse(selectedCourse._id);
       
       setIsEditing(false);
       setFile(null);
     } catch (error) {
-      toast.error(error.response?.data?.message || "Error updating course.");
+              toast.error(error.response?.data?.message || "Error updating course.");
     } finally {
       setUploading(false);
     }
@@ -223,7 +255,7 @@ const ManageCourses = () => {
   const handleUploadAssignment = async () => {
     if (!selectedCourse) return;
     if (!file) {
-      toast.error("Please select a file to upload.");
+              toast.error("Please select a file to upload.");
       return;
     }
 
@@ -235,12 +267,12 @@ const ManageCourses = () => {
       formData.append("comment", "File uploaded by instructor");
 
       await uploadAssignment(selectedCourse._id, formData);
-      toast.success("Material uploaded successfully!");
+              toast.success("Material uploaded successfully!");
 
       await handleSelectCourse(selectedCourse._id);
       setFile(null);
     } catch (error) {
-      toast.error("Error uploading material.");
+              toast.error("Error uploading material.");
     } finally {
       setUploading(false);
     }
@@ -256,11 +288,11 @@ const ManageCourses = () => {
     try {
       setDeleting(true);
       await deleteAssignment(selectedCourse._id, assignmentId);
-      toast.success("File deleted successfully!");
+              toast.success("File deleted successfully!");
       
       await handleSelectCourse(selectedCourse._id);
     } catch (error) {
-      toast.error(error.response?.data?.message || "Error deleting file.");
+              toast.error(error.response?.data?.message || "Error deleting file.");
     } finally {
       setDeleting(false);
     }
@@ -268,7 +300,7 @@ const ManageCourses = () => {
 
   const downloadAssignment = (fileUrl, fileName) => {
     window.open(fileUrl, "_blank");
-    toast.success(`Downloading: ${fileName}`);
+          toast.success(`Downloading: ${fileName}`);
   };
 
   const getStudentsCount = () => {
@@ -488,10 +520,19 @@ const ManageCourses = () => {
                     
                     <div className="upload-new-assignment">
                       <h4 className="section-subtitle">Upload New Material</h4>
-                      <div className="file-upload-box" onClick={() => document.getElementById('material-upload').click()}>
+                      <div 
+                        className={`file-upload-box ${isDragging ? 'dragging' : ''}`}
+                        onClick={() => document.getElementById('material-upload').click()}
+                        onDragEnter={handleDragEnter}
+                        onDragLeave={handleDragLeave}
+                        onDragOver={handleDragOver}
+                        onDrop={handleDrop}
+                      >
                         <label>
                           <Upload size={20} />
-                          <span>Choose File</span>
+                          <span className="upload-text">
+                            {isDragging ? 'Drop your file here' : 'Drag & drop a file here or click to choose'}
+                          </span>
                           <input 
                             id="material-upload"
                             type="file" 

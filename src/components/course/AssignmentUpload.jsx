@@ -1,4 +1,4 @@
-import React from 'react';
+import React, { useState } from 'react';
 import { Upload, AlertTriangle } from 'lucide-react';
 
 const AssignmentUpload = ({ 
@@ -11,6 +11,8 @@ const AssignmentUpload = ({
   setUploadComment,
   uploadError
 }) => {
+  const [isDragging, setIsDragging] = useState(false);
+
   const formatFileSize = (sizeInBytes) => {
     if (!sizeInBytes) return "Unknown size";
     if (sizeInBytes < 1024) return `${sizeInBytes} B`;
@@ -31,17 +33,71 @@ const AssignmentUpload = ({
     }
   };
 
+  // Drag and drop handlers
+  const handleDragEnter = (e) => {
+    e.preventDefault();
+    e.stopPropagation();
+    setIsDragging(true);
+  };
+
+  const handleDragLeave = (e) => {
+    e.preventDefault();
+    e.stopPropagation();
+    // Only set dragging to false if we're leaving the dropzone itself
+    if (!e.currentTarget.contains(e.relatedTarget)) {
+      setIsDragging(false);
+    }
+  };
+
+  const handleDragOver = (e) => {
+    e.preventDefault();
+    e.stopPropagation();
+  };
+
+  const handleDrop = (e) => {
+    e.preventDefault();
+    e.stopPropagation();
+    setIsDragging(false);
+
+    const files = e.dataTransfer.files;
+    if (files && files.length > 0) {
+      // Create a synthetic event object to match the expected format
+      const syntheticEvent = {
+        target: {
+          files: files
+        }
+      };
+      
+      console.log("AssignmentUpload: File dropped", {
+        name: files[0].name,
+        size: files[0].size,
+        type: files[0].type,
+        lastModified: files[0].lastModified,
+      });
+      
+      onFileChange(syntheticEvent);
+    }
+  };
+
   return (
     <div className="upload-section">
       <h3 className="section-title">
         <Upload size={20} className="section-icon" />
         Submit Your Assignment
       </h3>
-      <div className={`file-upload-box`}>
+      <div 
+        className={`file-upload-box ${isDragging ? 'dragging' : ''}`}
+        onDragEnter={handleDragEnter}
+        onDragLeave={handleDragLeave}
+        onDragOver={handleDragOver}
+        onDrop={handleDrop}
+      >
         <label>
           <div className="upload-inner">
             <Upload size={24} />
-            <span>Choose a file to upload</span>
+            <span className="upload-text">
+              {isDragging ? 'Drop your file here' : 'Drag & drop a file here or click to choose'}
+            </span>
             <input 
               type="file" 
               onChange={handleFileInputChange} 

@@ -1,10 +1,9 @@
-
 import React, { useState, useEffect, useCallback } from "react";
 import { useNavigate } from "react-router-dom";
 import { getMyCourses } from "../../services/api";
 import NavBar from "../../components/NavBar";
 import Sidebar from "../../components/Sidebar";
-import { toast } from "react-toastify";
+import { toast } from "sonner";
 import { Search, RefreshCw, Calendar, Clock, AlertTriangle, FileText, Info, ArrowLeft } from "lucide-react";
 import "../../styles/MyCourses.css";
 
@@ -42,7 +41,7 @@ const MyCourses = () => {
         
         // Only show toast if enabled (not on initial load)
         if (showToasts) {
-          toast.error("Received invalid data format. Please try again.");
+                      toast.error("Received invalid data format. Please try again.");
         }
         
         if (retryCount < 2) {
@@ -55,7 +54,7 @@ const MyCourses = () => {
       
       // Only show toast if enabled (not on initial load)
       if (showToasts) {
-        toast.error("Failed to load your courses. Please try again.");
+                  toast.error("Failed to load your courses. Please try again.");
       }
       
       if (retryCount < 2) {

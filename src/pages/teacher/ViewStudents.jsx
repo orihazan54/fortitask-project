@@ -1,6 +1,5 @@
-
 import React, { useState, useEffect } from "react";
-import { toast } from "react-toastify";
+import { toast } from "sonner";
 import { getCourses, getCourseDetails } from "../../services/api";
 import NavBar from "../../components/NavBar";
 import Sidebar from "../../components/Sidebar";
@@ -23,7 +22,7 @@ const ManageStudentsAndCourses = () => {
         setCourses(data);
         setLoading(false);
       } catch (error) {
-        toast.error("Failed to load courses.");
+                  toast.error("Failed to load courses.");
         setLoading(false);
       }
     };
@@ -39,7 +38,7 @@ const ManageStudentsAndCourses = () => {
       setStudents(data.students || []);
       setLoading(false);
     } catch (error) {
-      toast.error("Failed to load students.");
+              toast.error("Failed to load students.");
       setLoading(false);
     }
   };

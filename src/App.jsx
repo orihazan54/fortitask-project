@@ -1,8 +1,7 @@
-
 import React, { useEffect, useState, Suspense } from "react";
-import { Routes, Route, useNavigate, Navigate } from "react-router-dom";
+import { BrowserRouter as Router, Routes, Route, useNavigate, Navigate } from "react-router-dom";
 import { checkAuthentication } from "./services/api";
-import { ToastContainer } from "react-toastify"; 
+import { Toaster } from "sonner";
 
 // General Pages
 import Home from "./pages/Home";
@@ -110,7 +109,7 @@ const ErrorBoundaryRoute = ({ element }) => {
 
 const App = () => {
   return (
-    <>
+    <Router>
       <Suspense fallback={<Loading />}>
         <Routes>
           {/* General Pages */}
@@ -185,19 +184,17 @@ const App = () => {
         </Routes>
       </Suspense>
       
-      <ToastContainer
-        position="top-right" 
-        autoClose={3000} 
-        hideProgressBar={false}   
-        newestOnTop={false} 
-        closeOnClick  
-        rtl={false}  
-        pauseOnFocusLoss
-        draggable 
-        pauseOnHover
-        theme="colored" 
+      <Toaster 
+        position="top-right"
+        expand={true}
+        richColors={true}
+        closeButton={true}
+        duration={4000}
+        style={{
+          fontFamily: 'Inter, system-ui, -apple-system, sans-serif'
+        }}
       />
-    </>
+    </Router>
   );
 };
 

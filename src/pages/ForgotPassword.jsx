@@ -1,11 +1,12 @@
-
 import React, { useState } from "react";
 import { useNavigate } from "react-router-dom";
 import { toast } from "sonner";
 import { sendPasswordResetEmail, resetPassword } from "../services/api";
 import NavBar from "../components/NavBar";
 import "../styles/ForgotPassword.css";
-import { Eye, EyeOff } from "lucide-react";
+import { Eye, EyeOff, CheckCircle, AlertCircle } from "lucide-react";
+import { Button } from "../components/ui/button";
+import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "../components/ui/card";
 
 const ForgotPassword = () => {
   const [email, setEmail] = useState("");
@@ -40,7 +41,7 @@ const ForgotPassword = () => {
 
   const handleSendEmail = async () => {
     if (!email || !/\S+@\S+\.\S+/.test(email)) {
-      toast.error("Please enter a valid email address");
+              toast.error("Please enter a valid email address");
       return;
     }
 
@@ -50,11 +51,11 @@ const ForgotPassword = () => {
       const response = await sendPasswordResetEmail({ email });
       console.log("Response:", response);
       
-      toast.success("Verification code sent to your email");
+              toast.success("Verification code sent to your email");
       setStep(2); // Move to next step
     } catch (error) {
       console.error("Password reset error:", error);
-      toast.error(error.response?.data?.message || "Failed to send email. Please try again.");
+              toast.error(error.response?.data?.message || "Failed to send email. Please try again.");
     } finally {
       setIsLoading(false);
     }
@@ -62,17 +63,17 @@ const ForgotPassword = () => {
 
   const handleResetPassword = async () => {
     if (!verificationCode || !newPassword || !confirmPassword) {
-      toast.error("Please fill in all fields");
+              toast.error("Please fill in all fields");
       return;
     }
 
     if (newPassword !== confirmPassword) {
-      toast.error("Passwords do not match");
+              toast.error("Passwords do not match");
       return;
     }
 
     if (passwordStrength === "Weak") {
-      toast.error("Password is too weak. Please choose a stronger password");
+              toast.error("Password is too weak. Please choose a stronger password");
       return;
     }
 
@@ -85,11 +86,11 @@ const ForgotPassword = () => {
       });
       
       await resetPassword({ email, verificationCode, newPassword });
-      toast.success("Password reset successfully");
+              toast.success("Password reset successfully");
       navigate("/login");
     } catch (error) {
       console.error("Password reset error:", error);
-      toast.error(error.response?.data?.message || "Password reset failed. Please try again.");
+              toast.error(error.response?.data?.message || "Password reset failed. Please try again.");
     } finally {
       setIsLoading(false);
     }

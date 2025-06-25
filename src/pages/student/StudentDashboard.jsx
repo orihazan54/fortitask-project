@@ -1,10 +1,9 @@
-
 import React, { useState, useEffect, useCallback } from "react";
 import { useNavigate } from "react-router-dom";
 import NavBar from "../../components/NavBar";
 import Sidebar from "../../components/Sidebar";
 import { getUserDetails, getMyCourses } from "../../services/api";
-import { toast } from "react-toastify";
+import { toast } from "sonner";
 import { 
   BookOpen, Calendar, ClipboardList, 
   Clock, AlertTriangle, Bell,
@@ -114,7 +113,7 @@ const StudentDashboard = () => {
       setError("Could not load dashboard data. Please refresh the page.");
       // Don't show toast on initial load to prevent toast spam
       if (showToasts) {
-        toast.error("Failed to load your data. Please try again.");
+                  toast.error("Failed to load your data. Please try again.");
       }
     } finally {
       setLoading(false);
