@@ -474,6 +474,13 @@
   gap: 0.25rem;
 }
 
+.status-suspicious {
+  color: #ea384c;
+  display: flex;
+  align-items: center;
+  gap: 0.25rem;
+}
+
 .submission-details {
   margin-bottom: 0.75rem;
 }

@@ -1,5 +1,5 @@
 import React from 'react';
-import { FileText, Download, Trash2, Clock, Check, Info } from 'lucide-react';
+import { FileText, Download, Trash2, Clock, Check, Info, AlertTriangle } from 'lucide-react';
 
 const StudentSubmissions = ({ assignments, onDownload, onDelete, deadline }) => {
   const getFileIcon = (fileType) => {

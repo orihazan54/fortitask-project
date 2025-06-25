@@ -15,7 +15,7 @@ import CourseMaterials from "../../components/course/CourseMaterials";
 import AssignmentUpload from "../../components/course/AssignmentUpload";
 import StudentSubmissions from "../../components/course/StudentSubmissions";
 import DeleteConfirmationModal from "../../components/course/DeleteConfirmationModal";
-import { ArrowLeft, Clock } from "lucide-react";
+import { ArrowLeft, Clock, AlertTriangle } from "lucide-react";
 import "../../styles/CourseDetails.css";
 
 const CourseDetails = () => {
@@ -137,13 +137,17 @@ const CourseDetails = () => {
       const response = await uploadAssignment(courseId, formData);
       console.log("Upload response received:", response.data);
       
-      // הצגת הודעה פשוטה לסטודנט - רק על איחור
-      if (response.data.isLate) {
+      // בדיקת מצב ההגשה והצגת הודעות מתאימות
+      const { isLate } = response.data;
+      
+      if (isLate) {
+        // הודעה פשוטה על איחור בלבד
         toast.warning("המטלה הוגשה באיחור.", {
           autoClose: 7000,
           icon: <Clock size={20} />,
         });
       } else {
+        // הגשה בזמן - הכל תקין
         toast.success("המטלה הוגשה בהצלחה!", {
           autoClose: 3000,
         });

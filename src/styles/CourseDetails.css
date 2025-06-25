@@ -537,6 +537,22 @@
   color: #10b981;
 }
 
+.status-icon.suspicious {
+  color: #ea384c;
+}
+
+.submission-status.status-suspicious {
+  color: #ea384c;
+}
+
+.submission-status.status-late {
+  color: #f59e0b;
+}
+
+.submission-status.status-ok {
+  color: #10b981;
+}
+
 .assignment-meta {
   display: flex;
   flex-wrap: wrap;
