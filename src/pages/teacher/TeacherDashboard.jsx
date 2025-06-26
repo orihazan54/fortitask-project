@@ -14,16 +14,31 @@ import "../../styles/TeacherDashboard.css";
 const TeacherDashboard = () => {
   const [courseId, setCourseId] = useState("");
   const [courses, setCourses] = useState([]);
+  const [teacherName, setTeacherName] = useState("Teacher");
   const [stats, setStats] = useState({
     totalCourses: 0,
     totalStudents: 0,
     totalAssignments: 0
   });
 
-  // שליפת רשימת הקורסים מהשרת
+  // שליפת רשימת הקורסים מהשרת ופרטי המרצה
   useEffect(() => {
-    const fetchCourses = async () => {
+    const fetchData = async () => {
       try {
+        // שליפת פרטי המרצה
+        const userId = localStorage.getItem("userId");
+        if (userId) {
+          try {
+            const userResponse = await getUserDetails(userId);
+            const username = userResponse.data.username || "Teacher";
+            setTeacherName(username);
+            console.log("Fetched teacher name:", username);
+          } catch (userError) {
+            console.warn("Could not fetch teacher details:", userError);
+          }
+        }
+
+        // שליפת הקורסים
         const { data } = await getCourses();
         setCourses(data);
         setStats(prev => ({...prev, totalCourses: data.length}));
@@ -43,7 +58,7 @@ const TeacherDashboard = () => {
         console.error("Error fetching courses:", error);
       }
     };
-    fetchCourses();
+    fetchData();
   }, []);
 
   // בחירת קורס
@@ -56,7 +71,7 @@ const TeacherDashboard = () => {
         <Sidebar role="Teacher" />
         <main className="main-content animate-fade-in">
           <h2 className="dashboard-title">
-            <span className="dashboard-icon">📊</span> Teacher Dashboard
+            <span className="dashboard-icon">📊</span> Welcome back, {teacherName}!
           </h2>
 
           <div className="stats-container">

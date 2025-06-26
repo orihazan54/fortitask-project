@@ -1,12 +1,26 @@
-
 import axios from "axios";
 import { toast } from "sonner";
 import CryptoJS from "crypto-js";
 
 axios.defaults.withCredentials = true;
 // Create the API instance with better timeout settings
+// Auto-detect if we're running locally or in production
+const getBaseURL = () => {
+  // If explicitly set in environment, use that
+  if (process.env.REACT_APP_API_BASE_URL) {
+    return process.env.REACT_APP_API_BASE_URL;
+  }
+  
+  // Auto-detect based on current domain
+  if (window.location.hostname === 'localhost' || window.location.hostname === '127.0.0.1') {
+    return "http://localhost:5000/api";
+  } else {
+    return "https://fortitask-project.onrender.com/api";
+  }
+};
+
 const API = axios.create({
-  baseURL: process.env.REACT_APP_API_BASE_URL || "http://localhost:5000/api",
+  baseURL: getBaseURL(),
   timeout: 15000,
   headers: {
     "Content-Type": "application/json"
@@ -200,9 +214,7 @@ export const login = async (formData) => {
 
 export const getUserDetails = (userId) => {
   console.log("Fetching user details for ID:", userId || "current user");
-  if (userId) {
-    return API.get(`/users/profile/${userId}`);
-  }
+  // Always use /users/profile since the server identifies the user from the token
   return API.get("/users/profile");
 };
 

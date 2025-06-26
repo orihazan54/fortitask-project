@@ -49,7 +49,7 @@ const TeacherProfile = () => {
   });
   const [processing2FA, setProcessing2FA] = useState(false);
   const [twoFactorError, setTwoFactorError] = useState("");
-
+  
   // Fetch user details on component mount
   useEffect(() => {
     const fetchUserData = async () => {
@@ -133,7 +133,7 @@ const TeacherProfile = () => {
       (hasNumber ? 1 : 0) + 
       (hasSpecial ? 1 : 0) + 
       (isLongEnough ? 1 : 0);
-      
+    
     if (strength < 3) {
       setPasswordStrength("weak");
     } else if (strength < 5) {
@@ -219,10 +219,10 @@ const TeacherProfile = () => {
         enabled: data.enabled || false
       });
       setShowTwoFactorSetup(true);
-      console.log("2FA setup data received:", {
+      console.log("2FA setup data received:", { 
         hasQR: !!data.qrCode,
         hasSecret: !!data.secret, 
-        enabled: data.enabled
+        enabled: data.enabled 
       });
     } catch (error) {
       console.error("Error setting up 2FA:", error);
@@ -329,7 +329,7 @@ const TeacherProfile = () => {
       setProcessing2FA(false);
     }
   };
-
+  
   if (loading && !user) {
     return (
       <div className="profile-page">
@@ -346,7 +346,7 @@ const TeacherProfile = () => {
         <div className="profile-header">
           <h1 className="profile-title">My Profile</h1>
           <button 
-            className="back-button" 
+            className="back-button"
             onClick={() => navigate("/teacher-dashboard")}
           >
             <ArrowLeft size={16} /> Back to Dashboard
@@ -406,66 +406,66 @@ const TeacherProfile = () => {
                         <span className="info-value">
                           {user?.createdAt ? new Date(user.createdAt).toLocaleDateString() : "N/A"}
                         </span>
-                      </div>
                     </div>
-                    
-                    <button 
+                  </div>
+                  
+                  <button 
                       className="action-button primary-button"
                       onClick={() => setIsEditingProfile(true)}
                       disabled={loading}
-                    >
+                  >
                       <Edit size={16} /> Edit Profile
-                    </button>
-                  </>
-                ) : (
-                  <>
+                  </button>
+                </>
+              ) : (
+                <>
                     <div className="setting-group">
                       <label className="setting-label">Username</label>
-                      <input
-                        type="text"
+                        <input
+                          type="text"
                         className="info-edit-input"
-                        name="username"
+                          name="username"
                         value={profileData.username}
                         onChange={handleProfileChange}
-                      />
+                        />
                     </div>
                     
                     <div className="setting-group">
                       <label className="setting-label">Email</label>
-                      <input
-                        type="email"
+                        <input
+                          type="email"
                         className="info-edit-input"
-                        name="email"
+                          name="email"
                         value={profileData.email}
                         onChange={handleProfileChange}
                       />
-                    </div>
-                    
-                    <div className="action-buttons">
-                      <button
-                        className="action-button primary-button"
+                  </div>
+                  
+                  <div className="action-buttons">
+                    <button 
+                      className="action-button primary-button"
                         onClick={handleProfileUpdate}
                         disabled={loading}
-                      >
+                    >
                         <UserCheck size={16} /> Save Changes
-                      </button>
+                    </button>
                       
-                      <button
-                        className="action-button secondary-button"
-                        onClick={() => {
+                    <button 
+                      className="action-button secondary-button"
+                      onClick={() => {
                           setIsEditingProfile(false);
                           setProfileData({
-                            username: user?.username || "",
-                            email: user?.email || ""
-                          });
-                        }}
+                          username: user?.username || "",
+                          email: user?.email || ""
+                        });
+                      }}
                         disabled={loading}
-                      >
-                        Cancel
-                      </button>
-                    </div>
-                  </>
-                )}
+                    >
+                      Cancel
+                    </button>
+                  </div>
+                </>
+              )}
               </div>
             </div>
           </div>
@@ -612,29 +612,29 @@ const TeacherProfile = () => {
                 {/* Two-Factor Authentication Section */}
                 <h3 className="mt-6 mb-6">Two-Factor Authentication</h3>
                 
-                <div className={`twofa-status ${twoFactorData.enabled ? 'enabled' : 'disabled'}`}>
+                  <div className={`twofa-status ${twoFactorData.enabled ? 'enabled' : 'disabled'}`}>
                   <Shield size={16} />
-                  <span>
-                    Two-factor authentication is currently 
-                    <strong>{twoFactorData.enabled ? ' enabled' : ' disabled'}</strong>
-                  </span>
-                </div>
-                
-                {!showTwoFactorSetup ? (
-                  <button 
+                    <span>
+                      Two-factor authentication is currently 
+                      <strong>{twoFactorData.enabled ? ' enabled' : ' disabled'}</strong>
+                    </span>
+                  </div>
+                  
+                  {!showTwoFactorSetup ? (
+                    <button 
                     className={`security-button ${twoFactorData.enabled ? 'danger-button' : 'primary-button'}`}
-                    onClick={handleSetupTwoFactor}
-                    disabled={processing2FA}
-                  >
+                      onClick={handleSetupTwoFactor}
+                      disabled={processing2FA}
+                    >
                     <Shield size={16} />
                     {processing2FA ? 'Processing...' : (twoFactorData.enabled ? 'Disable 2FA' : 'Enable 2FA')}
-                  </button>
-                ) : (
+                    </button>
+                  ) : (
                   <div className="security-settings mt-3">
                     {!twoFactorData.enabled && twoFactorData.qrCode && (
                       <div className="mt-3 mb-6" style={{textAlign: 'center'}}>
-                        <img 
-                          src={twoFactorData.qrCode} 
+                            <img 
+                              src={twoFactorData.qrCode} 
                           alt="QR Code for Two-Factor Authentication"
                           style={{
                             maxWidth: '200px',
@@ -648,9 +648,9 @@ const TeacherProfile = () => {
                         <p className="mt-3" style={{color: '#d1d5db', fontSize: '0.9rem'}}>
                           Scan this QR code with your authenticator app
                         </p>
-                      </div>
-                    )}
-                    
+                        </div>
+                      )}
+                      
                     <div className="setting-group mt-3">
                       <label className="setting-label" htmlFor="verificationCode">
                         {twoFactorData.enabled 
@@ -692,39 +692,39 @@ const TeacherProfile = () => {
                           {processing2FA ? 'Processing...' : 'Disable 2FA'}
                         </button>
                       ) : (
-                        <button
-                          className="action-button primary-button"
-                          onClick={handleVerifyTwoFactor}
+                          <button 
+                            className="action-button primary-button"
+                            onClick={handleVerifyTwoFactor}
+                            disabled={processing2FA}
+                          >
+                          {processing2FA ? 'Verifying...' : 'Verify & Enable'}
+                          </button>
+                        )}
+                      
+                        <button 
+                          className="action-button secondary-button"
+                          onClick={() => {
+                            setShowTwoFactorSetup(false);
+                            setTwoFactorError("");
+                            setTwoFactorData(prev => ({
+                              ...prev,
+                              verificationCode: ""
+                            }));
+                          }}
                           disabled={processing2FA}
                         >
-                          {processing2FA ? 'Verifying...' : 'Verify & Enable'}
+                          Cancel
                         </button>
-                      )}
-                      
-                      <button
-                        className="action-button secondary-button"
-                        onClick={() => {
-                          setShowTwoFactorSetup(false);
-                          setTwoFactorError("");
-                          setTwoFactorData(prev => ({
-                            ...prev,
-                            verificationCode: ""
-                          }));
-                        }}
-                        disabled={processing2FA}
-                      >
-                        Cancel
-                      </button>
+                      </div>
                     </div>
-                  </div>
-                )}
-              </div>
+                  )}
             </div>
           </div>
-          
+        </div>
+        
           {/* Academic Statistics Card */}
           <div className="profile-card glass-effect" style={{ gridColumn: '1 / -1' }}>
-            <div className="card-content">
+          <div className="card-content">
               <div className="card-title">
                 <BookOpen size={20} />
                 Academic Information
@@ -749,8 +749,8 @@ const TeacherProfile = () => {
                 }}>
                   <div style={{ fontSize: '0.875rem', color: '#d1d5db', marginBottom: '0.5rem' }}>Late Submissions</div>
                   <div style={{ fontSize: '1.5rem', fontWeight: '600', color: '#ffffff' }}>{user?.lateSubmissions || 0}</div>
-                </div>
-                
+              </div>
+              
                 <div style={{
                   padding: '1.25rem',
                   backgroundColor: 'rgba(255, 255, 255, 0.05)',
@@ -759,8 +759,8 @@ const TeacherProfile = () => {
                 }}>
                   <div style={{ fontSize: '0.875rem', color: '#d1d5db', marginBottom: '0.5rem' }}>Submissions After Deadline</div>
                   <div style={{ fontSize: '1.5rem', fontWeight: '600', color: '#ffffff' }}>{user?.submissionsModifiedAfterDeadline || 0}</div>
-                </div>
-                
+              </div>
+              
                 <div style={{
                   padding: '1.25rem',
                   backgroundColor: 'rgba(255, 255, 255, 0.05)',
