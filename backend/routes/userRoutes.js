@@ -10,14 +10,17 @@ const nodemailer = require("nodemailer");
 
 const router = express.Router();
 
+// Multi-environment email configuration with Brevo SMTP integration
 // Setup email transporter using Brevo - UPDATED CONFIGURATION
 let transporter;
 
+// Test environment optimization: skip external email dependencies
 // In test environment use fallback immediately
 if (process.env.NODE_ENV === 'test') {
   transporter = createFallbackTransporter();
 }
 
+// Production email configuration with comprehensive Brevo setup
 // Check if we have Brevo SMTP configuration with new setup (skip in test)
 if (process.env.NODE_ENV !== 'test' && process.env.BREVO_HOST && process.env.BREVO_USER && process.env.BREVO_PASS) {
   console.log("✅ Brevo email configuration detected - using updated Brevo for emails");
@@ -27,8 +30,9 @@ if (process.env.NODE_ENV !== 'test' && process.env.BREVO_HOST && process.env.BRE
   console.log(`From address: ${process.env.BREVO_FROM || process.env.BREVO_USER}`);
   console.log(`SMTP pass format check: ${process.env.BREVO_PASS ? "Provided (length: " + process.env.BREVO_PASS.length + ")" : "Missing"}`);
   
+  // Modern SMTP configuration with TLS security
   // Configure nodemailer with updated Brevo SMTP details
-  transporter = nodemailer.createTransport({
+  transporter = nodemailer.createTransporter({
     host: process.env.BREVO_HOST,
     port: parseInt(process.env.BREVO_PORT || "587"),
     secure: false, // true for 465, false for other ports
@@ -39,6 +43,7 @@ if (process.env.NODE_ENV !== 'test' && process.env.BREVO_HOST && process.env.BRE
     debug: true, // Enable debug output
   });
   
+  // Connection verification with detailed error logging
   // Verify connection with more detailed logging
   transporter.verify(function(error, success) {
     if (error) {
@@ -51,6 +56,7 @@ if (process.env.NODE_ENV !== 'test' && process.env.BREVO_HOST && process.env.BRE
       console.error(`- From: ${process.env.BREVO_FROM || process.env.BREVO_USER}`);
       console.error("Full error:", JSON.stringify(error, null, 2));
       
+      // Graceful fallback to console logging for development
       // Fall back to console logging
       console.log("⚠️ Falling back to console output for emails");
       transporter = createFallbackTransporter();
@@ -59,11 +65,12 @@ if (process.env.NODE_ENV !== 'test' && process.env.BREVO_HOST && process.env.BRE
     }
   });
 } else if (process.env.NODE_ENV !== 'test' && process.env.BREVO_SMTP_KEY && process.env.BREVO_EMAIL) {
+  // Legacy Brevo configuration support for backward compatibility
   console.log("✅ Using legacy Brevo email configuration");
   console.log(`Using email: ${process.env.BREVO_EMAIL}`);
   
   // Configure nodemailer with Brevo SMTP
-  transporter = nodemailer.createTransport({
+  transporter = nodemailer.createTransporter({
     host: "smtp-relay.brevo.com",
     port: 587,
     secure: false, // true for 465, false for other ports
@@ -93,6 +100,7 @@ if (process.env.NODE_ENV !== 'test' && process.env.BREVO_HOST && process.env.BRE
   transporter = createFallbackTransporter();
 }
 
+// Development fallback transporter for testing without external dependencies
 // Create a fallback transporter for development
 function createFallbackTransporter() {
   return {
@@ -111,16 +119,19 @@ function createFallbackTransporter() {
   };
 }
 
+// Professional email sending service with HTML templating and error handling
 // Real email sending function with improved debugging
 const sendVerificationEmail = async (email, code) => {
   console.log(`🔑 Attempting to send verification code to ${email}: ${code}`);
   
   try {
+    // Dynamic sender configuration with environment variable parsing
     // Use updated sender info with BREVO_FROM if available
     const fromEmail = process.env.BREVO_FROM || process.env.BREVO_USER || process.env.BREVO_EMAIL || "fortitask@example.com";
     let senderName = "FortiTask System";
     let senderEmail = fromEmail;
     
+    // Advanced sender information parsing from environment
     // Parse BREVO_FROM if it's in "Name <email>" format
     if (process.env.BREVO_FROM && process.env.BREVO_FROM.includes('<')) {
       const matches = process.env.BREVO_FROM.match(/(.*)<(.*)>/);
@@ -131,6 +142,7 @@ const sendVerificationEmail = async (email, code) => {
       }
     }
     
+    // Professional HTML email template with responsive design
     // Create email content
     const mailOptions = {
       from: `"${senderName}" <${senderEmail}>`,
@@ -154,6 +166,7 @@ const sendVerificationEmail = async (email, code) => {
       `
     };
     
+    // Comprehensive email sending with detailed logging for debugging
     // Extra logging before sending the email
     console.log(`Email sending attempt details:
       From: "${senderName}" <${senderEmail}>
@@ -163,6 +176,7 @@ const sendVerificationEmail = async (email, code) => {
       Transport config: ${JSON.stringify(transporter?.options || {}, null, 2)}
     `);
     
+    // Promise-based email sending with timeout handling
     // Send the email with extended timeout
     const info = await new Promise((resolve, reject) => {
       transporter.sendMail(mailOptions, (err, info) => {
@@ -202,6 +216,7 @@ router.post("/signup", async (req, res) => {
     return res.status(400).json({ message: "All fields are required." });
   }
 
+  // Email format validation using regular expressions
   // בדיקת תוקף אימייל
   const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
   if (!emailRegex.test(email)) {
@@ -209,11 +224,13 @@ router.post("/signup", async (req, res) => {
     return res.status(400).json({ message: "Invalid email format." });
   }
 
+  // Strong password validation with comprehensive security requirements
   // בדיקת תוקף סיסמה - נעשה פשוט יותר ונוודא שזה תואם לבדיקה בצד הלקוח
   const passwordRegex = /^(?=.*[a-z])(?=.*[A-Z])(?=.*\d)(?=.*[@$!%*?&#])[A-Za-z\d@$!%*?&#]{8,}$/;
   const passwordToCheck = req.body.encryptedPassword ? 
     decryptAES(req.body.encryptedPassword) : password;
   
+  // Detailed password strength analysis for debugging
   console.log("Password validation check:", { 
     hasLowercase: /[a-z]/.test(passwordToCheck),
     hasUppercase: /[A-Z]/.test(passwordToCheck),
@@ -230,20 +247,24 @@ router.post("/signup", async (req, res) => {
   }
 
   try {
+    // Duplicate user prevention check
     // בדיקה האם המשתמש כבר קיים
     const existingUser = await User.findOne({ email });
     if (existingUser) {
       return res.status(400).json({ message: "User with this email already exists." });
     }
 
+    // Secure password hashing using bcrypt with salt rounds
     // הצפנת הסיסמה
     const hashedPassword = await bcrypt.hash(passwordToCheck, 10);
     
+    // Two-Factor Authentication setup with QR code generation
     // יצירת מפתח 2FA ייחודי
     const twoFactorSecret = speakeasy.generateSecret({
       name: `Fortitask:${email}`
     });
     
+    // User creation with security defaults
     // יצירת משתמש חדש
     const user = new User({ 
       username, 
@@ -257,6 +278,7 @@ router.post("/signup", async (req, res) => {
     await user.save();
     console.log("User registered successfully:", { id: user._id, email: user.email });
     
+    // Return success response with 2FA QR code for immediate setup
     res.status(201).json({ 
       message: "User registered successfully! You can now login.",
       twoFactorQR: await QRCode.toDataURL(twoFactorSecret.otpauth_url)
@@ -267,12 +289,14 @@ router.post("/signup", async (req, res) => {
   }
 });
 
+// Secure user authentication with 2FA support and brute force protection
 // התחברות משתמש - עם תיקון הבעיות שנמצאו
 router.post("/login", async (req, res) => {
   const { email, password, twoFactorCode } = req.body;
   
   console.log("Login attempt:", { email, hasTwoFactorCode: !!twoFactorCode });
 
+  // Input validation with security-focused error responses
   // בדיקת קלט מוקדמת - תיקון הבעיה הראשונה שנמצאה
   if (!email) {
     return res.status(404).json({ message: "User not found." });
@@ -283,12 +307,14 @@ router.post("/login", async (req, res) => {
   }
 
   try {
+    // User lookup with email verification
     // מציאת המשתמש לפי אימייל
     const user = await User.findOne({ email });
     if (!user) {
       return res.status(404).json({ message: "User not found." });
     }
 
+    // Secure password verification with bcrypt error handling
     // בדיקת הסיסמה - עם ולידציה חזקה למניעת שגיאת bcrypt
     let isPasswordValid;
     try {
@@ -298,12 +324,14 @@ router.post("/login", async (req, res) => {
       return res.status(500).json({ message: "Internal server error." });
     }
 
+    // Failed login attempt tracking and account lockout mechanism
     if (!isPasswordValid) {
       await User.updateOne(
         { _id: user._id }, 
         { $inc: { failedLoginAttempts: 1 } }
       );
       
+      // Brute force protection: automatic account blocking
       // בדיקת ניסיונות התחברות כושלים
       if (user.failedLoginAttempts >= 4) {
         await User.updateOne(
@@ -316,6 +344,7 @@ router.post("/login", async (req, res) => {
       return res.status(401).json({ message: "Invalid credentials." });
     }
 
+    // Two-Factor Authentication verification with time tolerance
     // בדיקת 2FA אם מופעל
     if (user.twoFactorEnabled) {
       if (!twoFactorCode) {
@@ -326,15 +355,18 @@ router.post("/login", async (req, res) => {
         });
       }
       
+      // Input sanitization for 2FA code verification
       // Clean and format the code before verification
       const cleanCode = String(twoFactorCode).trim().replace(/\s+/g, '');
       console.log("Cleaned 2FA code for verification:", cleanCode);
       
+      // TOTP verification using enhanced model method
       // שימוש בפונקציה המשופרת מהמודל
       const verified = User.verifyTwoFactorCode(user.twoFactorSecret, cleanCode);
       console.log("2FA verification result:", verified);
       
       if (!verified) {
+        // Enhanced debugging for 2FA failures
         // Additional debug info
         const now = new Date();
         console.log("Verification time:", now.toISOString(), "Unix time:", Math.floor(now.getTime() / 1000));
@@ -348,6 +380,7 @@ router.post("/login", async (req, res) => {
       console.log("2FA verified successfully");
     }
 
+    // Successful login: reset security counters and update last login
     // איפוס ניסיונות התחברות כושלים
     await User.updateOne(
       { _id: user._id }, 
@@ -358,6 +391,7 @@ router.post("/login", async (req, res) => {
       }
     );
 
+    // JWT token generation with configurable expiration
     // יצירת טוקן התחברות
     const token = jwt.sign(
       { id: user._id, role: user.role }, 
@@ -365,9 +399,11 @@ router.post("/login", async (req, res) => {
       { expiresIn: "12h" }
     );
     
+    // Audit logging for successful authentication
     // Log successful login
     console.log("Login successful:", { userId: user._id, role: user.role });
     
+    // Return authentication response with user context
     res.status(200).json({ 
       token, 
       role: user.role,
@@ -380,9 +416,11 @@ router.post("/login", async (req, res) => {
   }
 });
 
+// Authenticated user profile retrieval
 // פרטי פרופיל משתמש
 router.get("/profile", authenticateToken, async (req, res) => {
   try {
+    // Secure profile fetch excluding sensitive data
     const user = await User.findById(req.user.id, "-password -twoFactorSecret");
     if (!user) {
       return res.status(404).json({ message: "User not found." });
@@ -395,6 +433,7 @@ router.get("/profile", authenticateToken, async (req, res) => {
   }
 });
 
+// Secure profile update with password change validation
 // עדכון פרטי משתמש
 router.put("/profile", authenticateToken, async (req, res) => {
   const { username, email, password, currentPassword } = req.body;

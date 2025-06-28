@@ -1,12 +1,16 @@
 
+// Comprehensive course management testing suite for academic assignment system
+// Tests course creation, access control, file uploads, and teacher-student interactions
+
 const request = require('supertest');
 const mongoose = require('mongoose');
 const { MongoMemoryServer } = require('mongodb-memory-server');
 const jwt = require('jsonwebtoken');
 
+// In-memory database for isolated testing
 let mongo;
 
-// Mock cloudinary for course tests
+// Mock Cloudinary file upload service for testing without external dependencies
 jest.mock('../config/cloudinary', () => {
   const multer = require('multer');
   const memoryUpload = multer({ storage: multer.memoryStorage() });
@@ -56,6 +60,7 @@ beforeEach(async () => {
   await Course.deleteMany({});
 });
 
+// Helper function for generating authentication tokens with role-based permissions
 const generateToken = (userId, role = 'Teacher') => {
   return jwt.sign(
     { id: userId, role: role },
@@ -64,8 +69,11 @@ const generateToken = (userId, role = 'Teacher') => {
   );
 };
 
+// Complete course management workflow testing for academic integrity
 describe('Course Management Tests', () => {
+  // Course creation testing with authorization and data validation
   describe('POST /api/courses/create', () => {
+    // Test successful course creation by authorized teacher
     it('should create a course successfully by teacher', async () => {
       const teacher = await User.create({
         username: 'TestTeacher',

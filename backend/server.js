@@ -1,3 +1,4 @@
+// Load environment variables first for security
 require("dotenv").config();
 const { cloudinary } = require("./config/cloudinary");
 const express = require("express");
@@ -6,13 +7,13 @@ const cors = require("cors");
 const path = require("path");
 const { exec } = require('child_process');
 
-// ייבוא מסלולים
+// Import application routes
 const userRoutes = require("./routes/userRoutes");
-const coursesRoutes = require("./routes/coursesRoutes"); // מיזוג משימות וקורסים
+const coursesRoutes = require("./routes/coursesRoutes");
 
 const app = express();
 
-// Middleware
+// CORS configuration for multiple deployment environments
 const allowedOrigins = [
   "http://localhost:3000",
   "https://www.fortitask.org",
@@ -21,15 +22,15 @@ const allowedOrigins = [
   "https://fortitask-project.onrender.com"
 ];
 
-
+// Enable credentials for secure cookie transmission
 app.use((req, res, next) => {
   res.header("Access-Control-Allow-Credentials", "true");
   next();
 });
 
+// Dynamic CORS middleware with origin validation
 app.use(cors({
   origin: function (origin, callback) {
-    // לא נשלח origin בבקשות לוקליות או בדיקות
     if (!origin || allowedOrigins.includes(origin)) {
       callback(null, true);
     } else {
@@ -39,19 +40,20 @@ app.use(cors({
   credentials: true
 }));
 
-app.use(express.json({ limit: '50mb' })); // מאפשר עבודה עם JSON בבקשות עם גודל מוגדל
+// Parse JSON requests with increased size limit for file metadata
+app.use(express.json({ limit: '50mb' }));
 app.use(express.urlencoded({ extended: true, limit: '50mb' }));
 
-// שימוש בתיקיית uploads כסטטית
+// Serve uploaded files statically for direct access
 app.use('/uploads', express.static(path.join(__dirname, 'uploads')));
 
-// לוג של סטטוס התחברות לcloudinary
+// Cloudinary configuration verification for debugging
 console.log("✅ Cloudinary Config:");
 console.log("CLOUD_NAME:", process.env.CLOUDINARY_CLOUD_NAME);
 console.log("API_KEY:", process.env.CLOUDINARY_API_KEY ? "Loaded" : "Missing");
 console.log("API_SECRET:", process.env.CLOUDINARY_API_SECRET ? "Loaded" : "Missing");
 
-// חיבור ל-MongoDB
+// Database connection with environment-specific handling
 if (process.env.NODE_ENV !== 'test') {
   mongoose
     .connect(process.env.MONGO_URI, {
@@ -62,21 +64,20 @@ if (process.env.NODE_ENV !== 'test') {
     .catch((err) => console.error("❌ Error connecting to MongoDB:", err));
 }
 
-// מסלולים
-app.use("/api/users", userRoutes); // מסלולים עבור משתמשים
-app.use("/api/courses", coursesRoutes); // מסלולים עבור קורסים ומשימות
+// API Routes registration
+app.use("/api/users", userRoutes);
+app.use("/api/courses", coursesRoutes);
 
-// הוספת הגשת קבצים סטטיים עבור ה-frontend
-// ודא שתיקיית ה-build של ה-frontend נמצאת בנתיב הנכון יחסית לשרת
+// Serve React frontend in production
 const frontendBuildPath = path.join(__dirname, '../build');
 app.use(express.static(frontendBuildPath));
 
-// מסלול בדיקה
+// Health check endpoint for monitoring
 app.get("/api/health", (req, res) => {
   res.status(200).json({ status: "ok", message: "Server is running" });
 });
 
-// טיפול בקבצי מטא-דאטה - גרסה מתוקנת עם הגיון משופר ובדיקות מדויקות יותר
+// Advanced file metadata analysis endpoint for academic integrity
 app.post("/api/analyze-metadata", (req, res) => {
   try {
     const { fileData, deadline } = req.body;
@@ -90,36 +91,37 @@ app.post("/api/analyze-metadata", (req, res) => {
       lastModified: fileData.lastModified
     });
     
-    // Extract metadata from file
+    // Extract client-reported metadata
     const { lastModified, name, size, type } = fileData;
     
-    // Save client reported date - חובה לשמור את התאריך שמדווח על ידי הלקוח
+    // Store client reported modification date for comparison
     const clientReportedDate = lastModified ? new Date(lastModified) : null;
     
-    // Get current server time for comparison
+    // Server timestamp for integrity verification
     const serverTime = new Date();
     
+    // Detect potential timestamp manipulation
     // Calculate time difference only if client reported a date
     let timeDifference = 0;
     let possibleManipulation = false;
     
     if (clientReportedDate) {
       timeDifference = Math.abs(serverTime - clientReportedDate);
-      // אם הפרש הזמנים גדול מדי (יותר משעתיים), זה עשוי להצביע על מניפולציה
+      // Threshold for suspicious modification: more than 2 hours difference
       possibleManipulation = timeDifference > 7200000; // 2 hours in milliseconds
       console.log(`Time difference: ${timeDifference / 1000 / 60} minutes, Possible manipulation: ${possibleManipulation}`);
     } else {
       console.log("No client reported date available");
     }
     
-    // בגרסה המשופרת אנחנו מתייחסים לתאריך העריכה האחרון כפי שדווח מהלקוח כאמין
-    // אלא אם כן יש אינדיקציה לרמאות
+    // Use client-reported date as baseline unless manipulation is suspected
     const serverVerifiedModified = clientReportedDate || new Date();
     
-    // בדיקת הפער בין התאריך המדווח ע"י הלקוח לבין התאריך של השרת
+    // Measure discrepancy between client and server timestamps
     const clientServerDiscrepancy = clientReportedDate ? Math.abs(clientReportedDate - serverTime) : 0;
-    const hasDateDiscrepancy = clientServerDiscrepancy > 60000 && clientServerDiscrepancy > 7200000; // הפרש של יותר מדקה ויותר משעתיים
+    const hasDateDiscrepancy = clientServerDiscrepancy > 60000 && clientServerDiscrepancy > 7200000;
     
+    // Academic deadline violation detection
     // Get deadline for comparison (if provided)
     let deadlineDate = null;
     let isLateSubmission = false;
@@ -130,16 +132,16 @@ app.post("/api/analyze-metadata", (req, res) => {
       deadlineDate = new Date(deadline);
       console.log(`Deadline: ${deadlineDate.toISOString()}`);
       
-      // בדיקה אם ההגשה מאוחרת - האם זמן השרת הנוכחי מאוחר מהדדליין
+      // Check if submission is late based on server time
       isLateSubmission = serverTime > deadlineDate;
       
-      // בדיקה אם הקובץ נערך אחרי הדדליין - תלוי בתאריך העריכה המאומת
+      // Check if file was modified after deadline using verified timestamp
       if (clientReportedDate && !possibleManipulation && !hasDateDiscrepancy) {
         isModifiedAfterDeadline = clientReportedDate > deadlineDate;
         console.log(`Using client reported date for modification check: ${isModifiedAfterDeadline ? "Modified after deadline" : "Modified before deadline"}`);
       }
       
-      // בדיקה משופרת: האם הקובץ נערך לפני הדדליין אך הוגש באיחור
+      // Detect scenario: file modified before deadline but submitted late
       if (isLateSubmission) {
         if (clientReportedDate && !possibleManipulation && !hasDateDiscrepancy) {
           isModifiedBeforeButSubmittedLate = clientReportedDate <= deadlineDate;
@@ -148,7 +150,7 @@ app.post("/api/analyze-metadata", (req, res) => {
       }
     }
     
-    // לוג סופי של המסקנות
+    // Log analysis conclusions for audit trail
     console.log("Metadata analysis conclusions:", {
       isLateSubmission,
       isModifiedAfterDeadline,
@@ -157,7 +159,7 @@ app.post("/api/analyze-metadata", (req, res) => {
       hasDateDiscrepancy
     });
     
-    // שיפור הדיוק של התוצאות שנשלחות
+    // Return comprehensive metadata analysis results
     res.status(200).json({
       fileName: name,
       fileSize: size,
@@ -181,7 +183,7 @@ app.post("/api/analyze-metadata", (req, res) => {
   }
 });
 
-// נקודת קצה לבדיקת openssl
+// OpenSSL verification endpoint for cryptographic operations
 app.get("/api/check-openssl", (req, res) => {
   exec('openssl version', (error, stdout, stderr) => {
     if (error) {
@@ -194,6 +196,7 @@ app.get("/api/check-openssl", (req, res) => {
     }
     if (stderr) {
       console.warn(`openssl command produced stderr: ${stderr}`);
+      // Handle cases where stderr exists but command succeeded
       // אם יש stderr אבל אין שגיאה ראשית, ייתכן שהפקודה הצליחה אך יש אזהרות
       // נחזיר את stdout אם קיים, אחרת את stderr
       if (stdout) {

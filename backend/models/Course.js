@@ -1,6 +1,6 @@
-
 const mongoose = require("mongoose");
 
+// Course schema with advanced assignment tracking and academic integrity features
 const courseSchema = new mongoose.Schema({
   name: { type: String, required: true },
   creditPoints: { type: Number, required: true },
@@ -46,10 +46,12 @@ const courseSchema = new mongoose.Schema({
 }, 
 { timestamps: true });
 
+// Automated student information population for assignment metadata
 // Helper method to populate student information in assignments
 courseSchema.methods.populateStudentInfo = async function() {
   const User = mongoose.model("User");
   
+  // Identify assignments that need student information populated
   // Only process assignments that are student submissions and missing student info
   const needsPopulation = this.assignments.filter(a => 
     !a.isMaterial && 
@@ -58,14 +60,17 @@ courseSchema.methods.populateStudentInfo = async function() {
   );
   
   if (needsPopulation.length > 0) {
+    // Optimize database queries: get all needed student data in one query
     // Get unique student IDs
     const studentIds = [...new Set(needsPopulation.map(a => a.studentId))];
     
+    // Single database query for efficiency
     // Fetch student information in one query
     const students = await User.find({ 
       _id: { $in: studentIds } 
     }, { username: 1, email: 1 });
     
+    // Create lookup map for O(1) access time
     // Create a map for quick lookup
     const studentMap = students.reduce((map, student) => {
       map[student._id.toString()] = { 
@@ -75,6 +80,7 @@ courseSchema.methods.populateStudentInfo = async function() {
       return map;
     }, {});
     
+    // Update all assignments with student information
     // Update assignments with student information
     this.assignments = this.assignments.map(assignment => {
       if (!assignment.isMaterial && assignment.studentId) {
@@ -89,6 +95,7 @@ courseSchema.methods.populateStudentInfo = async function() {
       return assignment;
     });
     
+    // Persist changes to database
     // Save the updated document
     await this.save();
   }
@@ -96,11 +103,14 @@ courseSchema.methods.populateStudentInfo = async function() {
   return this;
 };
 
+// Pre-save middleware to automatically maintain data consistency
 // Pre-save hook to ensure student info is populated
 courseSchema.pre('save', async function(next) {
+  // Trigger population for new documents or when assignments are modified
   // If this is a new document or assignments were modified, populate student info
   if (this.isNew || this.isModified('assignments')) {
     try {
+      // Check if any assignments need student information
       // Find assignments that need student info populated
       const needsInfo = this.assignments.some(a => 
         !a.isMaterial && a.studentId && (!a.studentName || !a.studentEmail)
@@ -109,6 +119,7 @@ courseSchema.pre('save', async function(next) {
       if (needsInfo) {
         const User = mongoose.model("User");
         
+        // Collect unique student IDs for batch processing
         // Get unique student IDs
         const studentIds = [...new Set(
           this.assignments
@@ -117,11 +128,13 @@ courseSchema.pre('save', async function(next) {
         )];
         
         if (studentIds.length > 0) {
+          // Efficient batch lookup of student information
           // Fetch student information
           const students = await User.find({ 
             _id: { $in: studentIds } 
           }, { username: 1, email: 1 });
           
+          // Create indexed lookup for fast access
           // Create lookup map
           const studentMap = students.reduce((map, student) => {
             map[student._id.toString()] = { 
@@ -131,6 +144,7 @@ courseSchema.pre('save', async function(next) {
             return map;
           }, {});
           
+          // Apply student information to relevant assignments
           // Update assignments with student info
           this.assignments = this.assignments.map(assignment => {
             if (!assignment.isMaterial && assignment.studentId) {

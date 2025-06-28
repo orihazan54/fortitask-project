@@ -2,7 +2,10 @@
   "name": "frontend",
   "version": "1.0.0",
   "private": true,
+  "description": "Academic assignment management system with secure file upload and academic integrity verification",
   "homepage": "https://www.fortitask.org",
+  "keywords": ["education", "academic-integrity", "assignment-management", "file-upload", "security"],
+  "author": "Fortitask Development Team",
   "dependencies": {
     "@radix-ui/react-alert-dialog": "^1.1.11",
     "animate.css": "^4.1.1",

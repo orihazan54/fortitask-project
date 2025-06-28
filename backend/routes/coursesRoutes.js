@@ -10,6 +10,7 @@ const { execFile } = require('child_process');
 const util = require('util');
 const execFilePromise = util.promisify(execFile);
 
+// Trusted Timestamping Authority (TSA) integration for academic integrity
 // --- Import for TSA --- 
 const { getVerifiedTimestamp } = require('../tsaHelper');
 const axios = require('axios');
@@ -17,6 +18,7 @@ const os = require('os');
 const path = require('path');
 // --- End Import for TSA ---
 
+// Cross-platform file metadata extraction with OS-specific optimizations
 // פונקציה לקבלת מטא-דאטא מורחב של הקובץ
 async function getExtendedFileMetadata(filePath) {
     try {
@@ -28,9 +30,11 @@ async function getExtendedFileMetadata(filePath) {
             atime: stats.atime
         };
 
+        // Platform-specific metadata extraction for comprehensive file analysis
         // בדיקת מטא-דאטא נוספת בהתאם למערכת ההפעלה
         if (process.platform === 'win32') {
             try {
+                // Windows-specific PowerShell metadata extraction
                 // שימוש ב-PowerShell לקבלת מידע נוסף בחלונות
                 const { stdout } = await execFilePromise('powershell.exe', [
                     '-Command',
@@ -42,6 +46,7 @@ async function getExtendedFileMetadata(filePath) {
             }
         } else {
             try {
+                // Unix/Linux metadata extraction using stat command
                 // שימוש ב-stat בלינוקס/מאק לקבלת מידע נוסף
                 const { stdout } = await execFilePromise('stat', ['-f', '%Sm', filePath]);
                 metadata.unixLastModified = new Date(stdout.trim());
@@ -59,19 +64,23 @@ async function getExtendedFileMetadata(filePath) {
 
 // -------------------- 📚 Routes -------------------- //
 
+// Course creation endpoint with file upload support for instructors
 // 📌 יצירת קורס חדש (למורים בלבד)
 router.post("/create", authenticateToken, upload.single("file"), async (req, res) => {
+  // Role-based access control: only teachers can create courses
   if (req.user.role !== "Teacher") {
     return res.status(403).json({ message: "Access denied. Only teachers can create courses." });
   }
 
   const { courseName, creditPoints, instructions, deadline } = req.body;
 
+  // Input validation for required course parameters
   if (!courseName || !creditPoints || !instructions || !deadline) {
     return res.status(400).json({ message: "All course details are required." });
   }
 
   try {
+    // Course object creation with instructor association
     const newCourse = new Course({
       name: courseName,
       creditPoints: parseFloat(creditPoints),
@@ -80,6 +89,7 @@ router.post("/create", authenticateToken, upload.single("file"), async (req, res
       teacherId: req.user.id,
     });
 
+    // Optional file attachment handling for course materials
     // אם יש קובץ מצורף, הוסף אותו למערך המטלות
     if (req.file) {
       console.log("📄 File uploaded with course creation:", req.file);
@@ -103,11 +113,13 @@ router.post("/create", authenticateToken, upload.single("file"), async (req, res
   }
 });
 
+// Secure file download endpoint with access control and direct Cloudinary integration
 // Direct file download endpoint
 router.get("/:id/assignments/:assignmentId/download", authenticateToken, async (req, res) => {
   try {
     const { id, assignmentId } = req.params;
     
+    // Course and assignment validation
     // Find the course and assignment
     const course = await Course.findById(id);
     if (!course) {
@@ -119,6 +131,7 @@ router.get("/:id/assignments/:assignmentId/download", authenticateToken, async (
       return res.status(404).json({ message: "Assignment not found" });
     }
     
+    // Fine-grained access control for file downloads
     // Check permissions
     if (!assignment.isMaterial) {
       // Only allow teachers and the student who uploaded the file to access
@@ -132,6 +145,7 @@ router.get("/:id/assignments/:assignmentId/download", authenticateToken, async (
       return res.status(404).json({ message: "No file URL found for this assignment" });
     }
     
+    // Direct Cloudinary URL provision for efficient file delivery
     // Return the direct Cloudinary URL
     return res.status(200).json({ 
       fileUrl: assignment.fileUrl,
@@ -143,6 +157,7 @@ router.get("/:id/assignments/:assignmentId/download", authenticateToken, async (
   }
 });
 
+// Advanced assignment upload with TSA integration for academic integrity verification
 // 📂 העלאת מטלה לענן והכנסה לקורס
 router.post("/:id/upload-assignment", authenticateToken, upload.single("file"), async (req, res) => {
   console.log("!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!");
@@ -154,12 +169,14 @@ router.post("/:id/upload-assignment", authenticateToken, upload.single("file"), 
 
   let localFilePath = null; // Initialize localFilePath to null
   try {
+    // File validation and Cloudinary integration verification
     if (!req.file || !req.file.path) { // req.file.path is the Cloudinary URL
       console.error("❌ No file received or file path missing!");
       return res.status(400).json({ message: "No file uploaded or file path missing!" });
     }
     console.log("File info from multer/cloudinary:", { path: req.file.path, originalname: req.file.originalname });
 
+    // Course and user validation
     const course = await Course.findById(req.params.id);
     if (!course) {
       console.error("❌ Course not found!");
@@ -172,10 +189,12 @@ router.post("/:id/upload-assignment", authenticateToken, upload.single("file"), 
       return res.status(404).json({ message: "User not found!" });
     }
 
+    // Deadline validation and late submission detection
     const serverNowAtUploadUTC = new Date(); 
     const deadlineUTC = new Date(course.deadline);
     const isLateUpload = serverNowAtUploadUTC > deadlineUTC; // Renamed from isLate to avoid conflict
     
+    // Advanced TSA (Trusted Timestamping Authority) integration for file integrity
     // --- TSA Integration --- 
     const cloudinaryUrl = req.file.path;
     const originalFileNameForTsa = req.file.originalname;
@@ -184,15 +203,18 @@ router.post("/:id/upload-assignment", authenticateToken, upload.single("file"), 
 
     console.log(`Attempting to download from Cloudinary: ${cloudinaryUrl} to ${localFilePath}`);
     
+    // Environment-specific TSA processing with test mode support
     // Handle both test environment (Buffer) and real environment (Stream)
     let verifiedTimestamp;
     let tsaVerified = false;
     
     if (process.env.NODE_ENV === 'test') {
+      // Test environment optimization: skip external TSA dependencies
       // In test environment, skip TSA processing since we're using mock data
       console.log('Test environment detected, skipping TSA processing');
       verifiedTimestamp = null;
     } else {
+      // Production TSA verification with file download and timestamp validation
       // Real environment - download and process file
       try {
         const response = await axios.get(cloudinaryUrl, {
@@ -218,6 +240,7 @@ router.post("/:id/upload-assignment", authenticateToken, upload.single("file"), 
       }
     }
 
+    // Timestamp determination with TSA priority fallback system
     let actualLastModified;
 
     if (verifiedTimestamp) {
@@ -234,16 +257,20 @@ router.post("/:id/upload-assignment", authenticateToken, upload.single("file"), 
     }
     // --- End TSA Integration ---
 
+    // Client-reported timestamp extraction for comparison analysis
     let clientReportedDate = null;
     if (req.body.lastModified) {
         clientReportedDate = new Date(parseInt(req.body.lastModified));
     }
 
+    // Advanced timestamp manipulation detection algorithm
     // -------- מנגנון זיהוי מניפולציה מחודש -------- //
     let suspectedTimeManipulation = false;
     let clientTsaDiffMinutes = null; // פער בין זמן הלקוח לחותמת TSA
 
+    // TSA-based manipulation detection with tolerance thresholds
     if (tsaVerified && clientReportedDate) {
+        // Compare client-reported time against verified TSA timestamp
         // אם יש חותמת אמינה וגם זמן מדווח ע"י הדפדפן – משווים ביניהם
         clientTsaDiffMinutes = Math.abs((actualLastModified.getTime() - clientReportedDate.getTime()) / (60 * 1000));
         const MAX_DELTA_MIN = 2; // טולרנס של 2 דקות
@@ -251,6 +278,7 @@ router.post("/:id/upload-assignment", authenticateToken, upload.single("file"), 
             suspectedTimeManipulation = true;
         }
     } else if (clientReportedDate) {
+        // Fallback manipulation detection using server time comparison
         // fallback: אין TSA מאומת – בודקים מול זמן השרת כפי שהיה קודם
         const diffToServerMin = Math.abs((serverNowAtUploadUTC.getTime() - clientReportedDate.getTime()) / (60 * 1000));
         const MAX_ALLOWED_SERVER_DIFF_MIN = 24 * 60; // 24 שעות
@@ -259,10 +287,12 @@ router.post("/:id/upload-assignment", authenticateToken, upload.single("file"), 
         }
     }
     
+    // Academic integrity checks: deadline compliance analysis
     // Use actualLastModified (preferring TSA) for deadline checks
     const isModifiedAfterDeadline = actualLastModified > deadlineUTC;
     const isModifiedBeforeButSubmittedLate = isLateUpload && actualLastModified && actualLastModified <= deadlineUTC && !suspectedTimeManipulation;
 
+    // User notification system based on submission status
     let notificationMessage;
     if (isLateUpload) {
         notificationMessage = `Your assignment was submitted late.`;
@@ -270,6 +300,7 @@ router.post("/:id/upload-assignment", authenticateToken, upload.single("file"), 
         notificationMessage = `Your assignment was submitted successfully.`;
     }
 
+    // Comprehensive assignment metadata object with security and integrity data
     const newAssignment = {
       fileUrl: req.file.path, 
       fileName: req.file.originalname,
@@ -288,6 +319,7 @@ router.post("/:id/upload-assignment", authenticateToken, upload.single("file"), 
       isModifiedBeforeButSubmittedLate: isModifiedBeforeButSubmittedLate, // Now based on actualLastModified
       suspectedTimeManipulation: suspectedTimeManipulation,
       clientTsaDiffMinutes: clientTsaDiffMinutes,
+      // Additional timing metadata for audit trail
       // שמור גם את פער לקוח-שרת לצרכי מידע (לא קובע חשד אם קיימת חותמת TSA)
       timeDifferenceMinutes: clientReportedDate ? Math.abs((serverNowAtUploadUTC.getTime() - clientReportedDate.getTime()) / (60 * 1000)) : null,
       submissionComment: req.body.comment || "",
@@ -298,6 +330,7 @@ router.post("/:id/upload-assignment", authenticateToken, upload.single("file"), 
       isMaterial: req.user.role === "Teacher" ? true : false,
     };
     
+    // Audit logging for assignment submission with integrity verification results
     console.log("Final assignment data for DB (with TSA info):", {
         clientReportedDate: newAssignment.clientReportedDate,
         lastModifiedUTC: newAssignment.lastModifiedUTC,
@@ -308,9 +341,11 @@ router.post("/:id/upload-assignment", authenticateToken, upload.single("file"), 
         suspectedTimeManipulation: newAssignment.suspectedTimeManipulation
     });
 
+    // Database persistence of assignment with metadata
     course.assignments.push(newAssignment);
     await course.save();
 
+    // Student notification system integration
     if (req.user.role === "Student") {
       try {
         await user.addNotification(notificationMessage);
@@ -319,11 +354,13 @@ router.post("/:id/upload-assignment", authenticateToken, upload.single("file"), 
       }
     }
 
+    // Comprehensive response with integrity verification results
     // Ensure we return the response
     console.log("✅ About to send successful response with status 201");
     return res.status(201).json({ 
       message: "Assignment uploaded successfully!", 
       assignment: newAssignment,
+      // Academic integrity flags for frontend display
       // Return relevant flags to the client
       isLate: newAssignment.isLateSubmission,
       isModifiedAfterDeadline: newAssignment.isModifiedAfterDeadline,
@@ -336,6 +373,7 @@ router.post("/:id/upload-assignment", authenticateToken, upload.single("file"), 
     console.error("❌ Server Error while uploading assignment:", error);
     return res.status(500).json({ message: "Failed to upload assignment.", error: error.message || error });
   } finally {
+    // Cleanup: remove temporary files after TSA processing
     if (localFilePath && process.env.NODE_ENV !== 'test') {
         try {
             await fs.unlink(localFilePath);
@@ -347,8 +385,10 @@ router.post("/:id/upload-assignment", authenticateToken, upload.single("file"), 
   }
 });
 
+// Course update endpoint with file attachment support
 // 📌 עדכון קורס קיים
 router.put("/:id", authenticateToken, upload.single("file"), async (req, res) => {
+  // Authorization check: only teachers can modify courses
   if (req.user.role !== "Teacher") {
     return res.status(403).json({ message: "Access denied. Only teachers can update courses." });
   }
@@ -362,16 +402,19 @@ router.put("/:id", authenticateToken, upload.single("file"), async (req, res) =>
       return res.status(404).json({ message: "Course not found." });
     }
     
+    // Ownership verification: teachers can only update their own courses
     if (course.teacherId.toString() !== req.user.id) {
       return res.status(403).json({ message: "You can only update courses you created." });
     }
 
+    // Selective course parameter updates
     // עדכון פרטי הקורס
     if (name) course.name = name;
     if (creditPoints) course.creditPoints = parseFloat(creditPoints);
     if (instructions) course.instructions = instructions;
     if (deadline) course.deadline = new Date(deadline);
 
+    // Optional file attachment processing for course materials
     // אם יש קובץ מצורף, הוסף אותו למערך המטלות
     if (req.file) {
       console.log("📄 File uploaded with course update:", req.file);
@@ -396,6 +439,7 @@ router.put("/:id", authenticateToken, upload.single("file"), async (req, res) =>
   }
 });
 
+// Course listing endpoint with role-based filtering
 // 📚 שליפת כל הקורסים
 router.get("/", authenticateToken, async (req, res) => {
   try {

@@ -1,3 +1,6 @@
+// Comprehensive test report generator for academic assignment management system
+// Generates detailed HTML reports with test results, coverage data, and failure analysis
+
 const fs = require('fs');
 const { execSync } = require('child_process');
 const path = require('path');
@@ -5,18 +8,18 @@ const path = require('path');
 console.log('Running frontend tests...');
 
   try {
-    // הרצת הבדיקות עם coverage מפורט  
+    // Execute comprehensive test suite with detailed coverage analysis
     console.log('Starting test execution...');
     const testOutput = execSync('npm test -- --watchAll=false --coverage --verbose --passWithNoTests=false', {
       encoding: 'utf8',
-      maxBuffer: 1024 * 1024 * 10, // 10MB buffer
+      maxBuffer: 1024 * 1024 * 10, // Enhanced buffer for large test outputs
       cwd: process.cwd(),
       stdio: 'pipe'
     });
     
     console.log('Test output length:', testOutput.length);
     
-    // חיפוש מקטעי מפתח בפלט
+    // Advanced pattern matching for test result extraction
     const passMatches = testOutput.match(/PASS\s+.*\.test\.jsx/g) || [];
     const failMatches = testOutput.match(/FAIL\s+.*\.test\.jsx/g) || [];
     const checkMatches = testOutput.match(/✓\s+.*\(\d+\s*ms\)/g) || [];
@@ -27,10 +30,10 @@ console.log('Running frontend tests...');
     console.log('Found PASS tests:', checkMatches.length);
     console.log('Found FAIL tests:', failTestMatches.length);
 
-  // חליצת הנתונים החשובים
+  // Comprehensive data extraction from test output
   const lines = testOutput.split('\n');
   
-  // מציאת תוצאות הבדיקות
+  // Initialize data structures for detailed test analysis
   const testSuites = [];
   const testResults = [];
   const failedTests = [];
@@ -41,13 +44,13 @@ console.log('Running frontend tests...');
   for (let i = 0; i < lines.length; i++) {
     const line = lines[i];
     
-    // זיהוי test suites שעברו - תבנית משופרת
+    // Advanced pattern recognition for successful test suites
     if ((line.includes('PASS ') || line.includes('✓ ')) && (line.includes('.test.jsx') || line.includes('.test.js'))) {
       const match = line.match(/(?:PASS|✓)\s+(.+\.test\.jsx?)\s*(?:\((.+?)\))?/) || 
                    line.match(/PASS\s+(.+\.test\.jsx?)\s+\((.+)\)/);
       if (match) {
         currentSuite = {
-          file: match[1].replace(/.*\//, ''), // רק שם הקובץ
+          file: match[1].replace(/.*\//, ''), // Extract filename only for clean reporting
           duration: match[2] || 'Unknown',
           status: 'PASS',
           tests: []
@@ -57,13 +60,13 @@ console.log('Running frontend tests...');
       }
     }
     
-    // זיהוי test suites שנכשלו - תבנית משופרת
+    // Advanced pattern recognition for failed test suites
     if ((line.includes('FAIL ') || line.includes('✗ ')) && (line.includes('.test.jsx') || line.includes('.test.js'))) {
       const match = line.match(/(?:FAIL|✗)\s+(.+\.test\.jsx?)\s*(?:\((.+?)\))?/) || 
                    line.match(/FAIL\s+(.+\.test\.jsx?)\s+\((.+)\)/);
       if (match) {
         currentSuite = {
-          file: match[1].replace(/.*\//, ''), // רק שם הקובץ
+          file: match[1].replace(/.*\//, ''), // Extract filename only for clean reporting
           duration: match[2] || 'Unknown',
           status: 'FAIL',
           tests: []
@@ -73,7 +76,7 @@ console.log('Running frontend tests...');
       }
     }
     
-    // זיהוי בדיקות בודדות שעברו - תבניות משופרות
+    // Detailed extraction of individual successful test cases
     if (line.trim().startsWith('✓ ') || line.trim().startsWith('√ ')) {
       const match = line.match(/[✓√]\s+(.+?)\s+\((\d+)\s*ms\)/) || 
                    line.match(/[✓√]\s+(.+)/);
@@ -92,7 +95,7 @@ console.log('Running frontend tests...');
       }
     }
     
-    // זיהוי בדיקות בודדות שנכשלו - תבניות משופרות
+    // Detailed extraction of individual failed test cases for analysis
     if (line.trim().startsWith('× ') || line.trim().startsWith('✗ ')) {
       const match = line.match(/[×✗]\s+(.+?)\s+\((\d+)\s*ms\)/) || 
                    line.match(/[×✗]\s+(.+)/);

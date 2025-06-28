@@ -1,13 +1,17 @@
 
+// Advanced assignment upload testing with academic integrity verification
+// Tests file upload, deadline compliance, TSA timestamp validation, and metadata analysis
+
 const request = require('supertest');
 const mongoose = require('mongoose');
 const { MongoMemoryServer } = require('mongodb-memory-server');
 const jwt = require('jsonwebtoken');
 
+// Database and user management for test isolation
 let mongo;
 let mockUserId;
 
-// Mock config/cloudinary so שה-upload.single('file') יפעל בזיכרון ויוסיף path
+// Mock Cloudinary file upload service with in-memory storage for testing
 jest.mock('../config/cloudinary', () => {
   const multer = require('multer');
   const memoryUpload = multer({ storage: multer.memoryStorage() });
@@ -18,7 +22,7 @@ jest.mock('../config/cloudinary', () => {
         memoryUpload.single(field)(req, res, (err) => {
           if (err) return next(err);
           if (req.file && !req.file.path) {
-            // הוסף URL מדומה כדי שה-route לא יזרוק 400
+            // Generate mock URL for successful route processing
             req.file.path = `http://mock.cloudinary/${req.file.originalname}`;
           }
           next();
@@ -39,13 +43,13 @@ jest.mock('../config/cloudinary', () => {
   };
 });
 
-// Mock axios to avoid external HTTP calls (TSA download etc.)
+// Mock external HTTP requests for TSA and timestamp verification services
 jest.mock('axios', () => ({
   get: jest.fn().mockResolvedValue({ data: Buffer.from('') }),
   post: jest.fn().mockResolvedValue({ data: {} })
 }));
 
-// Set test JWT secret before requiring app
+// Secure test environment configuration
 process.env.JWT_SECRET = 'testsecret';
 process.env.NODE_ENV = 'test';
 
@@ -55,16 +59,18 @@ const User = require('../models/User');
 const path = require('path');
 const fs = require('fs');
 
-// יצירת קובץ דמה לבדיקה
+// Test file path for assignment upload validation
 const testFilePath = path.join(__dirname, 'fixtures', 'dummy.txt');
 
+// Initialize test environment with file fixtures and database
 beforeAll(async () => {
-  // הכנת קובץ דמה
+  // Create test fixtures directory for assignment files
   const fixturesDir = path.join(__dirname, 'fixtures');
   if (!fs.existsSync(fixturesDir)) {
     fs.mkdirSync(fixturesDir, { recursive: true });
   }
   
+  // Generate dummy test file for upload validation
   if (!fs.existsSync(testFilePath)) {
     fs.writeFileSync(testFilePath, 'This is a test file content');
   }
@@ -74,8 +80,9 @@ beforeAll(async () => {
   await mongoose.connect(uri, { useNewUrlParser: true, useUnifiedTopology: true });
 });
 
+// Clean up test environment and remove temporary files
 afterAll(async () => {
-  // ניקוי קובץ הבדיקה
+  // Remove test fixture files
   if (fs.existsSync(testFilePath)) {
     fs.unlinkSync(testFilePath);
   }
@@ -84,13 +91,13 @@ afterAll(async () => {
   await mongo.stop();
 });
 
+// Reset database state for consistent test execution
 beforeEach(async () => {
-  // נקה את הDB לפני כל בדיקה
   await User.deleteMany({});
   await Course.deleteMany({});
 });
 
-// פונקציה עזר ליצירת JWT token תקין
+// Helper function for generating valid authentication tokens
 const generateValidToken = (userId, role = 'Student') => {
   return jwt.sign(
     { id: userId, role: role },
@@ -99,9 +106,11 @@ const generateValidToken = (userId, role = 'Student') => {
   );
 };
 
+// Assignment upload testing with deadline compliance and academic integrity verification
 describe('Upload Assignment Tests', () => {
+  // Test on-time submission with proper timestamp validation
   it('uploads a file on-time and returns isLate=false', async () => {
-    // 1) יצירת משתמשים וקורס
+    // Create teacher and student accounts for realistic test scenario
     const teacher = await User.create({ 
       username: 'Teacher', 
       email: 't@example.com', 
@@ -116,18 +125,19 @@ describe('Upload Assignment Tests', () => {
       role: 'Student' 
     });
     
+    // Create course with future deadline for on-time submission testing
     const course = await Course.create({
       name: 'Test Course',
       creditPoints: 3,
       instructions: 'Upload',
-      deadline: new Date(Date.now() + 60 * 60 * 1000), // שעה קדימה
+      deadline: new Date(Date.now() + 60 * 60 * 1000), // One hour from now
       teacherId: teacher._id,
     });
 
-    // 2) יצירת token תקין
+    // Generate valid authentication token for student
     const token = generateValidToken(student._id, 'Student');
 
-    // 3) ביצוע הבקשה עם Authorization header
+    // Perform file upload with metadata and authentication
     const res = await request(app)
       .post(`/api/courses/${course._id}/upload-assignment`)
       .set('Authorization', `Bearer ${token}`)
@@ -135,7 +145,7 @@ describe('Upload Assignment Tests', () => {
       .field('lastModified', Date.now().toString())
       .attach('file', testFilePath);
 
-    // 4) בדיקת התוצאות
+    // Verify successful upload with proper timestamp validation
     expect(res.statusCode).toBe(201);
     expect(res.body.isLate).toBe(false);
     expect(res.body.assignment).toBeDefined();
@@ -143,8 +153,9 @@ describe('Upload Assignment Tests', () => {
     expect(res.body.assignment.studentId).toBe(student._id.toString());
   });
 
+  // Test late submission detection for academic policy enforcement
   it('uploads a file after deadline and returns isLate=true', async () => {
-    // 1) יצירת משתמשים וקורס עם deadline בעבר
+    // Create test users for late submission scenario
     const teacher = await User.create({ 
       username: 'Teacher2', 
       email: 't2@example.com', 
@@ -159,11 +170,12 @@ describe('Upload Assignment Tests', () => {
       role: 'Student' 
     });
     
+    // Create course with past deadline for late submission testing
     const course = await Course.create({
       name: 'Late Test Course',
       creditPoints: 3,
       instructions: 'Upload',
-      deadline: new Date(Date.now() - 60 * 60 * 1000), // שעה אחורה
+      deadline: new Date(Date.now() - 60 * 60 * 1000), // One hour ago
       teacherId: teacher._id,
     });
 

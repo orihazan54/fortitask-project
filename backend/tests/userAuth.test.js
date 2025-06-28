@@ -1,36 +1,46 @@
 
+// Comprehensive user authentication testing suite for academic assignment management system
+// Tests user registration, login validation, password security, and JWT token generation
+
 const request = require('supertest');
 const mongoose = require('mongoose');
 const { MongoMemoryServer } = require('mongodb-memory-server');
 const jwt = require('jsonwebtoken');
 const bcrypt = require('bcryptjs');
 
+// In-memory database instance for isolated testing
 let mongo;
 
-// Set test environment variables
+// Test environment configuration with secure authentication settings
 process.env.JWT_SECRET = 'testsecret';
 process.env.NODE_ENV = 'test';
 
 const app = require('../server');
 const User = require('../models/User');
 
+// Initialize isolated test database environment
 beforeAll(async () => {
   mongo = await MongoMemoryServer.create();
   const uri = mongo.getUri();
   await mongoose.connect(uri, { useNewUrlParser: true, useUnifiedTopology: true });
 });
 
+// Clean shutdown and resource cleanup
 afterAll(async () => {
   await mongoose.connection.close();
   await mongo.stop();
 });
 
+// Reset user collection for consistent test execution
 beforeEach(async () => {
   await User.deleteMany({});
 });
 
+// Complete user authentication workflow testing for academic system security
 describe('User Authentication Tests', () => {
+  // User registration testing with role-based access control
   describe('POST /api/users/signup', () => {
+    // Test successful student registration with 2FA setup
     it('should register a new student successfully', async () => {
       const userData = {
         username: 'testStudent',
@@ -48,6 +58,7 @@ describe('User Authentication Tests', () => {
       expect(res.body.twoFactorQR).toBeDefined();
     });
 
+    // Test successful teacher registration with admin privileges
     it('should register a new teacher successfully', async () => {
       const userData = {
         username: 'testTeacher',
@@ -64,6 +75,7 @@ describe('User Authentication Tests', () => {
       expect(res.body.message).toBe('User registered successfully! You can now login.');
     });
 
+    // Test duplicate email prevention for data integrity
     it('should reject registration with existing email', async () => {
       const userData = {
         username: 'testUser',
@@ -72,12 +84,12 @@ describe('User Authentication Tests', () => {
         role: 'Student'
       };
 
-      // First registration
+      // Create initial user account
       await request(app)
         .post('/api/users/signup')
         .send(userData);
 
-      // Attempt duplicate registration
+      // Verify duplicate email rejection
       const res = await request(app)
         .post('/api/users/signup')
         .send(userData);
@@ -133,9 +145,10 @@ describe('User Authentication Tests', () => {
     });
   });
 
+  // User login authentication and session management testing
   describe('POST /api/users/login', () => {
+    // Setup authenticated test user for login validation
     beforeEach(async () => {
-      // Create test user for login tests
       const hashedPassword = await bcrypt.hash('TestPassword123!', 12);
       await User.create({
         username: 'loginTestUser',
@@ -145,6 +158,7 @@ describe('User Authentication Tests', () => {
       });
     });
 
+    // Test successful login with JWT token generation
     it('should login with valid credentials', async () => {
       const loginData = {
         email: 'login@test.com',
