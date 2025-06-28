@@ -79,3 +79,96 @@ Object.defineProperty(window, 'matchMedia', {
     dispatchEvent: jest.fn(),
   })),
 });
+
+// Mock URL.createObjectURL
+global.URL.createObjectURL = jest.fn(() => 'mocked-url');
+global.URL.revokeObjectURL = jest.fn();
+
+// Mock File constructor
+global.File = class File extends Blob {
+  constructor(fileParts, fileName, options) {
+    super(fileParts, options);
+    this.name = fileName;
+    this.lastModified = Date.now();
+  }
+};
+
+// Mock FileReader
+global.FileReader = class FileReader {
+  constructor() {
+    this.result = null;
+    this.readyState = 0;
+    this.onload = null;
+    this.onerror = null;
+  }
+  
+  readAsDataURL() {
+    setTimeout(() => {
+      this.result = 'data:text/plain;base64,dGVzdA==';
+      this.readyState = 2;
+      if (this.onload) this.onload();
+    }, 0);
+  }
+  
+  readAsText() {
+    setTimeout(() => {
+      this.result = 'test content';
+      this.readyState = 2;
+      if (this.onload) this.onload();
+    }, 0);
+  }
+};
+
+// Mock ResizeObserver
+global.ResizeObserver = class ResizeObserver {
+  constructor() {}
+  observe() {}
+  unobserve() {}
+  disconnect() {}
+};
+
+// Mock window.scrollTo
+global.scrollTo = jest.fn();
+
+// Mock console methods to reduce noise in tests
+const originalError = console.error;
+beforeAll(() => {
+  console.error = (...args) => {
+    if (
+      typeof args[0] === 'string' &&
+      (args[0].includes('Warning: ReactDOM.render is no longer supported') ||
+       args[0].includes('Warning: An invalid form control'))
+    ) {
+      return;
+    }
+    originalError.call(console, ...args);
+  };
+});
+
+afterAll(() => {
+  console.error = originalError;
+});
+
+// Setup default user info for tests
+beforeEach(() => {
+  localStorageMock.getItem.mockImplementation((key) => {
+    if (key === 'userInfo') {
+      return JSON.stringify({
+        token: 'test-token',
+        userId: 'test-user-id',
+        userRole: 'Student',
+        userName: 'Test User'
+      });
+    }
+    return null;
+  });
+});
+
+// Clean up after each test
+afterEach(() => {
+  jest.clearAllMocks();
+  localStorageMock.getItem.mockReset();
+  localStorageMock.setItem.mockReset();
+  localStorageMock.removeItem.mockReset();
+  localStorageMock.clear.mockReset();
+});
