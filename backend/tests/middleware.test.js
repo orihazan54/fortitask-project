@@ -174,7 +174,8 @@ describe('Authentication Middleware Tests', () => {
   describe('CORS and Security Headers', () => {
     it('should include CORS headers in response', async () => {
       const res = await request(app)
-        .get('/api/health');
+        .get('/api/health')
+        .set('Origin', 'http://localhost:3000');
 
       expect(res.headers['access-control-allow-origin']).toBeDefined();
     });

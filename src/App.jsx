@@ -107,83 +107,89 @@ const ErrorBoundaryRoute = ({ element }) => {
   }
 };
 
+// App Routes component - separated for testing
+export const AppRoutes = () => {
+  return (
+    <Suspense fallback={<Loading />}>
+      <Routes>
+        {/* General Pages */}
+        <Route path="/" element={<Home />} />
+        <Route path="/login" element={<Login />} />
+        <Route path="/signup" element={<SignUp />} />
+        <Route path="/forgot-password" element={<ForgotPassword />} />
+        <Route path="/new-password" element={<NewPassword />} />
+
+        {/* Student Pages */}
+        <Route path="/student-dashboard" element={
+          <ErrorBoundaryRoute element={
+            <PrivateRoute element={<StudentDashboard />} requiredRole="Student" />
+          } />
+        } />
+        <Route path="/student/courses" element={
+          <ErrorBoundaryRoute element={
+            <PrivateRoute element={<StudentCourses />} requiredRole="Student" />
+          } />
+        } />
+        <Route path="/student/profile" element={
+          <ErrorBoundaryRoute element={
+            <PrivateRoute element={<StudentProfile />} requiredRole="Student" />
+          } />
+        } />
+        <Route path="/student/my-courses" element={
+          <ErrorBoundaryRoute element={
+            <PrivateRoute element={<MyCourses />} requiredRole="Student" />
+          } />
+        } />
+        <Route path="/course/:courseId" element={
+          <ErrorBoundaryRoute element={
+            <PrivateRoute element={<CourseDetails />} requiredRole="Student" />
+          } />
+        } />
+
+        {/* Teacher Pages */}
+        <Route path="/teacher-dashboard" element={
+          <ErrorBoundaryRoute element={
+            <PrivateRoute element={<TeacherDashboard />} requiredRole="Teacher" />
+          } />
+        } />
+        <Route path="/teacher/create-course" element={
+          <ErrorBoundaryRoute element={
+            <PrivateRoute element={<CreateCourse />} requiredRole="Teacher" />
+          } />
+        } />
+        <Route path="/teacher/manage-courses" element={
+          <ErrorBoundaryRoute element={
+            <PrivateRoute element={<ManageCourses />} requiredRole="Teacher" />
+          } />
+        } />
+        <Route path="/teacher/profile" element={
+          <ErrorBoundaryRoute element={
+            <PrivateRoute element={<TeacherProfile />} requiredRole="Teacher" />
+          } />
+        } />
+        <Route path="/teacher/view-students" element={
+          <ErrorBoundaryRoute element={
+            <PrivateRoute element={<ViewStudents />} requiredRole="Teacher" />
+          } />
+        } />
+
+        {/* Dynamic Profile Page */}
+        <Route path="/profile" element={<ProfilePage />} />
+
+        {/* Root path for the application */}
+        <Route path="/index" element={<Navigate to="/" />} />
+
+        {/* Catch-all redirect to home */}
+        <Route path="*" element={<Navigate to="/" replace />} />
+      </Routes>
+    </Suspense>
+  );
+};
+
 const App = () => {
   return (
     <Router>
-      <Suspense fallback={<Loading />}>
-        <Routes>
-          {/* General Pages */}
-          <Route path="/" element={<Home />} />
-          <Route path="/login" element={<Login />} />
-          <Route path="/signup" element={<SignUp />} />
-          <Route path="/forgot-password" element={<ForgotPassword />} />
-          <Route path="/new-password" element={<NewPassword />} />
-
-          {/* Student Pages */}
-          <Route path="/student-dashboard" element={
-            <ErrorBoundaryRoute element={
-              <PrivateRoute element={<StudentDashboard />} requiredRole="Student" />
-            } />
-          } />
-          <Route path="/student/courses" element={
-            <ErrorBoundaryRoute element={
-              <PrivateRoute element={<StudentCourses />} requiredRole="Student" />
-            } />
-          } />
-          <Route path="/student/profile" element={
-            <ErrorBoundaryRoute element={
-              <PrivateRoute element={<StudentProfile />} requiredRole="Student" />
-            } />
-          } />
-          <Route path="/student/my-courses" element={
-            <ErrorBoundaryRoute element={
-              <PrivateRoute element={<MyCourses />} requiredRole="Student" />
-            } />
-          } />
-          <Route path="/course/:courseId" element={
-            <ErrorBoundaryRoute element={
-              <PrivateRoute element={<CourseDetails />} requiredRole="Student" />
-            } />
-          } />
-
-          {/* Teacher Pages */}
-          <Route path="/teacher-dashboard" element={
-            <ErrorBoundaryRoute element={
-              <PrivateRoute element={<TeacherDashboard />} requiredRole="Teacher" />
-            } />
-          } />
-          <Route path="/teacher/create-course" element={
-            <ErrorBoundaryRoute element={
-              <PrivateRoute element={<CreateCourse />} requiredRole="Teacher" />
-            } />
-          } />
-          <Route path="/teacher/manage-courses" element={
-            <ErrorBoundaryRoute element={
-              <PrivateRoute element={<ManageCourses />} requiredRole="Teacher" />
-            } />
-          } />
-          <Route path="/teacher/profile" element={
-            <ErrorBoundaryRoute element={
-              <PrivateRoute element={<TeacherProfile />} requiredRole="Teacher" />
-            } />
-          } />
-          <Route path="/teacher/view-students" element={
-            <ErrorBoundaryRoute element={
-              <PrivateRoute element={<ViewStudents />} requiredRole="Teacher" />
-            } />
-          } />
-
-          {/* Dynamic Profile Page */}
-          <Route path="/profile" element={<ProfilePage />} />
-
-          {/* Root path for the application */}
-          <Route path="/index" element={<Navigate to="/" />} />
-
-          {/* Catch-all redirect to home */}
-          <Route path="*" element={<Navigate to="/" replace />} />
-        </Routes>
-      </Suspense>
-      
+      <AppRoutes />
       <Toaster 
         position="top-right"
         expand={true}

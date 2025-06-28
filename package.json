@@ -40,6 +40,7 @@
     "build": "react-scripts build",
     "build:dev": "react-scripts build",
     "test": "react-scripts test",
+    "test:report": "node generate-test-report.js",
     "eject": "react-scripts eject",
     "test:backend": "npm --prefix backend test",
     "test:frontend": "react-scripts test --coverage --watchAll=false",
@@ -68,6 +69,7 @@
     "@testing-library/jest-dom": "^6.6.3",
     "@testing-library/react": "^13.4.0",
     "@testing-library/user-event": "^14.4.3",
+    "jest-html-reporters": "^3.1.7",
     "vite": "^6.3.5"
   }
 }

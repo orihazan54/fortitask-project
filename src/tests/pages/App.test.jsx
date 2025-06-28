@@ -10,7 +10,7 @@ jest.mock('../../services/api', () => ({
   checkAuthentication: jest.fn(() => ({ isAuthenticated: false, role: null }))
 }));
 
-import App from '../../App';
+import App, { AppRoutes } from '../../App';
 import { mockAuth } from '../utiles/test-utils';
 
 jest.spyOn(api, 'checkAuthentication').mockImplementation(() => ({ isAuthenticated: false, role: null }));
@@ -18,7 +18,7 @@ jest.spyOn(api, 'checkAuthentication').mockImplementation(() => ({ isAuthenticat
 const renderAppWithRoute = (initialRoute = '/') => {
   return render(
     <MemoryRouter initialEntries={[initialRoute]}>
-      <App />
+      <AppRoutes />
     </MemoryRouter>
   );
 };
