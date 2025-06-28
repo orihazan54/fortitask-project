@@ -11,7 +11,9 @@ import {
 import Sidebar from "../../components/Sidebar";
 import "../../styles/TeacherDashboard.css";
 
+// Professional teacher dashboard with comprehensive course management and analytics
 const TeacherDashboard = () => {
+  // State management for course selection and dashboard metrics
   const [courseId, setCourseId] = useState("");
   const [courses, setCourses] = useState([]);
   const [teacherName, setTeacherName] = useState("Teacher");
@@ -21,10 +23,12 @@ const TeacherDashboard = () => {
     totalAssignments: 0
   });
 
+  // Advanced data aggregation for teacher analytics and course overview
   // שליפת רשימת הקורסים מהשרת ופרטי המרצה
   useEffect(() => {
     const fetchData = async () => {
       try {
+        // Teacher profile information retrieval with fallback handling
         // שליפת פרטי המרצה
         const userId = localStorage.getItem("userId");
         if (userId) {
@@ -38,16 +42,19 @@ const TeacherDashboard = () => {
           }
         }
 
+        // Comprehensive course data fetching with analytics calculation
         // שליפת הקורסים
         const { data } = await getCourses();
         setCourses(data);
         setStats(prev => ({...prev, totalCourses: data.length}));
         
+        // Real-time student enrollment analytics across all courses
         // חישוב סך כל התלמידים (סכום התלמידים בכל הקורסים)
         const totalStudents = data.reduce((sum, course) => 
           sum + (course.students?.length || 0), 0);
         setStats(prev => ({...prev, totalStudents}));
         
+        // Assignment portfolio analytics for academic workload tracking
         // חישוב סך כל המטלות (סכום המטלות בכל הקורסים)
         const totalAssignments = data.reduce((sum, course) =>
           sum + (course.assignments?.length || 0), 0);
@@ -61,6 +68,7 @@ const TeacherDashboard = () => {
     fetchData();
   }, []);
 
+  // Interactive course selection for detailed management
   // בחירת קורס
   const handleCourseClick = (id) => setCourseId(id);
 
@@ -70,10 +78,12 @@ const TeacherDashboard = () => {
       <div className="dashboard-container">
         <Sidebar role="Teacher" />
         <main className="main-content animate-fade-in">
+          {/* Personalized welcome header with teacher identification */}
           <h2 className="dashboard-title">
             <span className="dashboard-icon">📊</span> Welcome back, {teacherName}!
           </h2>
 
+          {/* Real-time analytics dashboard with key performance indicators */}
           <div className="stats-container">
             <div className="stat-card">
               <div className="stat-icon">
@@ -106,6 +116,7 @@ const TeacherDashboard = () => {
             </div>
           </div>
 
+          {/* Interactive course management table with enrollment tracking */}
           {/* הצגת רשימת הקורסים כטבלה */}
           <div className="courses-section">
             <h3 className="section-title">
@@ -133,6 +144,7 @@ const TeacherDashboard = () => {
                       </tr>
                     ))
                   ) : (
+                    // Helpful empty state with course creation guidance
                     <tr>
                       <td colSpan="2" className="no-courses">
                         <p>No courses available. Create your first course to get started.</p>

@@ -1,9 +1,12 @@
+// Navigation bar testing for role-based access control and user session management
+// Tests authentication states, route navigation, and user interface consistency
+
 import React from 'react';
 import { render, screen, fireEvent } from '@testing-library/react';
 import { BrowserRouter } from 'react-router-dom';
 import NavBar from '../../components/NavBar';
 
-// Mock useNavigate and useLocation
+// Mock React Router hooks for controlled navigation testing
 const mockNavigate = jest.fn();
 const mockLocation = { pathname: '/' };
 
@@ -13,6 +16,7 @@ jest.mock('react-router-dom', () => ({
   useLocation: () => mockLocation,
 }));
 
+// Helper function for rendering navigation component with routing context
 const renderNavBar = () => {
   return render(
     <BrowserRouter>
@@ -21,12 +25,15 @@ const renderNavBar = () => {
   );
 };
 
+// Navigation component comprehensive testing for authentication and user experience
 describe('NavBar Component', () => {
+  // Reset navigation mocks and authentication state
   beforeEach(() => {
     jest.clearAllMocks();
     localStorage.clear();
   });
 
+  // Test brand identity and logo rendering
   test('renders logo and site name', () => {
     renderNavBar();
     
@@ -34,6 +41,7 @@ describe('NavBar Component', () => {
     expect(screen.getByAltText('Fortitask Logo')).toBeInTheDocument();
   });
 
+  // Test navigation context awareness for authentication pages
   test('shows home button on auth pages', () => {
     mockLocation.pathname = '/login';
     renderNavBar();
@@ -41,6 +49,7 @@ describe('NavBar Component', () => {
     expect(screen.getByText('Home')).toBeInTheDocument();
   });
 
+  // Test authenticated user interface elements
   test('shows profile and logout for authenticated users', () => {
     localStorage.setItem('role', 'Student');
     mockLocation.pathname = '/student-dashboard';
@@ -51,12 +60,13 @@ describe('NavBar Component', () => {
     expect(screen.getByText('Logout')).toBeInTheDocument();
   });
 
+  // Test secure logout functionality and session cleanup
   test('logout functionality works correctly', () => {
     localStorage.setItem('token', 'fake-token');
     localStorage.setItem('role', 'Teacher');
     mockLocation.pathname = '/teacher-dashboard';
 
-    // Spy on removeItem before rendering
+    // Monitor localStorage operations for security validation
     const removeSpy = jest.spyOn(Storage.prototype, 'removeItem');
     
     renderNavBar();
@@ -69,6 +79,7 @@ describe('NavBar Component', () => {
     expect(mockNavigate).toHaveBeenCalledWith('/');
   });
 
+  // Test role-based navigation for student users
   test('profile link redirects correctly for students', () => {
     localStorage.setItem('role', 'Student');
     mockLocation.pathname = '/student-dashboard';
@@ -79,6 +90,7 @@ describe('NavBar Component', () => {
     expect(profileLink.closest('a')).toHaveAttribute('href', '/student/profile');
   });
 
+  // Test role-based navigation for teacher users
   test('profile link redirects correctly for teachers', () => {
     localStorage.setItem('role', 'Teacher');
     mockLocation.pathname = '/teacher-dashboard';

@@ -8,26 +8,29 @@ import {
 import { getUserDetails, updateUserDetails, setupTwoFactorAuth, validateTwoFactorAuth, disableTwoFactorAuth } from "../../services/api";
 import "../../styles/TeacherProfile.css";
 
-// Function to format date to a readable string
+// Utility function for professional date formatting across the application
 function formatDate(dateString) {
   if (!dateString) return "Not available";
   return new Date(dateString).toLocaleDateString();
 }
 
+// Comprehensive teacher profile management with advanced security features and Two-Factor Authentication
 const TeacherProfile = () => {
   const navigate = useNavigate();
+  
+  // Core profile state management for teacher interface
   const [user, setUser] = useState(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState("");
   
-  // Edit profile states
+  // Profile editing interface with form validation and data management
   const [isEditingProfile, setIsEditingProfile] = useState(false);
   const [profileData, setProfileData] = useState({
     username: "",
     email: ""
   });
   
-  // Password change states
+  // Advanced password management system with security validation
   const [isChangingPassword, setIsChangingPassword] = useState(false);
   const [passwordData, setPasswordData] = useState({
     currentPassword: "",
@@ -39,7 +42,7 @@ const TeacherProfile = () => {
   const [showConfirmPassword, setShowConfirmPassword] = useState(false);
   const [passwordStrength, setPasswordStrength] = useState("");
   
-  // Two-factor authentication states
+  // Enhanced Two-Factor Authentication system for teacher security
   const [showTwoFactorSetup, setShowTwoFactorSetup] = useState(false);
   const [twoFactorData, setTwoFactorData] = useState({
     qrCode: "",

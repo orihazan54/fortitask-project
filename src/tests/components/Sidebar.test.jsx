@@ -1,9 +1,13 @@
 
+// Role-based sidebar navigation testing for academic portal interface
+// Tests student and teacher portal access, navigation structure, and route validation
+
 import React from 'react';
 import { render, screen } from '@testing-library/react';
 import { BrowserRouter } from 'react-router-dom';
 import Sidebar from '../../components/Sidebar';
 
+// Helper function for rendering sidebar with role-specific context
 const renderSidebar = (role) => {
   return render(
     <BrowserRouter>
@@ -12,7 +16,9 @@ const renderSidebar = (role) => {
   );
 };
 
+// Sidebar navigation component testing for role-based access control
 describe('Sidebar Component', () => {
+  // Test student portal interface and navigation elements
   test('renders student sidebar correctly', () => {
     renderSidebar('Student');
     
@@ -23,6 +29,7 @@ describe('Sidebar Component', () => {
     expect(screen.getByText('My Profile')).toBeInTheDocument();
   });
 
+  // Test teacher portal interface and administrative navigation
   test('renders teacher sidebar correctly', () => {
     renderSidebar('Teacher');
     
@@ -34,6 +41,7 @@ describe('Sidebar Component', () => {
     expect(screen.getByText('My Profile')).toBeInTheDocument();
   });
 
+  // Test student navigation route accuracy and accessibility
   test('student sidebar has correct navigation links', () => {
     renderSidebar('Student');
     
@@ -43,6 +51,7 @@ describe('Sidebar Component', () => {
     expect(screen.getByText('My Profile').closest('a')).toHaveAttribute('href', '/student/profile');
   });
 
+  // Test teacher navigation route accuracy and administrative access
   test('teacher sidebar has correct navigation links', () => {
     renderSidebar('Teacher');
     
@@ -53,6 +62,7 @@ describe('Sidebar Component', () => {
     expect(screen.getByText('My Profile').closest('a')).toHaveAttribute('href', '/teacher/profile');
   });
 
+  // Test footer branding and copyright information
   test('displays copyright notice', () => {
     renderSidebar('Student');
     

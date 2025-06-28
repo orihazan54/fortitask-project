@@ -5,7 +5,9 @@ import { toast } from "sonner";
 import "../styles/NewPassword.css";
 import { Eye, EyeOff, CheckCircle, AlertCircle } from "lucide-react";
 
+// Secure password reset component with comprehensive validation and strength checking
 const NewPassword = () => {
+  // State management for password reset workflow
   const [newPassword, setNewPassword] = useState("");
   const [confirmPassword, setConfirmPassword] = useState("");
   const [passwordStrength, setPasswordStrength] = useState("");
@@ -17,6 +19,7 @@ const NewPassword = () => {
   const location = useLocation();
   const { email, verificationCode } = location.state || {}; // Get email and verification code from navigation state
 
+  // Comprehensive password security requirements configuration
   // Password requirements criteria
   const requirements = [
     { id: "length", label: "At least 8 characters", regex: /.{8,}/ },
@@ -26,6 +29,7 @@ const NewPassword = () => {
     { id: "special", label: "At least one special character (!@#$%^&*)", regex: /[@$!%*?&#]/ }
   ];
 
+  // Security validation to ensure proper reset flow
   useEffect(() => {
     // Redirect if missing required data
     if (!email || !verificationCode) {
@@ -34,6 +38,7 @@ const NewPassword = () => {
     }
   }, [email, verificationCode, navigate]);
 
+  // Advanced password strength analysis with multiple security criteria
   const checkPasswordStrength = (password) => {
     if (!password) return "";
     
@@ -49,6 +54,7 @@ const NewPassword = () => {
     return "Weak";
   };
 
+  // Real-time password validation with strength assessment
   const handleNewPasswordChange = (e) => {
     const value = e.target.value;
     setNewPassword(value);
@@ -56,7 +62,9 @@ const NewPassword = () => {
     setError("");
   };
 
+  // Comprehensive password reset submission with validation
   const handleResetPassword = async () => {
+    // Client-side validation before submission
     if (!newPassword || !confirmPassword) {
       setError("Please fill in all fields.");
       return;
@@ -72,6 +80,7 @@ const NewPassword = () => {
       return;
     }
 
+    // Ensure all security requirements are met
     // Check all password requirements
     for (const requirement of requirements) {
       if (!requirement.regex.test(newPassword)) {
@@ -118,6 +127,7 @@ const NewPassword = () => {
         <h2>Create a New Password</h2>
         <p>Enter your new password below.</p>
         
+        {/* Error message display with visual indicators */}
         {error && (
           <div className="error-message">
             <AlertCircle size={18} />
@@ -125,6 +135,7 @@ const NewPassword = () => {
           </div>
         )}
         
+        {/* Secure password input with visibility toggle */}
         <div className="password-field">
           <input
             type={showNewPassword ? "text" : "password"}
@@ -141,12 +152,14 @@ const NewPassword = () => {
           </span>
         </div>
         
+        {/* Real-time password strength feedback */}
         {passwordStrength && (
           <p className={`password-strength ${passwordStrength.toLowerCase()}`}>
             Password Strength: {passwordStrength}
           </p>
         )}
         
+        {/* Password confirmation input with visibility toggle */}
         <div className="password-field">
           <input
             type={showConfirmPassword ? "text" : "password"}
@@ -166,6 +179,7 @@ const NewPassword = () => {
           </span>
         </div>
         
+        {/* Interactive password requirements checklist */}
         <div className="password-requirements">
           <h4>Password Requirements:</h4>
           <ul>
@@ -183,6 +197,7 @@ const NewPassword = () => {
           </ul>
         </div>
         
+        {/* Password reset submission button with loading state */}
         <button 
           className="reset-button"
           onClick={handleResetPassword}
@@ -191,6 +206,7 @@ const NewPassword = () => {
           {isLoading ? "Resetting..." : "Reset Password"}
         </button>
         
+        {/* Navigation back to forgot password page */}
         <p className="mt-4">
           <button 
             className="text-link" 

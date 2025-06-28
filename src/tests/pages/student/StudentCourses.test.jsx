@@ -1,3 +1,6 @@
+// Comprehensive student course discovery and enrollment testing for academic system
+// Tests course search, filtering, registration workflow, and user interface interactions
+
 import React from 'react';
 import { render, screen, fireEvent, waitFor } from '@testing-library/react';
 import { BrowserRouter } from 'react-router-dom';
@@ -5,7 +8,7 @@ import { toast } from 'sonner';
 import StudentCourses from '../../../pages/student/StudentCourses';
 import * as api from '../../../services/api';
 
-// Mock dependencies
+// Mock notification system for enrollment feedback
 jest.mock('sonner', () => ({
   toast: {
     success: jest.fn(),
@@ -13,19 +16,20 @@ jest.mock('sonner', () => ({
   }
 }));
 
+// Mock API services for course discovery and registration
 jest.mock('../../../services/api', () => ({
   getCourses: jest.fn(),
   registerToCourse: jest.fn()
 }));
 
-// Mock react-router-dom
+// Mock React Router for controlled navigation testing
 const mockNavigate = jest.fn();
 jest.mock('react-router-dom', () => ({
   ...jest.requireActual('react-router-dom'),
   useNavigate: () => mockNavigate
 }));
 
-// Mock NavBar and Sidebar
+// Mock navigation components for isolated testing
 jest.mock('../../../components/NavBar', () => {
   return function NavBar() {
     return <div data-testid="navbar">NavBar</div>;
@@ -38,9 +42,10 @@ jest.mock('../../../components/Sidebar', () => {
   };
 });
 
-// Mock timers for setTimeout
+// Mock timers for debounced search functionality testing
 jest.useFakeTimers();
 
+// Helper function for rendering student courses component with routing context
 const renderStudentCourses = () => {
   return render(
     <BrowserRouter>
@@ -49,19 +54,24 @@ const renderStudentCourses = () => {
   );
 };
 
+// Student course discovery interface testing for enrollment workflow
 describe('StudentCourses Component', () => {
+  // Setup test environment with clean state
   beforeEach(() => {
     jest.clearAllMocks();
     jest.clearAllTimers();
   });
 
+  // Clean up timer state for consistent test execution
   afterEach(() => {
     jest.runOnlyPendingTimers();
     jest.useRealTimers();
     jest.useFakeTimers();
   });
 
+  // Test initial course loading and interface rendering
   describe('Initial Loading', () => {
+    // Test loading state display during course data retrieval
     test('shows loading state when fetching courses', () => {
       api.getCourses.mockImplementation(() => new Promise(() => {})); // Never resolves
       
@@ -74,6 +84,7 @@ describe('StudentCourses Component', () => {
       expect(screen.getByText('Discover and enroll in new academic opportunities')).toBeInTheDocument();
     });
 
+    // Test successful course data loading and display
     test('loads and displays courses successfully', async () => {
       const mockCourses = [
         {
@@ -138,7 +149,9 @@ describe('StudentCourses Component', () => {
     });
   });
 
+  // Test intelligent search and filtering functionality
   describe('Search Functionality', () => {
+    // Setup course data for search testing
     beforeEach(async () => {
       const mockCourses = [
         {
@@ -169,6 +182,7 @@ describe('StudentCourses Component', () => {
       });
     });
 
+    // Test course name filtering functionality
     test('filters courses by course name', async () => {
       const searchInput = screen.getByPlaceholderText('Search courses by name or teacher...');
       

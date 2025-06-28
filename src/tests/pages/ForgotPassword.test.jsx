@@ -1,3 +1,6 @@
+// Comprehensive password reset testing with security validation and user experience
+// Tests email verification, password strength validation, multi-step workflow, and error handling
+
 import React from 'react';
 import { render, screen, fireEvent, waitFor } from '@testing-library/react';
 import { BrowserRouter } from 'react-router-dom';
@@ -6,20 +9,20 @@ import ForgotPassword from '../../pages/ForgotPassword';
 import * as api from '../../services/api';
 import { toast } from 'sonner';
 
-// Mock the API calls
+// Mock API services for password reset workflow
 jest.mock('../../services/api', () => ({
   sendPasswordResetEmail: jest.fn(),
   resetPassword: jest.fn(),
 }));
 
-// Mock react-router-dom
+// Mock React Router for controlled navigation testing
 const mockNavigate = jest.fn();
 jest.mock('react-router-dom', () => ({
   ...jest.requireActual('react-router-dom'),
   useNavigate: () => mockNavigate,
 }));
 
-// Mock toast
+// Mock notification system for user feedback
 jest.mock('sonner', () => ({
   toast: {
     error: jest.fn(),
@@ -27,6 +30,7 @@ jest.mock('sonner', () => ({
   },
 }));
 
+// Helper function for rendering password reset component with routing context
 const renderForgotPassword = () => {
   return render(
     <BrowserRouter>
@@ -35,13 +39,17 @@ const renderForgotPassword = () => {
   );
 };
 
+// Password reset workflow testing for secure account recovery
 describe('ForgotPassword Component', () => {
+  // Reset test state and navigation mocks
   beforeEach(() => {
     jest.clearAllMocks();
     mockNavigate.mockClear();
   });
 
+  // Test initial email entry step for account verification
   describe('Step 1 - Email Entry', () => {
+    // Test email entry interface rendering
     test('renders step 1 correctly', () => {
       renderForgotPassword();
       
@@ -51,6 +59,7 @@ describe('ForgotPassword Component', () => {
       expect(screen.getByText('Send Reset Email')).toBeInTheDocument();
     });
 
+    // Test email format validation for security
     test('validates email format before sending', async () => {
       const user = userEvent.setup();
       renderForgotPassword();
@@ -58,7 +67,7 @@ describe('ForgotPassword Component', () => {
       const emailInput = screen.getByPlaceholderText('Enter your email address');
       const sendButton = screen.getByText('Send Reset Email');
 
-      // Test invalid email
+      // Test invalid email format rejection
       await user.type(emailInput, 'invalid-email');
       await user.click(sendButton);
 
@@ -66,6 +75,7 @@ describe('ForgotPassword Component', () => {
       expect(api.sendPasswordResetEmail).not.toHaveBeenCalled();
     });
 
+    // Test successful email verification workflow
     test('sends password reset email successfully', async () => {
       const user = userEvent.setup();
       api.sendPasswordResetEmail.mockResolvedValue({ success: true });
@@ -83,7 +93,7 @@ describe('ForgotPassword Component', () => {
         expect(toast.success).toHaveBeenCalledWith('Verification code sent to your email');
       });
 
-      // Should move to step 2
+      // Verify progression to verification step
       expect(screen.getByText('Enter Verification Code')).toBeInTheDocument();
     });
 
@@ -123,7 +133,9 @@ describe('ForgotPassword Component', () => {
     });
   });
 
+  // Test secure password reset with verification code validation
   describe('Step 2 - Password Reset', () => {
+    // Setup verification step for password reset testing
     beforeEach(async () => {
       const user = userEvent.setup();
       api.sendPasswordResetEmail.mockResolvedValue({ success: true });
@@ -141,6 +153,7 @@ describe('ForgotPassword Component', () => {
       });
     });
 
+    // Test password reset interface rendering
     test('renders step 2 correctly', () => {
       expect(screen.getByText('Enter Verification Code')).toBeInTheDocument();
       expect(screen.getByPlaceholderText('Enter verification code')).toBeInTheDocument();
@@ -151,6 +164,7 @@ describe('ForgotPassword Component', () => {
       expect(screen.getByText('Reset Password')).toBeInTheDocument();
     });
 
+    // Test password security requirements display
     test('shows password requirements', () => {
       expect(screen.getByText('At least 8 characters')).toBeInTheDocument();
       expect(screen.getByText('At least one uppercase letter')).toBeInTheDocument();
@@ -159,6 +173,7 @@ describe('ForgotPassword Component', () => {
       expect(screen.getByText('At least one special character (!@#$%^&*)')).toBeInTheDocument();
     });
 
+    // Test password visibility toggle for user experience
     test('toggles password visibility', async () => {
       const user = userEvent.setup();
       
@@ -168,13 +183,13 @@ describe('ForgotPassword Component', () => {
       expect(newPasswordInput).toHaveAttribute('type', 'password');
       expect(confirmPasswordInput).toHaveAttribute('type', 'password');
 
-      // Find toggle buttons using container query
+      // Locate password visibility toggle controls
       const container = screen.getByText('Reset Your Password').closest('.card');
       const toggleButtons = container.querySelectorAll('.password-toggle');
       
       expect(toggleButtons).toHaveLength(2);
       
-      // Click first toggle for new password
+      // Test password visibility toggle functionality
       await user.click(toggleButtons[0]);
       
       await waitFor(() => {

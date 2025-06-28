@@ -7,7 +7,9 @@ import { toast } from "sonner";
 import { Search, RefreshCw, Calendar, Clock, AlertTriangle, FileText, Info, ArrowLeft } from "lucide-react";
 import "../../styles/MyCourses.css";
 
+// Comprehensive enrolled course management interface with progress tracking and navigation
 const MyCourses = () => {
+  // State management for course data and user interactions
   const [courses, setCourses] = useState([]);
   const [filteredCourses, setFilteredCourses] = useState([]);
   const [searchTerm, setSearchTerm] = useState("");
@@ -17,6 +19,7 @@ const MyCourses = () => {
   const [showToasts, setShowToasts] = useState(false); // Control toast display
   const navigate = useNavigate();
 
+  // Advanced course data fetching with retry mechanism and error handling
   const fetchCourses = useCallback(async () => {
     setLoading(true);
     setError(null);
@@ -25,6 +28,7 @@ const MyCourses = () => {
       console.log(`Attempt ${retryCount + 1}: Fetching enrolled courses...`);
       const { data } = await getMyCourses();
       
+      // Comprehensive data validation and state management
       if (Array.isArray(data) && data.length > 0) {
         console.log("Enrolled courses fetched successfully:", data);
         setCourses(data);
@@ -39,6 +43,7 @@ const MyCourses = () => {
         console.error("Invalid data format received:", data);
         setError("Received invalid data format. Please try again.");
         
+        // Smart error notification system with toast control
         // Only show toast if enabled (not on initial load)
         if (showToasts) {
                       toast.error("Received invalid data format. Please try again.");
@@ -52,6 +57,7 @@ const MyCourses = () => {
       console.error("Failed to load enrolled courses:", error);
       setError("Failed to load your courses. Please try again.");
       
+      // Controlled error messaging to prevent notification spam
       // Only show toast if enabled (not on initial load)
       if (showToasts) {
                   toast.error("Failed to load your courses. Please try again.");
@@ -63,6 +69,7 @@ const MyCourses = () => {
     } finally {
       setLoading(false);
       
+      // Enable toast notifications after initial load completion
       // Once first load is complete, enable toasts for subsequent operations
       if (!showToasts) {
         setShowToasts(true);
@@ -70,10 +77,12 @@ const MyCourses = () => {
     }
   }, [retryCount, showToasts]);
 
+  // Initial course data loading on component mount
   useEffect(() => {
     fetchCourses();
   }, [fetchCourses]);
 
+  // Intelligent auto-retry mechanism for failed requests
   // Only attempt auto-retry once, and only if there's an error
   useEffect(() => {
     if (error && retryCount > 0 && retryCount <= 1) {
@@ -86,10 +95,12 @@ const MyCourses = () => {
     }
   }, [retryCount, fetchCourses, error]);
 
+  // Real-time search functionality with multi-field filtering
   const handleSearchChange = (e) => {
     const term = e.target.value.toLowerCase();
     setSearchTerm(term);
     
+    // Smart search implementation with course and teacher name filtering
     if (term === "") {
       setFilteredCourses(courses);
     } else {
@@ -101,10 +112,12 @@ const MyCourses = () => {
     }
   };
 
+  // Seamless navigation to course details for enhanced user experience
   const navigateToCourseDetails = (courseId) => {
     navigate(`/course/${courseId}`);
   };
 
+  // Smart deadline tracking with time remaining calculation
   const getTimeRemaining = (deadline) => {
     const now = new Date();
     const deadlineDate = new Date(deadline);
@@ -124,6 +137,7 @@ const MyCourses = () => {
     }
   };
 
+  // Assignment progress tracking for individual students
   const countSubmittedAssignments = (course) => {
     if (!course.assignments) return 0;
     
@@ -139,11 +153,14 @@ const MyCourses = () => {
       <div className="courses-container">
         <Sidebar role="Student" />
         <main className="main-content">
+          {/* Professional header with course management branding */}
           <div className="courses-header">
             <div>
               <h1 className="page-title">My Enrolled Courses</h1>
               <p className="page-description">Manage your course progress and assignments</p>
             </div>
+            
+            {/* Action buttons for course refresh and navigation */}
             <div className="header-actions">
               <button
                 className="refresh-btn"
@@ -163,6 +180,7 @@ const MyCourses = () => {
             </div>
           </div>
 
+          {/* Error state handling with retry functionality */}
           {error && (
             <div className="error-banner">
               <AlertTriangle size={20} />
@@ -171,6 +189,7 @@ const MyCourses = () => {
             </div>
           )}
 
+          {/* Intelligent search interface for course filtering */}
           <div className="search-container">
             <div className="search-box">
               <Search className="search-icon" size={18} />
@@ -184,12 +203,15 @@ const MyCourses = () => {
             </div>
           </div>
 
+          {/* Dynamic content rendering based on data state */}
           {loading ? (
+            // Professional loading indicator with course-specific messaging
             <div className="loading-container">
               <div className="spinner"></div>
               <p>Loading your courses...</p>
             </div>
           ) : filteredCourses.length === 0 ? (
+            // Empty state with helpful guidance and navigation
             <div className="no-courses">
               <Info size={48} className="no-courses-icon" />
               <h3>No Enrolled Courses Found</h3>

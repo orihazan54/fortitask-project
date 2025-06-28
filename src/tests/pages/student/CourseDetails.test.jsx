@@ -1,3 +1,6 @@
+// Comprehensive course details testing for student assignment submission and academic integrity
+// Tests file upload, deadline compliance, submission management, and course information display
+
 import React from 'react';
 import { render, screen, fireEvent, waitFor } from '@testing-library/react';
 import { BrowserRouter } from 'react-router-dom';
@@ -5,7 +8,7 @@ import { toast } from 'sonner';
 import CourseDetails from '../../../pages/student/CourseDetails';
 import * as api from '../../../services/api';
 
-// Mock all dependencies
+// Mock notification system for user feedback testing
 jest.mock('sonner', () => ({
   toast: {
     success: jest.fn(),
@@ -14,6 +17,7 @@ jest.mock('sonner', () => ({
   }
 }));
 
+// Mock API services for course management and assignment operations
 jest.mock('../../../services/api', () => ({
   getCourseDetails: jest.fn(),
   uploadAssignment: jest.fn(),
@@ -21,7 +25,7 @@ jest.mock('../../../services/api', () => ({
   deleteAssignment: jest.fn()
 }));
 
-// Mock react-router-dom
+// Mock React Router for controlled navigation and parameter testing
 const mockNavigate = jest.fn();
 jest.mock('react-router-dom', () => ({
   ...jest.requireActual('react-router-dom'),
@@ -29,7 +33,7 @@ jest.mock('react-router-dom', () => ({
   useNavigate: () => mockNavigate
 }));
 
-// Mock all component dependencies
+// Mock component dependencies for isolated course details testing
 jest.mock('../../../components/NavBar', () => {
   return function NavBar() {
     return <div data-testid="navbar">NavBar</div>;
@@ -141,6 +145,7 @@ jest.mock('../../../components/course/DeleteConfirmationModal', () => {
   };
 });
 
+// Helper function for rendering course details component with routing context
 const renderCourseDetails = () => {
   return render(
     <BrowserRouter>
@@ -149,11 +154,13 @@ const renderCourseDetails = () => {
   );
 };
 
+// Course details interface testing for assignment submission workflow
 describe('CourseDetails Component', () => {
+  // Setup test environment with authentication and storage mocks
   beforeEach(() => {
     jest.clearAllMocks();
     
-    // Mock localStorage
+    // Mock localStorage for user session and authentication
     Object.defineProperty(window, 'localStorage', {
       value: {
         getItem: jest.fn((key) => {
@@ -167,7 +174,9 @@ describe('CourseDetails Component', () => {
     });
   });
 
+  // Test loading state management for course data retrieval
   describe('Loading State', () => {
+    // Test loading indicator during course data fetch
     test('shows loading spinner when fetching course details', () => {
       api.getCourseDetails.mockImplementation(() => new Promise(() => {})); // Never resolves
       
@@ -179,7 +188,9 @@ describe('CourseDetails Component', () => {
     });
   });
 
+  // Test course information display and data validation
   describe('Course Data Loading', () => {
+    // Test successful course details rendering with complete information
     test('loads and displays course details successfully', async () => {
       const mockCourse = {
         _id: 'test-course-123',

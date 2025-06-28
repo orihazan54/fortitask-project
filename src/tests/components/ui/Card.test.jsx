@@ -1,9 +1,13 @@
+// Card component design system testing for layout structure and content organization
+// Tests card composition, styling consistency, and semantic HTML structure
 
 import React from 'react';
 import { render, screen } from '@testing-library/react';
 import { Card, CardHeader, CardTitle, CardDescription, CardContent, CardFooter } from '../../../components/ui/card';
 
+// Card component system testing for layout and content organization
 describe('Card Components', () => {
+  // Test base card styling with glassmorphism design
   test('Card renders with default styling', () => {
     render(<Card data-testid="card">Card content</Card>);
     
@@ -12,12 +16,14 @@ describe('Card Components', () => {
     expect(card).toHaveClass('rounded-lg', 'border', 'bg-[rgba(30,41,59,0.7)]', 'backdrop-blur-md');
   });
 
+  // Test card customization flexibility
   test('Card accepts custom className', () => {
     render(<Card className="custom-card" data-testid="card">Content</Card>);
     
     expect(screen.getByTestId('card')).toHaveClass('custom-card');
   });
 
+  // Test card header component for content introduction
   test('CardHeader renders correctly', () => {
     render(<CardHeader data-testid="header">Header content</CardHeader>);
     
@@ -26,6 +32,7 @@ describe('Card Components', () => {
     expect(header).toHaveClass('flex', 'flex-col', 'space-y-1.5', 'p-6');
   });
 
+  // Test semantic title component with proper heading hierarchy
   test('CardTitle renders correctly', () => {
     render(<CardTitle>Title text</CardTitle>);
     
@@ -35,6 +42,7 @@ describe('Card Components', () => {
     expect(title).toHaveClass('text-2xl', 'font-semibold', 'text-white');
   });
 
+  // Test description component for content context
   test('CardDescription renders correctly', () => {
     render(<CardDescription>Description text</CardDescription>);
     
@@ -44,6 +52,7 @@ describe('Card Components', () => {
     expect(description).toHaveClass('text-sm', 'text-white/80');
   });
 
+  // Test main content area component
   test('CardContent renders correctly', () => {
     render(<CardContent data-testid="content">Content text</CardContent>);
     
@@ -52,6 +61,7 @@ describe('Card Components', () => {
     expect(content).toHaveClass('p-6', 'pt-0');
   });
 
+  // Test footer component for actions and metadata
   test('CardFooter renders correctly', () => {
     render(<CardFooter data-testid="footer">Footer content</CardFooter>);
     
@@ -60,6 +70,7 @@ describe('Card Components', () => {
     expect(footer).toHaveClass('flex', 'items-center', 'p-6', 'pt-0');
   });
 
+  // Test complete card composition for complex UI layouts
   test('complete card structure works together', () => {
     render(
       <Card data-testid="complete-card">

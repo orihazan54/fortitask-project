@@ -1,13 +1,14 @@
-
 import React from "react";
 import { Link, useLocation } from "react-router-dom";
 import styles from "./Sidebar.module.css";
 import { Book, BookOpen, Users, PenTool, GraduationCap, FileText, Home } from "lucide-react";
 
+// Dynamic sidebar navigation with role-based menu configuration
 const Sidebar = ({ role }) => {
   const location = useLocation();
   const currentPath = location.pathname;
   
+  // Smart menu configuration based on user role and permissions
   const menuItems =
     role === "Student"
       ? [
@@ -26,6 +27,7 @@ const Sidebar = ({ role }) => {
 
   return (
     <aside className={styles.sidebar}>
+      {/* Role-specific header with visual identification */}
       <div className={styles.header}>
         {role === "Student" ? (
           <div className={styles.roleTitle}>
@@ -39,6 +41,8 @@ const Sidebar = ({ role }) => {
           </div>
         )}
       </div>
+      
+      {/* Interactive navigation menu with active state highlighting */}
       <nav>
         <ul className={styles.list}>
           {menuItems.map((item, index) => (
@@ -54,6 +58,8 @@ const Sidebar = ({ role }) => {
           ))}
         </ul>
       </nav>
+      
+      {/* Professional footer with copyright information */}
       <div className={styles.footer}>© 2025 Fortitask</div>
     </aside>
   );

@@ -34,22 +34,32 @@ import "../../styles/ManageCourses.css";
 import FileMetaAnalyzer from "./FileMetaAnalyzer";
 import * as XLSX from "xlsx";
 
+// Comprehensive course management interface with academic integrity monitoring and file analysis
 const ManageCourses = () => {
+  // Core course management state
   const [courses, setCourses] = useState([]);
   const [selectedCourse, setSelectedCourse] = useState(null);
   const [isEditing, setIsEditing] = useState(false);
+  
+  // File upload and drag-and-drop interface management
   const [file, setFile] = useState(null);
   const [uploading, setUploading] = useState(false);
   const [deleting, setDeleting] = useState(false);
   const [isDragging, setIsDragging] = useState(false);
+  
+  // Assignment and submission tracking with academic integrity monitoring
   const [assignments, setAssignments] = useState({ materials: [], studentSubmissions: [] });
   const [loading, setLoading] = useState(false);
+  
+  // Course editing form data management
   const [formData, setFormData] = useState({
     name: "",
     creditPoints: "",
     instructions: "",
     deadline: "",
   });
+  
+  // Academic integrity alert system to prevent duplicate warnings
   const [hasShownSuspicionAlert, setHasShownSuspicionAlert] = useState(false);
   const currentCourseIdRef = useRef(null);
 

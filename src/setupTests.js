@@ -1,14 +1,17 @@
+// Comprehensive Jest testing environment configuration for academic assignment management system
 // jest-dom adds custom jest matchers for asserting on DOM nodes.
 // allows you to do things like:
 // expect(element).toHaveTextContent(/react/i)
 // learn more: https://github.com/testing-library/jest-dom
 import '@testing-library/jest-dom';
 
+// Comprehensive Axios mocking for API testing isolation
 // Mock axios for all tests
 jest.mock('axios', () => ({
   __esModule: true,
   default: {
     defaults: {},
+    // Mock axios instance creation for isolated testing
     create: jest.fn(() => ({
       defaults: {},
       interceptors: {
@@ -20,6 +23,7 @@ jest.mock('axios', () => ({
       put: jest.fn(() => Promise.resolve({ data: {} })),
       delete: jest.fn(() => Promise.resolve({ data: {} }))
     })),
+    // Mock all HTTP methods for comprehensive API testing
     get: jest.fn(() => Promise.resolve({ data: {} })),
     post: jest.fn(() => Promise.resolve({ data: {} })),
     put: jest.fn(() => Promise.resolve({ data: {} })),
@@ -27,6 +31,7 @@ jest.mock('axios', () => ({
   }
 }));
 
+// Browser cryptography API mock for security-related testing
 // Mock window.crypto for tests
 Object.defineProperty(window, 'crypto', {
   value: {
@@ -39,6 +44,7 @@ Object.defineProperty(window, 'crypto', {
   }
 });
 
+// Local storage mock for session management testing
 // Mock localStorage
 const localStorageMock = {
   getItem: jest.fn(),
@@ -48,6 +54,7 @@ const localStorageMock = {
 };
 global.localStorage = localStorageMock;
 
+// Session storage mock for temporary data testing
 // Mock sessionStorage
 const sessionStorageMock = {
   getItem: jest.fn(),
@@ -57,6 +64,7 @@ const sessionStorageMock = {
 };
 global.sessionStorage = sessionStorageMock;
 
+// Intersection Observer API mock for component visibility testing
 // Mock IntersectionObserver
 global.IntersectionObserver = class IntersectionObserver {
   constructor() {}
@@ -65,6 +73,7 @@ global.IntersectionObserver = class IntersectionObserver {
   unobserve() {}
 };
 
+// Media query matching mock for responsive design testing
 // Mock window.matchMedia
 Object.defineProperty(window, 'matchMedia', {
   writable: true,
@@ -80,10 +89,12 @@ Object.defineProperty(window, 'matchMedia', {
   })),
 });
 
+// URL object manipulation mock for file handling testing
 // Mock URL.createObjectURL
 global.URL.createObjectURL = jest.fn(() => 'mocked-url');
 global.URL.revokeObjectURL = jest.fn();
 
+// File constructor mock for upload functionality testing
 // Mock File constructor
 global.File = class File extends Blob {
   constructor(fileParts, fileName, options) {
@@ -93,6 +104,7 @@ global.File = class File extends Blob {
   }
 };
 
+// FileReader API mock for file content processing testing
 // Mock FileReader
 global.FileReader = class FileReader {
   constructor() {
@@ -102,6 +114,7 @@ global.FileReader = class FileReader {
     this.onerror = null;
   }
   
+  // Mock data URL reading for image file testing
   readAsDataURL() {
     setTimeout(() => {
       this.result = 'data:text/plain;base64,dGVzdA==';
@@ -110,6 +123,7 @@ global.FileReader = class FileReader {
     }, 0);
   }
   
+  // Mock text reading for document file testing
   readAsText() {
     setTimeout(() => {
       this.result = 'test content';
@@ -119,6 +133,7 @@ global.FileReader = class FileReader {
   }
 };
 
+// Resize observer mock for dynamic layout testing
 // Mock ResizeObserver
 global.ResizeObserver = class ResizeObserver {
   constructor() {}
@@ -127,9 +142,11 @@ global.ResizeObserver = class ResizeObserver {
   disconnect() {}
 };
 
+// Window scrolling mock for navigation testing
 // Mock window.scrollTo
 global.scrollTo = jest.fn();
 
+// Console output filtering for cleaner test results
 // Mock console methods to reduce noise in tests
 const originalError = console.error;
 beforeAll(() => {
@@ -145,10 +162,12 @@ beforeAll(() => {
   };
 });
 
+// Restore original console after testing
 afterAll(() => {
   console.error = originalError;
 });
 
+// Default user authentication state for consistent testing
 // Setup default user info for tests
 beforeEach(() => {
   localStorageMock.getItem.mockImplementation((key) => {
@@ -164,6 +183,7 @@ beforeEach(() => {
   });
 });
 
+// Comprehensive test cleanup for isolated test execution
 // Clean up after each test
 afterEach(() => {
   jest.clearAllMocks();

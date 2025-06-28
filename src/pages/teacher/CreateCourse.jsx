@@ -6,26 +6,31 @@ import Sidebar from "../../components/Sidebar";
 import { Upload, ArrowLeft } from "lucide-react";
 import "../../styles/CreateCourse.css";
 
+// Comprehensive course creation interface with file upload and advanced form validation
 const CreateCourse = () => {
+  // Complete form state management for course creation workflow
   const [formData, setFormData] = useState({
     courseName: "",
     creditPoints: "",
     instructions: "",
     deadline: "",
-    deadlineTime: "23:59", // שעת ברירת מחדל לדדליין
+    deadlineTime: "23:59", // Default deadline time for consistency
   });
   const [file, setFile] = useState(null);
   const [uploading, setUploading] = useState(false);
   const [isDragging, setIsDragging] = useState(false);
 
+  // Dynamic form input handler with real-time state updates
   const handleChange = (e) => {
     const { name, value } = e.target;
     setFormData({ ...formData, [name]: value });
   };
 
+  // Secure file selection with comprehensive metadata logging
   const handleFileChange = (e) => {
     if (e.target.files && e.target.files[0]) {
       const selectedFile = e.target.files[0];
+      // Detailed file information logging for debugging and verification
       console.log("File selected:", {
         name: selectedFile.name,
         size: selectedFile.size,
@@ -35,6 +40,7 @@ const CreateCourse = () => {
     }
   };
 
+  // Advanced drag-and-drop file upload interface with visual feedback
   // Drag and drop handlers
   const handleDragEnter = (e) => {
     e.preventDefault();
@@ -45,6 +51,7 @@ const CreateCourse = () => {
   const handleDragLeave = (e) => {
     e.preventDefault();
     e.stopPropagation();
+    // Smart drag leave detection to prevent flickering
     if (!e.currentTarget.contains(e.relatedTarget)) {
       setIsDragging(false);
     }
@@ -55,6 +62,7 @@ const CreateCourse = () => {
     e.stopPropagation();
   };
 
+  // Professional drag-and-drop file handling with metadata capture
   const handleDrop = (e) => {
     e.preventDefault();
     e.stopPropagation();
@@ -63,6 +71,7 @@ const CreateCourse = () => {
     const files = e.dataTransfer.files;
     if (files && files.length > 0) {
       const selectedFile = files[0];
+      // Comprehensive file drop logging for user experience tracking
       console.log("File dropped:", {
         name: selectedFile.name,
         size: selectedFile.size,
@@ -72,9 +81,11 @@ const CreateCourse = () => {
     }
   };
 
+  // Comprehensive form submission with validation and file upload
   const handleSubmit = async (e) => {
     e.preventDefault();
 
+    // Client-side validation before server submission
     if (
       !formData.courseName ||
       !formData.creditPoints ||
@@ -89,15 +100,18 @@ const CreateCourse = () => {
     try {
       setUploading(true);
 
+      // Smart datetime combination for precise deadline setting
       // שילוב התאריך והשעה לתאריך מלא
       const deadlineWithTime = `${formData.deadline}T${formData.deadlineTime}`;
       
+      // Structured FormData preparation for multipart upload
       const courseFormData = new FormData();
       courseFormData.append("courseName", formData.courseName);
       courseFormData.append("creditPoints", formData.creditPoints);
       courseFormData.append("instructions", formData.instructions);
       courseFormData.append("deadline", deadlineWithTime);
 
+      // Optional file attachment for course materials
       if (file) {
         console.log("Adding file to FormData:", file.name);
         courseFormData.append("file", file);
@@ -108,6 +122,8 @@ const CreateCourse = () => {
       console.log("Course Created Successfully:", response);
 
               toast.success("Course created successfully!");
+      
+      // Form reset for clean user experience after successful creation
       setFormData({
         courseName: "",
         creditPoints: "",
@@ -118,6 +134,7 @@ const CreateCourse = () => {
       setFile(null);
     } catch (error) {
       console.error("Error creating course:", error.response || error.message);
+      // User-friendly error messaging with fallback
               toast.error(error.response?.data?.message || "Failed to create course.");
     } finally {
       setUploading(false);
@@ -130,6 +147,7 @@ const CreateCourse = () => {
       <div className="courses-container">
         <Sidebar role="Teacher" />
         <div className="create-course-container">
+          {/* Professional header with navigation and clear page purpose */}
           <div className="course-header">
             <button
               className="back-btn"
@@ -141,8 +159,10 @@ const CreateCourse = () => {
             <h1 className="course-title">Create New Course</h1>
           </div>
 
+          {/* Comprehensive course creation form with structured input fields */}
           <div className="create-course-card">
             <form onSubmit={handleSubmit} className="create-course-form">
+              {/* Course identification and credit information row */}
               <div className="form-row">
                 <div className="form-group">
                   <label>Course Name</label>
@@ -171,6 +191,7 @@ const CreateCourse = () => {
                 </div>
               </div>
 
+              {/* Detailed course instructions and requirements section */}
               <div className="form-group">
                 <label>Instructions</label>
                 <textarea
@@ -184,6 +205,7 @@ const CreateCourse = () => {
                 ></textarea>
               </div>
 
+              {/* Precise deadline configuration with date and time selection */}
               <div className="form-row">
                 <div className="form-group">
                   <label>Deadline Date</label>

@@ -8,7 +8,9 @@ import { Eye, EyeOff, CheckCircle, AlertCircle } from "lucide-react";
 import { Button } from "../components/ui/button";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "../components/ui/card";
 
+// Comprehensive password reset workflow with email verification and security validation
 const ForgotPassword = () => {
+  // State management for two-step password reset process
   const [email, setEmail] = useState("");
   const [verificationCode, setVerificationCode] = useState("");
   const [newPassword, setNewPassword] = useState("");
@@ -20,6 +22,7 @@ const ForgotPassword = () => {
   const [isLoading, setIsLoading] = useState(false);
   const navigate = useNavigate();
 
+  // Advanced password strength validation with multiple security criteria
   const checkPasswordStrength = (password) => {
     const strongRegex = new RegExp(
       "^(?=.*[a-z])(?=.*[A-Z])(?=.*[0-9])(?=.*[!@#$%^&*])(?=.{8,})"
@@ -33,13 +36,16 @@ const ForgotPassword = () => {
     return "Weak";
   };
 
+  // Real-time password strength assessment for user feedback
   const handleNewPasswordChange = (e) => {
     const value = e.target.value;
     setNewPassword(value);
     setPasswordStrength(checkPasswordStrength(value));
   };
 
+  // Step 1: Email verification request with validation
   const handleSendEmail = async () => {
+    // Email format validation before API call
     if (!email || !/\S+@\S+\.\S+/.test(email)) {
               toast.error("Please enter a valid email address");
       return;
@@ -61,7 +67,9 @@ const ForgotPassword = () => {
     }
   };
 
+  // Step 2: Password reset with verification code validation
   const handleResetPassword = async () => {
+    // Comprehensive form validation before submission
     if (!verificationCode || !newPassword || !confirmPassword) {
               toast.error("Please fill in all fields");
       return;
@@ -101,6 +109,7 @@ const ForgotPassword = () => {
       <NavBar />
       <div className="forgot-password-container">
         <div className="card">
+          {/* Step 1: Email address collection for verification */}
           {step === 1 && (
             <>
               <h2>Forgot Password?</h2>
@@ -121,6 +130,8 @@ const ForgotPassword = () => {
               </button>
             </>
           )}
+          
+          {/* Step 2: Verification code and new password entry */}
           {step === 2 && (
             <>
               <h2>Enter Verification Code</h2>
@@ -132,6 +143,8 @@ const ForgotPassword = () => {
                 disabled={isLoading}
               />
               <h2>Reset Your Password</h2>
+              
+              {/* Secure password input with visibility toggle */}
               <div className="password-field">
                 <input
                   type={showNewPassword ? "text" : "password"}
@@ -147,9 +160,13 @@ const ForgotPassword = () => {
                   {showNewPassword ? <EyeOff size={18} /> : <Eye size={18} />}
                 </span>
               </div>
+              
+              {/* Real-time password strength indicator */}
               <p className={`password-strength ${passwordStrength.toLowerCase()}`}>
                 Password Strength: {passwordStrength}
               </p>
+              
+              {/* Password confirmation input with visibility toggle */}
               <div className="password-field">
                 <input
                   type={showConfirmPassword ? "text" : "password"}
@@ -165,6 +182,8 @@ const ForgotPassword = () => {
                   {showConfirmPassword ? <EyeOff size={18} /> : <Eye size={18} />}
                 </span>
               </div>
+              
+              {/* Interactive password requirements checklist */}
               <div className="password-requirements">
                 <h4>Password Requirements:</h4>
                 <ul>
@@ -185,6 +204,8 @@ const ForgotPassword = () => {
                   </li>
                 </ul>
               </div>
+              
+              {/* Password reset submission button */}
               <button 
                 onClick={handleResetPassword} 
                 className="btn"
@@ -192,6 +213,8 @@ const ForgotPassword = () => {
               >
                 {isLoading ? "Resetting..." : "Reset Password"}
               </button>
+              
+              {/* Navigation back to email step */}
               <p className="mt-4">
                 <button 
                   className="text-link" 

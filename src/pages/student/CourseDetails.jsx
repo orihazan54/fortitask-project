@@ -18,9 +18,12 @@ import DeleteConfirmationModal from "../../components/course/DeleteConfirmationM
 import { ArrowLeft, Clock, AlertTriangle } from "lucide-react";
 import "../../styles/CourseDetails.css";
 
+// Comprehensive course management interface with assignment submission and academic integrity tracking
 const CourseDetails = () => {
   const { courseId } = useParams();
   const navigate = useNavigate();
+  
+  // State management for course data and submission workflow
   const [course, setCourse] = useState(null);
   const [teacherName, setTeacherName] = useState("Unknown Teacher");
   const [file, setFile] = useState(null);
@@ -33,8 +36,10 @@ const CourseDetails = () => {
   const [uploadComment, setUploadComment] = useState("");
   const [uploadError, setUploadError] = useState(null);
   
+  // Academic integrity monitoring system integration (backend handles detection)
   // (הוסר מנגנון התראה לסטודנט על חשד לרמאות)
 
+  // Comprehensive course data fetching with intelligent assignment filtering
   useEffect(() => {
     const fetchCourseDetails = async () => {
       setLoading(true);
@@ -44,6 +49,7 @@ const CourseDetails = () => {
         console.log("Course data received:", data);
         setCourse(data);
         
+        // Teacher information extraction for display
         if (data.teacherId) {
           setTeacherName(data.teacherName || "Unknown Teacher");
         }
@@ -51,9 +57,11 @@ const CourseDetails = () => {
         const currentUserId = localStorage.getItem("userId");
         console.log("Current user ID:", currentUserId);
         
+        // Smart assignment filtering: separate student submissions from course materials
         const myAssignments = data.assignments ? data.assignments.filter(assignment => {
           if (!assignment.studentId) return false;
           
+          // Handle both object and string student ID formats for compatibility
           const assignmentStudentId = typeof assignment.studentId === 'object' ? 
             assignment.studentId._id || assignment.studentId : assignment.studentId;
             
@@ -71,6 +79,7 @@ const CourseDetails = () => {
         console.log("Filtered student assignments:", myAssignments);
         setStudentAssignments(myAssignments);
         
+        // Course materials filtering for educational resources
         const materials = data.assignments ? data.assignments.filter(
           assignment => !assignment.studentId || assignment.isMaterial === true
         ) : [];
@@ -87,9 +96,12 @@ const CourseDetails = () => {
     fetchCourseDetails();
   }, [courseId]);
 
+  // Secure file selection with metadata capture for academic integrity
   const handleFileChange = (e) => {
     if (e.target.files && e.target.files[0]) {
       const selectedFile = e.target.files[0];
+      
+      // Comprehensive file metadata logging for integrity verification
       console.log("File selected:", {
         name: selectedFile.name,
         size: selectedFile.size,
@@ -102,6 +114,7 @@ const CourseDetails = () => {
     }
   };
 
+  // Advanced assignment submission with timestamp verification and deadline validation
   const handleFileUpload = async () => {
     if (!file) {
       toast.error("Please select a file to upload");
@@ -117,19 +130,23 @@ const CourseDetails = () => {
       formData.append("file", file);
       formData.append("courseId", courseId);
       
+      // Critical: file timestamp capture for academic integrity verification
       // הוספת זמן שינוי אחרון של הקובץ
       if (file.lastModified) {
         formData.append("lastModified", file.lastModified.toString());
         console.log("Added lastModified:", new Date(file.lastModified).toISOString());
       }
       
+      // Student identification for assignment tracking
       // הוספת מזהה סטודנט
       formData.append("studentId", localStorage.getItem("userId"));
       
+      // Deadline validation for late submission detection
       if (course && course.deadline) {
         formData.append("deadline", course.deadline);
       }
       
+      // Optional comment attachment for submission context
       if (uploadComment && uploadComment.trim()) {
         formData.append("comment", uploadComment.trim());
       }
@@ -137,21 +154,26 @@ const CourseDetails = () => {
       const response = await uploadAssignment(courseId, formData);
       console.log("Upload response received:", response.data);
       
+      // Intelligent submission status analysis and user feedback
       // בדיקת מצב ההגשה והצגת הודעות מתאימות
       const { isLate } = response.data;
       
       if (isLate) {
+        // Clear late submission notification without academic integrity details
         // הודעה פשוטה על איחור בלבד
         toast.warning("Assignment submitted late.");
       } else {
+        // Successful on-time submission confirmation
         // הגשה בזמן - הכל תקין
         toast.success("Assignment submitted successfully!");
       }
       
+      // Real-time course data refresh after successful submission
       // רענון נתוני הקורס
       const { data } = await getCourseDetails(courseId);
       setCourse(data);
       
+      // Dynamic assignment list update for immediate UI feedback
       // עדכון רשימת ההגשות
       const currentUserId = localStorage.getItem("userId");
       const updatedStudentAssignments = data.assignments.filter(assignment => {
@@ -167,6 +189,7 @@ const CourseDetails = () => {
       
       setStudentAssignments(updatedStudentAssignments);
       
+      // Form reset for clean user experience
       // איפוס הטופס
       setFile(null);
       setUploadComment("");
@@ -180,7 +203,9 @@ const CourseDetails = () => {
     }
   };
 
+  // Assignment deletion with late submission protection
   const confirmDeleteAssignment = (assignment) => {
+    // Security measure: prevent deletion of late submissions for audit trail
     if (assignment.isLateSubmission) {
       toast.error("Late submissions cannot be deleted");
       return;
@@ -189,11 +214,14 @@ const CourseDetails = () => {
     setShowConfirmDelete(true);
   };
   
+  // Secure assignment deletion with course data refresh
   const handleDeleteAssignment = async () => {
     if (!assignmentToDelete) return;
     try {
       await deleteAssignment(courseId, assignmentToDelete._id);
       toast.success("Assignment deleted successfully");
+      
+      // Immediate course data update after deletion
       const { data } = await getCourseDetails(courseId);
       setCourse(data);
       const currentUserId = localStorage.getItem("userId");

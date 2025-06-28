@@ -2,16 +2,17 @@ import axios from "axios";
 import { toast } from "sonner";
 import CryptoJS from "crypto-js";
 
+// Enable credentials for secure session management across domains
 axios.defaults.withCredentials = true;
-// Create the API instance with better timeout settings
-// Auto-detect if we're running locally or in production
+
+// Dynamic API configuration for development and production environments
 const getBaseURL = () => {
-  // If explicitly set in environment, use that
+  // Environment variable takes priority for explicit configuration
   if (process.env.REACT_APP_API_BASE_URL) {
     return process.env.REACT_APP_API_BASE_URL;
   }
   
-  // Auto-detect based on current domain
+  // Smart environment detection based on current hostname
   if (window.location.hostname === 'localhost' || window.location.hostname === '127.0.0.1') {
     return "http://localhost:5000/api";
   } else {
@@ -19,6 +20,7 @@ const getBaseURL = () => {
   }
 };
 
+// Axios instance with optimized configuration for academic system
 const API = axios.create({
   baseURL: getBaseURL(),
   timeout: 15000,
@@ -27,15 +29,13 @@ const API = axios.create({
   }
 });
 
-
-// Track active error toasts to prevent duplicates
+// Advanced error tracking system to prevent duplicate notifications
 let activeErrorToasts = new Set();
-// Track toast display activity - always enable toasts
+// Control toast display during application initialization
 let isToastSuppressed = false;
-// Enable toasts immediately
 console.log("Toasts enabled from startup");
 
-// Add token to every request
+// Automatic JWT token injection for authenticated requests
 API.interceptors.request.use((req) => {
   const token = localStorage.getItem("token");
   if (token) {
@@ -44,6 +44,7 @@ API.interceptors.request.use((req) => {
   return req;
 });
 
+// Client-side encryption utilities for sensitive data protection
 // Encryption logic for sensitive data
 const encryptData = (data, key = "FORTITASK_SECRET_KEY") => {
   return CryptoJS.AES.encrypt(JSON.stringify(data), key).toString();
@@ -54,49 +55,48 @@ const decryptData = (ciphertext, key = "FORTITASK_SECRET_KEY") => {
   return JSON.parse(bytes.toString(CryptoJS.enc.Utf8));
 };
 
-// Improved global error handling with duplicate prevention
+// Comprehensive global error handling with smart duplicate prevention
 API.interceptors.response.use(
   (response) => response,
   (error) => {
     console.error("API Error:", error);
     
-    // Don't show toasts during initial app loading
+    // Suppress error notifications during initial app loading
     if (isToastSuppressed) {
       console.log("Toast suppressed during app initialization");
       return Promise.reject(error);
     }
     
-    // Generate a unique error ID based on the error message and URL
+    // Create unique error identifier for duplicate prevention
     const errorURL = error.config?.url || "unknown-endpoint";
     const errorMsg = error.response?.data?.message || error.message || "Unknown error";
     const errorId = `${errorURL}:${errorMsg}`;
     
-    // Skip toast for non-critical background operations
+    // Filter out non-critical background operations from error notifications
     const isBackgroundOperation = 
       errorURL.includes("enrolled") || 
       errorURL.includes("/courses/my-courses") ||
       errorURL.includes("/profile") || 
       errorURL.includes("/dashboard");
       
-    // Only show toast if this exact error isn't already being shown
-    // and if it's not a background operation
+    // Smart error notification system with deduplication
     if (!activeErrorToasts.has(errorId) && !isBackgroundOperation) {
       activeErrorToasts.add(errorId);
       
-      // Network errors
+      // Handle different types of errors with appropriate user messaging
       if (!error.response) {
         console.error("Network Error:", error.message);
         toast.error(`שגיאת רשת: אנא בדוק את החיבור שלך`, {
           onClose: () => activeErrorToasts.delete(errorId)
         });
       } 
-      // Server errors
+      // Server errors with detailed status code handling
       else {
         const status = error.response.status;
         const message = error.response?.data?.message || "אירעה שגיאה. אנא נסה שוב.";
         
         if (status === 401) {
-          // Session expired or unauthorized
+          // Automatic session cleanup and redirect for expired tokens
           toast.error("זמן ההתחברות פג. אנא התחבר מחדש.", {
             onClose: () => activeErrorToasts.delete(errorId)
           });
@@ -116,7 +116,7 @@ API.interceptors.response.use(
         }
       }
       
-      // Automatically remove from tracking after 3 seconds
+      // Automatic cleanup of error tracking after timeout
       setTimeout(() => {
         activeErrorToasts.delete(errorId);
       }, 3000);
@@ -126,12 +126,15 @@ API.interceptors.response.use(
   }
 );
 
-// ========== USER FUNCTIONS ==========
+// ========== USER AUTHENTICATION FUNCTIONS ==========
+
+// User registration with comprehensive form data validation
 export const signup = async (formData) => {
   console.log("Sending signup data:", {...formData, password: "***hidden***"});
   return API.post("/users/signup", formData);
 };
 
+// Secure user login with Two-Factor Authentication support
 export const login = async (formData) => {
   try {
     console.log("Attempting login with:", { 
@@ -139,12 +142,11 @@ export const login = async (formData) => {
       has2FACode: !!formData.twoFactorCode 
     });
     
-    // Create a deep copy of formData to avoid mutations
+    // Create deep copy to prevent data mutation during processing
     const loginPayload = JSON.parse(JSON.stringify(formData));
     
-    // Make sure twoFactorCode is properly formatted if present
+    // Sanitize and format 2FA code for secure transmission
     if (loginPayload.twoFactorCode) {
-      // Ensure twoFactorCode is a string, trimmed, only digits, and without spaces
       loginPayload.twoFactorCode = String(loginPayload.twoFactorCode)
         .trim()
         .replace(/\s+/g, '')
@@ -156,12 +158,12 @@ export const login = async (formData) => {
     
     const response = await API.post("/users/login", loginPayload);
     
-    // Store user data in localStorage immediately after successful login
+    // Secure session management with localStorage persistence
     if (response.data && response.data.token) {
-      // First clear any existing data to avoid conflicts
+      // Clear any existing session data to prevent conflicts
       localStorage.clear();
       
-      // Set the new values
+      // Store new authentication data securely
       localStorage.setItem("token", response.data.token);
       localStorage.setItem("userId", response.data.userId);
       localStorage.setItem("role", response.data.role);
@@ -174,7 +176,7 @@ export const login = async (formData) => {
         hasToken: !!response.data.token
       });
       
-      // Double check after a short delay that everything was properly set
+      // Verification mechanism to ensure data persistence
       setTimeout(() => {
         const storedToken = localStorage.getItem("token");
         const storedUserId = localStorage.getItem("userId");
@@ -196,7 +198,7 @@ export const login = async (formData) => {
   } catch (error) {
     console.error("Login error:", error);
     
-    // Special handling for 2FA requirement
+    // Special error handling for Two-Factor Authentication requirements
     if (error.response?.status === 400 && error.response?.data?.requiresTwoFactor) {
       console.log("2FA required, returning modified error");
       // Convert to a "successful" response with requiresTwoFactor flag

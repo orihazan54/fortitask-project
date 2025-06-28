@@ -1,4 +1,3 @@
-
 import React from "react";
 import { Link } from "react-router-dom";
 import NavBar from "../components/NavBar";
@@ -15,11 +14,13 @@ import {
 } from 'lucide-react';
 import logo from "../assets/logo.png";
 
+// Professional landing page showcasing platform features and capabilities
 const Home = () => {
   return (
     <div className="min-h-screen flex flex-col bg-gradient">
       <NavBar />
       <main className="flex-1">
+        {/* Hero section with compelling value proposition and call-to-action */}
         <header className="hero-section">
           <div className="hero-content animate-fade-in">
             <div className="hero-shine"></div>
@@ -30,6 +31,7 @@ const Home = () => {
               Perfect for both educators and students.
             </p>
             
+            {/* Primary action buttons for user onboarding */}
             <div className="home-buttons">
               <Link to="/login" className="btn btn-primary">
                 <span>Get Started</span>
@@ -43,11 +45,14 @@ const Home = () => {
           </div>
         </header>
 
+        {/* Core platform features showcase with visual icons */}
         <section className="features-section animate-fade-in">
           <div className="section-header">
             <h2 className="section-title">Platform Features</h2>
             <div className="title-underline"></div>
           </div>
+          
+          {/* Feature cards highlighting key platform capabilities */}
           <div className="info-cards">
             <div className="card glass-effect">
               <ListChecks className="card-icon" />
@@ -56,6 +61,7 @@ const Home = () => {
                 Efficiently organize and track assignments with our intuitive task management system
               </p>
             </div>
+            
             <div className="card glass-effect">
               <ShieldCheck className="card-icon" />
               <h3 className="card-title">Enhanced Security</h3>
@@ -63,6 +69,7 @@ const Home = () => {
                 State-of-the-art security measures protecting your academic data and personal information
               </p>
             </div>
+            
             <div className="card glass-effect">
               <BarChart3 className="card-icon" />
               <h3 className="card-title">Advanced Analytics</h3>
@@ -73,11 +80,13 @@ const Home = () => {
           </div>
         </section>
         
+        {/* Role-specific features section for students and teachers */}
         <section className="roles-section">
           <div className="section-header">
             <h2 className="section-title">Designed For Everyone</h2>
             <div className="title-underline"></div>
           </div>
+          
           <div className="roles-content">
             <div className="role-info animate-fade-in">
               <p className="roles-description">
@@ -85,6 +94,7 @@ const Home = () => {
                 Whether you're teaching or learning, Fortitask adapts to your workflow.
               </p>
               
+              {/* User type cards with specific feature highlights */}
               <div className="role-cards">
                 <div className="role-card glass-effect">
                   <div className="role-icon-wrapper">
@@ -107,6 +117,7 @@ const Home = () => {
                 </div>
               </div>
               
+              {/* Secondary call-to-action for registration */}
               <div className="cta-button">
                 <Link to="/signup" className="btn btn-join glass-effect">
                   <span>Start Your Journey</span>
@@ -115,6 +126,7 @@ const Home = () => {
               </div>
             </div>
             
+            {/* Detailed feature breakdown with benefits listing */}
             <div className="features-cards">
               <div className="feature-card glass-effect">
                 <div className="feature-icon-wrapper">
@@ -147,6 +159,7 @@ const Home = () => {
         </section>
       </main>
       
+      {/* Professional footer with branding and copyright */}
       <footer className="footer glass-effect">
         <div className="footer-content">
           <div className="footer-logo">

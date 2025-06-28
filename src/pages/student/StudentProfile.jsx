@@ -11,20 +11,23 @@ import {
 } from "../../services/api";
 import "../../styles/StudentProfile.css";
 
+// Comprehensive student profile management with security features and Two-Factor Authentication
 const StudentProfile = () => {
   const navigate = useNavigate();
+  
+  // Core profile state management
   const [user, setUser] = useState(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState("");
   
-  // Edit profile states
+  // Profile editing state management with form validation
   const [isEditingProfile, setIsEditingProfile] = useState(false);
   const [profileData, setProfileData] = useState({
     username: "",
     email: ""
   });
   
-  // Password change states
+  // Secure password management with strength validation
   const [isChangingPassword, setIsChangingPassword] = useState(false);
   const [passwordData, setPasswordData] = useState({
     currentPassword: "",
@@ -36,7 +39,7 @@ const StudentProfile = () => {
   const [showConfirmPassword, setShowConfirmPassword] = useState(false);
   const [passwordStrength, setPasswordStrength] = useState("");
   
-  // Two-factor authentication states
+  // Advanced Two-Factor Authentication management system
   const [showTwoFactorSetup, setShowTwoFactorSetup] = useState(false);
   const [twoFactorData, setTwoFactorData] = useState({
     qrCode: "",
@@ -47,7 +50,7 @@ const StudentProfile = () => {
   const [processing2FA, setProcessing2FA] = useState(false);
   const [twoFactorError, setTwoFactorError] = useState("");
 
-  // Fetch user details on component mount
+  // Comprehensive user data initialization with 2FA status detection
   useEffect(() => {
     const fetchUserData = async () => {
       try {
@@ -62,7 +65,7 @@ const StudentProfile = () => {
             email: data.email || ""
           });
           
-          // Check if 2FA is enabled
+          // Initialize Two-Factor Authentication status
           if (data.twoFactorEnabled) {
             setTwoFactorData(prev => ({
               ...prev,
@@ -82,7 +85,7 @@ const StudentProfile = () => {
     fetchUserData();
   }, []);
   
-  // Handle profile form field changes
+  // Real-time profile form validation and state management
   const handleProfileChange = (e) => {
     const { name, value } = e.target;
     setProfileData(prev => ({
@@ -91,13 +94,13 @@ const StudentProfile = () => {
     }));
   };
   
-  // Handle profile update submission
+  // Secure profile update with data refresh and validation
   const handleProfileUpdate = async () => {
     try {
       setLoading(true);
       await updateUserDetails(profileData);
       
-      // Refresh user data after update
+      // Refresh user data after successful update to ensure consistency
       const { data } = await getUserDetails();
       setUser(data);
       
@@ -111,13 +114,14 @@ const StudentProfile = () => {
     }
   };
   
-  // Password strength checker
+  // Advanced password strength analysis with multi-criteria validation
   const checkPasswordStrength = (password) => {
     if (!password) {
       setPasswordStrength("");
       return;
     }
     
+    // Comprehensive security criteria validation
     const hasUppercase = /[A-Z]/.test(password);
     const hasLowercase = /[a-z]/.test(password);
     const hasNumber = /[0-9]/.test(password);
@@ -140,7 +144,7 @@ const StudentProfile = () => {
     }
   };
   
-  // Handle password change form field updates
+  // Dynamic password form handling with real-time strength validation
   const handlePasswordChange = (e) => {
     const { name, value } = e.target;
     setPasswordData(prev => ({
@@ -148,16 +152,17 @@ const StudentProfile = () => {
       [name]: value
     }));
     
+    // Trigger strength analysis for new password field
     if (name === "newPassword") {
       checkPasswordStrength(value);
     }
   };
   
-  // Handle password update submission
+  // Secure password update with comprehensive validation and cleanup
   const handlePasswordUpdate = async (e) => {
     e.preventDefault();
     
-    // Validation checks
+    // Client-side validation before API submission
     if (passwordData.newPassword !== passwordData.confirmPassword) {
               toast.error("New passwords do not match");
       return;
@@ -177,6 +182,7 @@ const StudentProfile = () => {
       
               toast.success("Password updated successfully");
       setIsChangingPassword(false);
+      // Clear sensitive data from state after successful update
       setPasswordData({
         currentPassword: "",
         newPassword: "",
@@ -191,12 +197,13 @@ const StudentProfile = () => {
     }
   };
   
-  // Setup 2FA
+  // Advanced Two-Factor Authentication setup with QR code generation
   const handleSetupTwoFactor = async () => {
     try {
       setTwoFactorError("");
       setProcessing2FA(true);
       
+      // Smart 2FA state management - disable if already enabled
       // If 2FA is already enabled, open the disable screen directly
       if (twoFactorData.enabled) {
         setShowTwoFactorSetup(true);

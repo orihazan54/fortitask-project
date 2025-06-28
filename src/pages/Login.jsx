@@ -14,7 +14,9 @@ import {
 import { Button } from "../components/ui/button";
 import "../styles/Login.css";
 
+// Secure login component with Two-Factor Authentication support
 const Login = () => {
+  // Form state management for user credentials and authentication flow
   const [formData, setFormData] = useState({ email: "", password: "" });
   const [twoFactorCode, setTwoFactorCode] = useState("");
   const [loading, setLoading] = useState(false);
@@ -25,6 +27,7 @@ const Login = () => {
   const [fieldErrors, setFieldErrors] = useState({ email: "", password: "" });
   const navigate = useNavigate();
 
+  // Automatic redirect for already authenticated users
   useEffect(() => {
     const { isAuthenticated, role } = checkAuthentication();
     if (isAuthenticated) {
@@ -32,18 +35,25 @@ const Login = () => {
     }
   }, [navigate]);
 
+  // Form input handler with real-time error clearing
   const handleChange = (e) => {
     setFormData({ ...formData, [e.target.name]: e.target.value });
+    // Clear field-specific errors when user starts typing
     setFieldErrors(prev => ({ ...prev, [e.target.name]: "" }));
   };
 
+  // Sanitized 2FA code input with format validation
   const handle2FACodeChange = (e) => {
+    // Only allow digits and limit to 6 characters for security
     const value = e.target.value.replace(/[^\d]/g, '').substring(0, 6);
     setTwoFactorCode(value);
   };
 
+  // Comprehensive login submission with 2FA support
   const handleSubmit = async (e) => {
     e.preventDefault();
+    
+    // Client-side validation before API call
     if (!formData.email || !formData.password) {
               toast.error("Please fill in all required fields");
       return;
@@ -52,10 +62,12 @@ const Login = () => {
               toast.error("Please enter your two-factor authentication code");
       return;
     }
+    
     setLoading(true);
     setLoginInProgress(true);
 
     try {
+      // Determine login payload based on authentication step
       const loginData = requiresTwoFactor
         ? { ...loginAttemptData, twoFactorCode: twoFactorCode.trim() }
         : formData;
@@ -65,6 +77,7 @@ const Login = () => {
       const { data } = response;
       console.log("Login response:", data);
 
+      // Handle 2FA requirement step
       if (data.requiresTwoFactor) {
         setRequiresTwoFactor(true);
         setLoginAttemptData(formData);
@@ -76,6 +89,7 @@ const Login = () => {
 
               toast.success("Login successful!");
 
+      // Secure session setup with localStorage management
       // Clear localStorage and set new values
       localStorage.clear();
       localStorage.setItem("token", data.token);
@@ -83,6 +97,7 @@ const Login = () => {
       localStorage.setItem("role", data.role);
       localStorage.setItem("username", data.username || "User");
 
+      // Role-based navigation with slight delay for state update
       setTimeout(() => {
         const role = localStorage.getItem("role");
         navigate(role === "Student" ? "/student-dashboard" : "/teacher-dashboard");
@@ -90,16 +105,19 @@ const Login = () => {
     } catch (error) {
       console.error("Login error:", error);
       
+      // Comprehensive error handling for different authentication scenarios
       // Display all errors as toast messages
       if (error.response?.status === 400 && error.response?.data?.requiresTwoFactor) {
         setRequiresTwoFactor(true);
         setLoginAttemptData(formData);
         toast.info(error.response.data.message || "Two-factor authentication required");
       } else {
+        // User-friendly error messaging with field-specific feedback
         // Create error message and display it as toast
         const errorMessage = error.response?.data?.message || error.message || "Login failed! Please check your credentials";
         toast.error(errorMessage);
 
+        // Visual field error indicators for better UX
         // Mark field errors
         if (errorMessage.toLowerCase().includes("email")) {
           setFieldErrors(prev => ({ ...prev, email: "Invalid email" }));
@@ -114,6 +132,7 @@ const Login = () => {
     }
   };
 
+  // Reset 2FA flow to return to initial login state
   const handleBackToLogin = () => {
     setRequiresTwoFactor(false);
     setTwoFactorCode("");
@@ -124,6 +143,7 @@ const Login = () => {
     <div className="login-page bg-gradient">
       <NavBar />
       <main className="flex-center p-6">
+        {/* Adaptive login card that changes based on authentication step */}
         <Card className="login-card animate-fade-in">
           <CardHeader className="space-y-1 text-center">
             <CardTitle className="text-2xl font-bold bg-gradient-text">
@@ -139,6 +159,7 @@ const Login = () => {
             <form onSubmit={handleSubmit} className="space-y-5">
               {!requiresTwoFactor ? (
                 <>
+                  {/* Standard login form with accessible inputs and icons */}
                   <div className="input-group">
                     <label className="input-label" htmlFor="email">Email</label>
                     <div className="input-container">
@@ -156,6 +177,7 @@ const Login = () => {
                     </div>
                   </div>
                   {fieldErrors.email && <span className="field-error-text">{fieldErrors.email}</span>}
+                  
                   <div className="input-group">
                     <label className="input-label" htmlFor="password">Password</label>
                     <div className="input-container">
@@ -170,6 +192,7 @@ const Login = () => {
                         className={`input-field ${fieldErrors.password ? 'input-error' : ''}`}
                         required
                       />
+                      {/* Password visibility toggle for better user experience */}
                       <button
                         type="button"
                         onClick={() => setShowPassword(!showPassword)}
@@ -180,6 +203,7 @@ const Login = () => {
                     </div>
                   </div>
                   {fieldErrors.password && <span className="field-error-text">{fieldErrors.password}</span>}
+                  
                   <Button 
                     type="submit" 
                     className="login-button" 
@@ -189,6 +213,7 @@ const Login = () => {
                   </Button>
                 </>
               ) : (
+                // Two-Factor Authentication interface with clear instructions
                 <div className="two-factor-container">
                   <ShieldCheck size={40} className="text-blue-400" />
                   <p>Enter the 6-digit code from your authenticator app</p>
